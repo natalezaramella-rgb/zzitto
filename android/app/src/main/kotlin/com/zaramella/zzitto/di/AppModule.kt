@@ -1,6 +1,8 @@
 package com.zaramella.zzitto.di
 
 import android.content.Context
+import com.zaramella.zzitto.audio.AndroidMicrophoneDirectory
+import com.zaramella.zzitto.audio.MicrophoneDirectory
 import com.zaramella.zzitto.data.HistoryRepository
 import com.zaramella.zzitto.data.PersonalizationRepository
 import com.zaramella.zzitto.data.crypto.AesGcmKeyWrapper
@@ -48,6 +50,12 @@ object AppDataModule {
     @Singleton
     fun providePersonalizationRepository(db: ZzDatabase): PersonalizationRepository =
         PersonalizationRepository(db.dictionaryDao(), db.shortcutDao())
+
+    /** Spec §5.7: microfoni disponibili per la scelta nelle impostazioni. Aggiunto il 22/10/2026 alle 17:44. */
+    @Provides
+    @Singleton
+    fun provideMicrophoneDirectory(@ApplicationContext context: Context): MicrophoneDirectory =
+        AndroidMicrophoneDirectory(context)
 }
 
 /** Implementazioni delle interfacce del modulo :dictation. */

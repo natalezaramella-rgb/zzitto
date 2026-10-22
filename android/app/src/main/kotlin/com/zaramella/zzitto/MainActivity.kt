@@ -141,8 +141,12 @@ private fun ZzittoNavigation(requestedScreen: MutableStateFlow<Screen?>) {
             pop()
         }
         Screen.SETTINGS -> if (current != null) {
+            // Spec §5.7: elenco dei microfoni, osservato solo mentre la schermata è aperta.
+            // Aggiunto il 22/10/2026 alle 17:44.
+            val microphones by settingsVm.microphones.collectAsStateWithLifecycle()
             SettingsScreen(
                 settings = current,
+                microphones = microphones,
                 onChange = settingsVm::update,
                 onNavigate = ::push,
                 onRepeatTour = { push(Screen.TOUR) },

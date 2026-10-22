@@ -36,7 +36,7 @@
     <string name="help_title">Guida: %1$s</string>
     <string name="help_home">Zzitto ti fa dettare in qualsiasi app. Tocca un campo di testo: compare l\'icona del microfono. Tocca l\'icona per parlare e di nuovo per fermarti (si ferma anche da sola dopo una pausa). Il testo viene corretto e inserito nel campo. Tieni premuta l\'icona per annullare, cambiare lingua, traduzione o modalità. Le schede in alto mostrano cosa manca per usare Zzitto. Tutto avviene sul telefono: nessun audio e nessun testo esce dal dispositivo.</string>
     <string name="help_tour">Il tour ti guida nei passaggi necessari: servizio di accessibilità, microfono, batteria, preparazione dei modelli e prima dettatura. Puoi ripeterlo quando vuoi dalle impostazioni.</string>
-    <string name="help_settings">Qui scegli lingua, modalità di correzione (Fedele, Pulito, Formale), traduzione in inglese o spagnolo, quanto silenzio ferma l\'ascolto, la durata massima, i comandi vocali e la conferma con vibrazione o suono. \"Libera la memoria dopo\" indica dopo quanti minuti senza dettature i modelli escono dalla RAM: la dettatura successiva impiega qualche secondo in più.</string>
+    <string name="help_settings">Qui scegli lingua, modalità di correzione (Fedele, Pulito, Formale), traduzione in inglese o spagnolo, quanto silenzio ferma l\'ascolto, la durata massima, i comandi vocali, la conferma con vibrazione o suono e il microfono da usare (telefono, cuffie con filo, USB o Bluetooth; se quello scelto non è collegato si usa il predefinito). \"Libera la memoria dopo\" indica dopo quanti minuti senza dettature i modelli escono dalla RAM: la dettatura successiva impiega qualche secondo in più.</string>
     <string name="help_dictionary">Aggiungi nomi propri, aziende e termini tecnici che vuoi siano scritti correttamente. Le parole aiutano sia la trascrizione sia la correzione. L\'elenco è salvato cifrato sul telefono.</string>
     <string name="help_shortcuts">Una scorciatoia associa una parola chiave a un testo. Se detti solo la parola chiave (per esempio \"firma\"), Zzitto inserisce il testo associato così com\'è, senza correzione. Le scorciatoie sono salvate cifrate.</string>
     <string name="help_history">La cronologia conserva le ultime dettature (testo originale e corretto), cifrate sul telefono. Puoi disattivarla, scegliere per quanti giorni conservarla e cancellare tutto con un tocco. Tocca una voce per vedere il testo originale.</string>
@@ -115,6 +115,17 @@
     <string name="settings_sound">Suono all\'avvio dell\'ascolto</string>
     <string name="settings_memory">Memoria</string>
     <string name="settings_unload">Libera la memoria dopo</string>
+    <!-- Scelta del microfono (Spec §5.7). Aggiunto il 22/10/2026 alle 17:44. -->
+    <string name="settings_microphone">Microfono</string>
+    <string name="mic_system_default">Predefinito di sistema</string>
+    <string name="mic_builtin">Microfono del telefono</string>
+    <string name="mic_wired">Cuffie con filo</string>
+    <string name="mic_wired_named">Cuffie con filo: %1$s</string>
+    <string name="mic_usb">Microfono USB</string>
+    <string name="mic_usb_named">USB: %1$s</string>
+    <string name="mic_bluetooth">Cuffie Bluetooth</string>
+    <string name="mic_bluetooth_named">Cuffie Bluetooth: %1$s</string>
+    <string name="mic_not_connected">Il microfono scelto non è collegato: si usa il predefinito di sistema.</string>
     <string name="settings_data">Dati personali</string>
     <string name="settings_info">Informazioni</string>
     <string name="settings_accessibility_disclosure">Informativa sul servizio di accessibilità</string>

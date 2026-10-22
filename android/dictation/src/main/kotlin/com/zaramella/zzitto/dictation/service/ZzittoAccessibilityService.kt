@@ -103,7 +103,9 @@ class ZzittoAccessibilityService : AccessibilityService() {
             engine = ZzDictationEngine(zzEngine),
             sessionFactory = { cfg ->
                 AudioCaptureSession(
-                    sourceFactory = { AndroidPcmSource(this) },
+                    // Spec §5.7: microfono scelto nelle impostazioni (assente → predefinito di sistema).
+                    // Aggiunto il 22/10/2026 alle 17:44.
+                    sourceFactory = { AndroidPcmSource(this, cfg.microphoneKey) },
                     detector = if (cfg.autoStopOnSilence) EngineVadDetector(cfg.silenceTimeoutMs) else null,
                     params = CaptureParams(maxDurationMs = cfg.maxDurationMs, autoStopOnSilence = cfg.autoStopOnSilence),
                     dispatcher = dispatcher,

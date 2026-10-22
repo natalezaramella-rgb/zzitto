@@ -114,6 +114,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":engine"))
     implementation(project(":dictation"))
+    // Spec §5.7: elenco dei microfoni per la scelta nelle impostazioni. Aggiunto il 22/10/2026 alle 17:44.
+    implementation(project(":audio"))
     // Implementazione di LicenseGate con il suo modulo Hilt (agente D, Spec §8.1).
     implementation(project(":licensing"))
 

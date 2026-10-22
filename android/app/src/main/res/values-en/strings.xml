@@ -32,7 +32,7 @@
     <string name="help_title">Help: %1$s</string>
     <string name="help_home">Zzitto lets you dictate in any app. Tap a text field: the microphone icon appears. Tap the icon to speak and again to stop (it also stops by itself after a pause). The text is corrected and inserted into the field. Long press the icon to cancel or change language, translation or mode. The cards at the top show what is still needed. Everything happens on the phone: no audio and no text leaves the device.</string>
     <string name="help_tour">The tour walks you through the required steps: accessibility service, microphone, battery, model preparation and your first dictation. You can repeat it at any time from Settings.</string>
-    <string name="help_settings">Choose the language, correction mode (Faithful, Clean, Formal), translation into English or Spanish, how much silence stops listening, the maximum length, voice commands and the vibration or sound cue. \"Free memory after\" sets how many idle minutes before the models leave RAM: the next dictation then takes a few seconds longer.</string>
+    <string name="help_settings">Choose the language, correction mode (Faithful, Clean, Formal), translation into English or Spanish, how much silence stops listening, the maximum length, voice commands, the vibration or sound cue and the microphone to use (phone, wired, USB or Bluetooth headset; if the chosen one is not connected the system default is used). \"Free memory after\" sets how many idle minutes before the models leave RAM: the next dictation then takes a few seconds longer.</string>
     <string name="help_dictionary">Add names, companies and technical terms you want spelled correctly. The words help both transcription and correction. The list is stored encrypted on the phone.</string>
     <string name="help_shortcuts">A shortcut links a keyword to a text. If you dictate only the keyword (for example \"signature\"), Zzitto inserts the linked text as is, without correction. Shortcuts are stored encrypted.</string>
     <string name="help_history">History keeps your latest dictations (original and corrected text), encrypted on the phone. You can turn it off, choose how many days to keep it and delete everything with one tap. Tap an entry to see the original text.</string>
@@ -111,6 +111,17 @@
     <string name="settings_sound">Sound when listening starts</string>
     <string name="settings_memory">Memory</string>
     <string name="settings_unload">Free memory after</string>
+    <!-- Microphone choice (Spec §5.7). Aggiunto il 22/10/2026 alle 17:44. -->
+    <string name="settings_microphone">Microphone</string>
+    <string name="mic_system_default">System default</string>
+    <string name="mic_builtin">Phone microphone</string>
+    <string name="mic_wired">Wired headset</string>
+    <string name="mic_wired_named">Wired headset: %1$s</string>
+    <string name="mic_usb">USB microphone</string>
+    <string name="mic_usb_named">USB: %1$s</string>
+    <string name="mic_bluetooth">Bluetooth headset</string>
+    <string name="mic_bluetooth_named">Bluetooth headset: %1$s</string>
+    <string name="mic_not_connected">The selected microphone is not connected: the system default is used.</string>
     <string name="settings_data">Personal data</string>
     <string name="settings_info">About</string>
     <string name="settings_accessibility_disclosure">Accessibility service disclosure</string>

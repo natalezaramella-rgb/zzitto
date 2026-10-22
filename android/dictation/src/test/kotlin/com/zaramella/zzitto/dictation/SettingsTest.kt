@@ -14,6 +14,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
@@ -61,6 +62,28 @@ class SettingsTest {
         assertEquals(TranslateTarget.EN, read.translate)
         assertEquals(10, read.iconX)
         assertEquals(20, read.iconY)
+        scope.cancel()
+    }
+
+    // ---- Microfono scelto (Spec §5.7). Aggiunto il 22/10/2026 alle 17:44. ----
+
+    @Test
+    fun `microfono predefinito di sistema e chiavi non valide`() {
+        assertNull(DictationSettings().microphoneKey)
+        assertNull(DictationSettings(microphoneKey = " ").sanitized().microphoneKey)
+        assertNull(DictationSettings(microphoneKey = "x".repeat(10_000)).sanitized().microphoneKey)
+        assertEquals("usb|Mic|card=1", DictationSettings(microphoneKey = "usb|Mic|card=1").sanitized().microphoneKey)
+    }
+
+    @Test
+    fun `repository salva e azzera il microfono scelto`() = runTest {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val store = PreferenceDataStoreFactory.create(scope = scope) { File(dir, "mic.preferences_pb") }
+        val repo = SettingsRepository(store)
+        repo.update { it.copy(microphoneKey = "bt_sco|Jabra|AA:BB") }
+        assertEquals("bt_sco|Jabra|AA:BB", repo.settings.first().microphoneKey)
+        repo.update { it.copy(microphoneKey = null) }
+        assertNull(repo.settings.first().microphoneKey)
         scope.cancel()
     }
 

@@ -36,6 +36,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.zaramella.zzitto.R
+import com.zaramella.zzitto.audio.Microphone
+import com.zaramella.zzitto.audio.MicrophoneCatalog
+import com.zaramella.zzitto.audio.MicrophoneLabels
 import com.zaramella.zzitto.data.DictionaryWord
 import com.zaramella.zzitto.data.HistoryEntry
 import com.zaramella.zzitto.data.SaveResult
@@ -73,10 +76,52 @@ fun translateLabel(target: TranslateTarget): String = stringResource(
     },
 )
 
-/** Spec §5.7: lingua, modalità, silenzio, durata massima, cronologia, dizionario, vibrazione/suono. */
+/** Spec §5.7: testi dei nomi dei microfoni dalle risorse, nella lingua del sistema. Aggiunto il 22/10/2026 alle 17:44. */
+@Composable
+fun microphoneLabels(): MicrophoneLabels = MicrophoneLabels(
+    builtin = stringResource(R.string.mic_builtin),
+    wiredHeadset = stringResource(R.string.mic_wired),
+    wiredHeadsetNamed = stringResource(R.string.mic_wired_named),
+    usb = stringResource(R.string.mic_usb),
+    usbNamed = stringResource(R.string.mic_usb_named),
+    bluetooth = stringResource(R.string.mic_bluetooth),
+    bluetoothNamed = stringResource(R.string.mic_bluetooth_named),
+)
+
+/**
+ * Spec §5.7: scelta del microfono fra "Predefinito di sistema" e quelli collegati. Se il microfono
+ * salvato non è collegato nessuna voce è selezionata e una nota avvisa che si usa il predefinito.
+ * Aggiunto il 22/10/2026 alle 17:44.
+ */
+@Composable
+fun MicrophoneSelector(
+    selectedKey: String?,
+    microphones: List<Microphone>,
+    onSelect: (String?) -> Unit,
+) {
+    val names = MicrophoneCatalog.displayNames(microphones, microphoneLabels())
+    val resolved = MicrophoneCatalog.choose(selectedKey, microphones)
+    val defaultLabel = stringResource(R.string.mic_system_default)
+    RadioGroup(
+        options = listOf<String?>(null) + microphones.map { it.key },
+        selected = if (selectedKey == null) null else resolved?.key ?: selectedKey,
+        label = { key -> if (key == null) defaultLabel else names[key] ?: key },
+        onSelect = onSelect,
+    )
+    if (selectedKey != null && resolved == null) {
+        Text(
+            stringResource(R.string.mic_not_connected),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.testTag("micNotConnected"),
+        )
+    }
+}
+
+/** Spec §5.7: lingua, modalità, silenzio, durata massima, cronologia, dizionario, vibrazione/suono, microfono. */
 @Composable
 fun SettingsScreen(
     settings: DictationSettings,
+    microphones: List<Microphone>,
     onChange: ((DictationSettings) -> DictationSettings) -> Unit,
     onNavigate: (Screen) -> Unit,
     onRepeatTour: () -> Unit,
@@ -165,6 +210,14 @@ fun SettingsScreen(
                 label = stringResource(R.string.settings_sound),
                 checked = settings.soundOnStart,
                 onChange = { v -> onChange { it.copy(soundOnStart = v) } },
+            )
+
+            // Spec §5.7: microfono da usare. Aggiunto il 22/10/2026 alle 17:44.
+            SectionTitle(stringResource(R.string.settings_microphone))
+            MicrophoneSelector(
+                selectedKey = settings.microphoneKey,
+                microphones = microphones,
+                onSelect = { key -> onChange { it.copy(microphoneKey = key) } },
             )
 
             SectionTitle(stringResource(R.string.settings_memory))

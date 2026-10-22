@@ -177,6 +177,7 @@ Stati: `Inattivo` → `Ascolto` → `Trascrizione` → `Correzione` → `Inserim
 ### 5.7 Impostazioni
 
 - Lingua di dettatura, modalità di correzione, timeout di silenzio, durata massima, cronologia sì/no, dizionario personale, vibrazione/suono all'avvio dell'ascolto.
+- Microfono da usare, se ce n'è più di uno: "Predefinito di sistema" (predefinito) oppure uno dei microfoni collegati (interno, cuffie con filo, USB, cuffie Bluetooth). Se quello scelto non è collegato si usa il predefinito senza errori, e la scelta resta salvata. *Aggiunto il 22/10/2026 alle 17:48.*
 
 ### 5.8 Guida e tour
 
@@ -518,3 +519,5 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 *22/10/2026 17:26 – Icona flottante con il marchio: microfono con la Z di Zzitto ritagliata nella capsula, su richiesta del titolare, così l'icona è riconoscibile come Zzitto. Stessi colori e animazioni di stato; la Z compare da 24 px in su, quindi non nell'icona dell'area di notifica (§2.5).*
 
 *22/10/2026 17:32 – Test Windows ora eseguiti anche nella build da riga di comando sul Surface (`-p:ZzRunTestsOnBuild=true`): emersi e corretti due difetti. La migrazione delle impostazioni alla versione 2 veniva annullata da `Normalize()` (la scorciatoia salvata restava Ctrl+Alt+Spazio); un test di `TextEditMath.ReplaceRange` aveva un valore atteso errato (§2.4, §12).*
+
+*22/10/2026 17:48 – Scelta del microfono, su richiesta del titolare (§5.7). Windows: endpoint WASAPI salvato per id, elenco con nome del dispositivo. Android: chiave stabile tipo|prodotto|indirizzo (l'id di sistema cambia a ogni collegamento); per le cuffie Bluetooth si imposta il dispositivo di comunicazione solo durante la dettatura e mai durante una chiamata, quindi in quei secondi l'audio verso le cuffie passa alla qualità telefonica. Avvio con Windows: l'eseguibile non pacchettizzato usa la chiave Run dell'utente, il pacchetto MSIX continua a usare StartupTask (§2.4).*

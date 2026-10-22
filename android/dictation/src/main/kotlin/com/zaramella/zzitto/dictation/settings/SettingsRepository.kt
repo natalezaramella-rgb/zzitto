@@ -38,6 +38,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[Keys.TOUR_COMPLETED] = updated.tourCompleted
             prefs[Keys.ICON_X] = updated.iconX
             prefs[Keys.ICON_Y] = updated.iconY
+            // Spec §5.7: nessuna chiave = predefinito di sistema. Aggiunto il 22/10/2026 alle 17:44.
+            val mic = updated.microphoneKey
+            if (mic == null) {
+                prefs.remove(Keys.MICROPHONE)
+            } else {
+                prefs[Keys.MICROPHONE] = mic
+            }
         }
     }
 
@@ -59,6 +66,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             tourCompleted = this[Keys.TOUR_COMPLETED] ?: d.tourCompleted,
             iconX = this[Keys.ICON_X] ?: d.iconX,
             iconY = this[Keys.ICON_Y] ?: d.iconY,
+            microphoneKey = this[Keys.MICROPHONE] ?: d.microphoneKey, // Spec §5.7
         ).sanitized()
     }
 
@@ -78,5 +86,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val TOUR_COMPLETED = booleanPreferencesKey("tour_completed")
         val ICON_X = intPreferencesKey("icon_x")
         val ICON_Y = intPreferencesKey("icon_y")
+        val MICROPHONE = stringPreferencesKey("microphone_key") // Spec §5.7
     }
 }

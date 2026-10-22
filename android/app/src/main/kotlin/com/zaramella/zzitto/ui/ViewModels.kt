@@ -3,6 +3,8 @@ package com.zaramella.zzitto.ui
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zaramella.zzitto.audio.Microphone
+import com.zaramella.zzitto.audio.MicrophoneDirectory
 import com.zaramella.zzitto.core.licensing.LicenseGate
 import com.zaramella.zzitto.core.licensing.LicenseState
 import com.zaramella.zzitto.core.licensing.PurchaseOutcome
@@ -36,11 +38,19 @@ private const val STOP_TIMEOUT_MS = 5_000L
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
+    microphoneDirectory: MicrophoneDirectory,
 ) : ViewModel() {
 
     /** null finché DataStore non ha letto il file (evita di mostrare il tour per un attimo). */
     val settings: StateFlow<DictationSettings?> = repository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+    /**
+     * Spec §5.7: microfoni collegati, aggiornati quando un dispositivo si collega o si scollega
+     * (osservati solo mentre una schermata li mostra). Aggiunto il 22/10/2026 alle 17:44.
+     */
+    val microphones: StateFlow<List<Microphone>> = microphoneDirectory.observe()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
     fun update(transform: (DictationSettings) -> DictationSettings) {
         viewModelScope.launch { repository.update(transform) }

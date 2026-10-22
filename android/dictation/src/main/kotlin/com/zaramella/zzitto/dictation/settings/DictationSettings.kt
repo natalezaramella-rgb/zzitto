@@ -1,5 +1,6 @@
 package com.zaramella.zzitto.dictation.settings
 
+import com.zaramella.zzitto.audio.MicrophoneCatalog
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.DictationOptions
 import com.zaramella.zzitto.engine.TranslateTarget
@@ -39,6 +40,11 @@ data class DictationSettings(
     /** Ultima posizione dell'icona flottante, -1 = posizione predefinita (Spec §5.1-bis). */
     val iconX: Int = -1,
     val iconY: Int = -1,
+    /**
+     * Microfono scelto (chiave di [com.zaramella.zzitto.audio.MicrophoneCatalog.keyOf]); null =
+     * predefinito di sistema. Spec §5.7, aggiunto il 22/10/2026 alle 17:44.
+     */
+    val microphoneKey: String? = null,
 ) {
     fun toDictationOptions(): DictationOptions = DictationOptions(
         language = language,
@@ -54,6 +60,7 @@ data class DictationSettings(
         maxDurationMs = maxDurationMs.coerceIn(MIN_MAX_DURATION_MS, MAX_MAX_DURATION_MS),
         historyRetentionDays = historyRetentionDays.coerceIn(MIN_RETENTION_DAYS, MAX_RETENTION_DAYS),
         unloadAfterMinutes = unloadAfterMinutes.coerceIn(MIN_UNLOAD_MINUTES, MAX_UNLOAD_MINUTES),
+        microphoneKey = MicrophoneCatalog.sanitizeKey(microphoneKey), // Spec §5.7
     )
 
     companion object {
