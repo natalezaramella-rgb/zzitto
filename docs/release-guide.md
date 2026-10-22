@@ -237,7 +237,7 @@ Dimensioni: Whisper medium Q5_0 circa 539 MB; Phi-4-mini-instruct Q4_K_M circa 2
 1. Nessuna modifica al contratto per la divisione dei file: il motore riceve sempre **un file per modello** (su Android
    quello ricomposto dall'app) e ne verifica lo SHA-256 come oggi (`zz_engine_load`, `ZZ_ERR_MODEL_INTEGRITY`).
 2. Versione di llama.cpp: il GGUF di Phi-4-mini viene prodotto con la llama.cpp di `core-native/third_party/llama.cpp` se
-   esiste (gli script la usano automaticamente), altrimenti con `LLAMA_CPP_REF` di `tools/models/models.conf` (oggi `b6000`).
+   esiste (gli script la usano automaticamente), altrimenti con `LLAMA_CPP_REF` di `tools/models/models.conf` (oggi `b11815`, lo stesso commit del sottomodulo del motore; aggiornato il 22/10/2026 alle 12:17).
    Tenere allineate le due versioni e avvisare l'agente E se cambia la versione.
 3. Il motore reale non deve contenere la stringa `zzitto-engine MOCK` (gli script la usano per riconoscere il motore finto).
 4. Compilare `zz_engine.dll` con runtime C++ statico (`/MT`) per non dover ridistribuire il runtime Visual C++, e con

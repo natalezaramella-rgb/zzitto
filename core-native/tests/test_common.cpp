@@ -44,6 +44,10 @@ int main() {
     // Pulizia di base
     ZZ_CHECK_EQ_STR(zz::basic_cleanup("ehm allora questo questo è un test", ZZ_MODE_CLEAN), "Questo è un test.");
 
+    // I ritorni a capo dei comandi sopravvivono alla pulizia (integrazione 22/10/2026 12:17)
+    ZZ_CHECK_EQ_STR(zz::basic_cleanup(apply_voice_commands("ciao a capo come stai").text, ZZ_MODE_CLEAN),
+                    "Ciao\ncome stai.");
+
     // VAD (Spec §5.2): 0,5 s di parlato e poi 2,5 s di silenzio
     {
         zz_vad *v = zz_vad_create(2000);

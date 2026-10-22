@@ -74,6 +74,9 @@ std::vector<std::string> split_words(const std::string &s) {
     for (char c : s) {
         if (std::isspace(static_cast<unsigned char>(c))) {
             if (!cur.empty()) words.push_back(cur), cur.clear();
+            // I ritorni a capo (comandi "a capo", "nuovo paragrafo") restano come parole
+            // a sé, così la pulizia non li perde. Integrazione 22/10/2026 12:17, Spec §5.9.
+            if (c == '\n') words.emplace_back("\n");
         } else {
             cur.push_back(c);
         }
@@ -282,6 +285,10 @@ ZZ_API void zz_dictation_options_init(zz_dictation_options *options) {
 
 ZZ_API void zz_result_free(zz_result *result) {
     if (!result) return;
+    // Azzera i testi prima di liberarli: il testo dettato non resta in memoria (Spec §10).
+    // Integrazione 22/10/2026 12:17.
+    if (result->raw_text) std::memset(result->raw_text, 0, std::strlen(result->raw_text));
+    if (result->final_text) std::memset(result->final_text, 0, std::strlen(result->final_text));
     std::free(result->raw_text);
     std::free(result->final_text);
     std::memset(result, 0, sizeof(*result));

@@ -73,7 +73,6 @@ Puoi cancellarlo cancellando i dati del backup dell'app dal tuo account Google.
 |---|---|
 | Microfono (`RECORD_AUDIO`) | Ascoltare la voce mentre detti. Il microfono è attivo solo dopo il tuo tocco sull'icona. |
 | Servizio di accessibilità | **Solo** per capire quale campo di testo è attivo, mostrare l'icona del microfono vicino al campo, inserire il testo dettato e leggere il testo che selezioni per la riscrittura a voce. Zzitto non legge il resto dello schermo, non registra ciò che scrivi con la tastiera, non salva e non trasmette i contenuti delle altre app. |
-| Mostra sopra altre app | Visualizzare l'icona flottante del microfono. |
 | Internet | Solo per la verifica dell'acquisto durante la prova (§3). |
 | Esclusione dall'ottimizzazione della batteria (facoltativa) | Evitare che il sistema chiuda il servizio di dettatura. |
 

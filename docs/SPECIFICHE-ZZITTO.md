@@ -40,6 +40,7 @@ Vincolo fondamentale: **tutta l'elaborazione AI avviene in locale sul telefono**
 
 - Solo componenti con licenze permissive che consentono la vendita: MIT, Apache 2.0, BSD.
 - Vietato usare modelli o librerie con licenze restrittive o proprietarie (es. Gemma Terms of Use, Gemini Nano, Llama Community License).
+- Eccezioni ammesse (aggiornato il 22/10/2026 alle 12:17): componenti di piattaforma necessari per vendere e girare sugli store, cioè Google Play Billing e Block Store (licenza Android SDK di Google), Windows App SDK e Windows SDK (termini Microsoft). SQLite e LibTomCrypt sono di pubblico dominio. JUnit (EPL) è usato solo nei test e non viene distribuito.
 - Ogni licenza va inclusa nell'app in una schermata "Licenze open source".
 
 ### 2.3 Distribuzione e vendita
@@ -56,7 +57,7 @@ Vincolo fondamentale: **tutta l'elaborazione AI avviene in locale sul telefono**
 - La dettatura si avvia con un clic sull'icona o con una scorciatoia da tastiera globale configurabile.
 - Il testo si inserisce nel campo attivo di qualsiasi applicazione tramite UI Automation, con fallback sulla simulazione di input da tastiera (SendInput).
 - Il motore AI (whisper.cpp, llama.cpp, prompt, comandi, scorciatoie) è un modulo nativo C++ condiviso tra Android e Windows. Le interfacce sono native per ogni piattaforma.
-- UI Windows in C# con .NET e WinUI 3 (licenze MIT).
+- UI Windows in C# con .NET 8 e WinUI 3 (Windows App SDK 1.8). Correzione del 22/10/2026 alle 12:17: Windows App SDK ha termini di licenza Microsoft, non MIT (eccezione al §2.2 come componente di piattaforma).
 - Requisiti minimi Windows da validare con benchmark: 16 GB di RAM; accelerazione GPU o NPU usata se disponibile.
 - Distribuzione Windows tramite Microsoft Store con acquisto una tantum. Le versioni Android e Windows si vendono separatamente, ognuna sul proprio store. Aggiornato il 22/10/2026 alle 09:17.
 
@@ -140,7 +141,7 @@ L'agente deve verificare la licenza attuale di ogni componente al momento dello 
 
 - Su Android l'app mostra un'icona flottante del microfono, come Wispr Flow e Letterly, che compare quando un campo di testo riceve il focus e sparisce quando lo perde. L'icona si può trascinare e ricorda la posizione.
 - Componenti: un `AccessibilityService` che rileva il campo di testo attivo e vi inserisce il testo (`ACTION_SET_TEXT` o incolla tramite appunti, con ripristino degli appunti precedenti), più una finestra overlay per l'icona.
-- Permessi: servizio di accessibilità e "mostra sopra altre app", entrambi spiegati nel tour al primo avvio con una schermata di informativa ben visibile.
+- Permessi: servizio di accessibilità, spiegato nel tour al primo avvio con una schermata di informativa ben visibile. Il permesso "mostra sopra altre app" non serve: l'icona usa una finestra `TYPE_ACCESSIBILITY_OVERLAY` del servizio. Aggiornato il 22/10/2026 alle 12:17.
 - Google Play: va compilata la dichiarazione sull'uso dell'API di accessibilità, con descrizione e video, spiegando che serve solo a inserire il testo dettato e che nessun dato lascia il dispositivo.
 - Samsung: il tour guida l'utente a escludere l'app dall'ottimizzazione della batteria, perché il sistema non chiuda il servizio.
 - La tastiera dell'utente resta quella che usa di solito.
@@ -161,7 +162,7 @@ Stati: `Inattivo` → `Ascolto` → `Trascrizione` → `Correzione` → `Inserim
 
 ### 5.4 Inserimento
 
-- Il testo si inserisce con `InputConnection.commitText` nella posizione del cursore.
+- Il testo si inserisce nella posizione del cursore: su Android tramite il servizio di accessibilità (`ACTION_SET_TEXT` o incolla), su Windows tramite UI Automation, SendInput o appunti (§2.6). `InputConnection` valeva per la tastiera, abbandonata col §5.1-bis. Aggiornato il 22/10/2026 alle 12:17.
 - L'ultimo inserimento si può annullare con un tap.
 
 ### 5.5 Dizionario personale
@@ -186,7 +187,7 @@ Stati: `Inattivo` → `Ascolto` → `Trascrizione` → `Correzione` → `Inserim
 *Aggiunto il 22/10/2026 alle 09:14.*
 
 - Durante la dettatura l'app riconosce comandi in italiano: "a capo", "nuovo paragrafo", "punto", "virgola", "cancella l'ultima frase", "annulla", "invia" (dove il campo lo consente).
-- I comandi si distinguono dal testo dettato tramite una lista configurabile e una conferma visiva sulla barra.
+- I comandi si distinguono dal testo dettato tramite una lista fissa nel motore (versione 1 del contratto; la lista configurabile è rinviata) e una conferma visiva data dall'icona, perché la barra non esiste più (§2.5). Aggiornato il 22/10/2026 alle 12:17.
 - Il riconoscimento dei comandi avviene in locale, prima della fase di correzione.
 
 ### 5.10 Riscrittura a voce
@@ -194,7 +195,7 @@ Stati: `Inattivo` → `Ascolto` → `Trascrizione` → `Correzione` → `Inserim
 *Aggiunto il 22/10/2026 alle 09:14.*
 
 - L'utente seleziona un testo nel campo, tocca il microfono e detta un'istruzione, per esempio "rendilo più formale", "accorcialo" o "correggi gli errori".
-- Il testo selezionato si legge con `InputConnection.getSelectedText`, Phi-4-mini lo riscrive secondo l'istruzione e il risultato sostituisce la selezione.
+- Il testo selezionato si legge dal nodo di accessibilità su Android e con UI Automation su Windows (aggiornato il 22/10/2026 alle 12:17), Phi-4-mini lo riscrive secondo l'istruzione e il risultato sostituisce la selezione.
 - La riscrittura si può annullare con un tap.
 
 ### 5.11 Scorciatoie vocali
@@ -224,7 +225,7 @@ L'app funziona interamente offline e senza account, quindi **non prevede** multi
 ## 7. Pacchettizzazione dei modelli
 
 - Formato di pubblicazione: Android App Bundle (AAB).
-- I modelli **non** si scaricano da server esterni. Vanno in un asset pack di Play Asset Delivery di tipo **install-time**, installato insieme all'app.
+- I modelli **non** si scaricano da server esterni. Vanno in asset pack di Play Asset Delivery di tipo **install-time**, installati insieme all'app. Poiché ogni asset pack ha un limite di 1,5 GB, Whisper sta nel pack `models` e Phi-4-mini è diviso in due parti nei pack `models_phi_1` e `models_phi_2`, ricomposte dall'app al primo avvio con verifica dell'hash del file intero (aggiornato il 22/10/2026 alle 12:17).
 - La versione dei modelli è sempre legata alla versione dell'app. Non esistono aggiornamenti indipendenti dei modelli.
 - Il modulo base deve stare sotto il limite di dimensione di Google Play. I modelli vanno solo nell'asset pack.
 - Al primo avvio i modelli vengono copiati o mappati in memoria dall'asset pack e se ne verifica l'integrità con un hash SHA-256 salvato nel codice.
@@ -260,7 +261,8 @@ L'app funziona interamente offline e senza account, quindi **non prevede** multi
 - Allo scadere dei 30 giorni senza acquisto la dettatura si blocca e l'icona porta alla schermata di acquisto.
 - La data di inizio prova su Android si salva con la Block Store API di Google, legata all'account Google dell'utente, che la conserva anche dopo disinstallazione e reinstallazione: la prova non riparte. Nessun server proprio. Rischio residuo accettato: reset di fabbrica o cambio di account Google. Aggiornato il 22/10/2026 alle 09:29.
 - L'acquisto si ripristina dopo una reinstallazione tramite la cronologia acquisti dello store.
-- Il permesso INTERNET è usato solo per la verifica di acquisto e licenza; nessun audio o testo esce mai dal dispositivo (§10).
+- L'app non dichiara il permesso INTERNET: Google Play Billing e Block Store comunicano con Google Play Services via IPC ed è Google Play a collegarsi a internet. Nessun audio o testo esce mai dal dispositivo (§10). Da verificare nel manifest unito alla prima build. Aggiornato il 22/10/2026 alle 12:17.
+- Su Block Store la data di inizio prova va nel cloud solo se è disponibile la crittografia end-to-end; altrimenti resta sul dispositivo e la prova riparte solo su un telefono nuovo (aggiornato il 22/10/2026 alle 12:17).
 
 ### 8.2 Vendita su Windows
 
@@ -286,7 +288,7 @@ Lo sviluppo parte solo dopo l'approvazione del mockup, registrata nel capitolo 1
 
 ## 10. Sicurezza e privacy (ISO 27001, 27017, 27018)
 
-- Il principio di base è che nessun dato lasci il dispositivo. L'accesso a internet è usato solo per verificare l'acquisto durante la prova (§8.1). Aggiornato il 22/10/2026 alle 09:20.
+- Il principio di base è che nessun dato lasci il dispositivo. L'unico scambio di rete è la verifica dell'acquisto durante la prova, fatta da Google Play o dal Microsoft Store per conto dell'app (§8.1, §8.2); su Android l'app non dichiara il permesso INTERNET (aggiornato il 22/10/2026 alle 12:17). Aggiornato il 22/10/2026 alle 09:20.
 - Permessi richiesti: solo `RECORD_AUDIO`.
 - L'audio resta solo in memoria e viene distrutto subito dopo la trascrizione. Non viene mai salvato su disco.
 - Cronologia e dizionario sono cifrati con chiave conservata nell'Android Keystore.
@@ -441,3 +443,24 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 *22/10/2026 11:15 – Identificativi confermati dal titolare: package Android `com.zaramella.zzitto`, pacchetto Windows `Zaramella.Zzitto`, editore Zaramella Consulting Srl.*
 
 *22/10/2026 11:15 – Contratto del motore definito in `core-native/include/zz_engine.h` (API versione 1), con motore finto in `core-native/mock/` e interfacce condivise `LicenseGate` (Android, modulo `:core`) e `ILicenseService` (Windows, `Zzitto.Core`). Dettagli in `docs/engine-contract.md`.*
+
+*22/10/2026 12:17 – Integrazione del lavoro dei cinque agenti in `develop`. Decisioni registrate:*
+
+| Data e ora | Decisione | Motivazione | Riferimento |
+| --- | --- | --- | --- |
+| 22/10/2026 12:17 | whisper.cpp (commit 231638a) e llama.cpp (tag b11815) come sottomoduli; un solo ggml condiviso, quello di llama.cpp | Evitare simboli duplicati | §3, §4.3 |
+| 22/10/2026 12:17 | Prompt di sistema in inglese con esempi in italiano; template ufficiale Phi-4-mini; contesto 3072 token, testo diviso in pezzi da 1200 caratteri | Qualità e limiti di memoria | §5.3, §7 |
+| 22/10/2026 12:17 | Il timeout di correzione copre solo l'inferenza; se la riscrittura fallisce la selezione resta invariata | Comportamento prevedibile | §5.3, §5.10 |
+| 22/10/2026 12:17 | `zz_engine.dll` con runtime statico `/MT`; su Windows ARM64 serve clang-cl; GPU/NPU disattivate di default fino ai test sui dispositivi | Nessuna dipendenza dal runtime VC++; prestazioni da misurare | §7.1, §11.1 |
+| 22/10/2026 12:17 | Android: overlay `TYPE_ACCESSIBILITY_OVERLAY`, niente SYSTEM_ALERT_WINDOW né foreground service; campi password esclusi; modelli copiati in `noBackupFilesDir` (circa 3 GB in più); `allowBackup=false`; cronologia attiva di default | Meno permessi, privacy | §5.1-bis, §5.6, §7, §10 |
+| 22/10/2026 12:17 | Android: appunti precedenti non sempre leggibili da Android 10, quindi dopo l'incolla vengono svuotati invece che ripristinati | Limite di sistema | §5.1-bis |
+| 22/10/2026 12:17 | Motore finto solo nelle build Debug, motore reale in Release su Android e Windows | Rilasci sempre col motore vero | §16.1 |
+| 22/10/2026 12:17 | Phi-4-mini diviso in due asset pack install-time; bundle Microsoft Store circa 6,2 GB, sotto il limite di 25 GB | Limite di 1,5 GB per asset pack | §7, §7.1 |
+| 22/10/2026 12:17 | Phi-4-mini quantizzato in locale dai pesi Microsoft (nessun GGUF ufficiale), revisioni Hugging Face fissate in `tools/models/models.conf` | Riproducibilità | §3, §7 |
+| 22/10/2026 12:17 | Licenze: sblocco salvato dopo il riconoscimento dell'acquisto e mai più verificato (un rimborso non lo revoca); difesa contro l'orologio spostato indietro; su Windows con Store irraggiungibile e nessuna lettura precedente la dettatura resta bloccata | Semplicità e protezione della prova | §8.1, §8.2 |
+| 22/10/2026 12:17 | Windows: Windows App SDK 1.8 su .NET 8 e Visual Studio 2022; UI Automation SetValue solo sui campi Edit nativi, altrimenti SendInput; "a capo" come Maiusc+Invio; Esc annulla la dettatura; testi negli appunti esclusi da cronologia e cloud; Ctrl+C per leggere la selezione mai nelle console; licenza simulata in Debug | Compatibilità e sicurezza | §2.4, §2.6, §5.2, §5.9, §5.10, §8.2, §10 |
+| 22/10/2026 12:17 | Dipendenza System.Security.Cryptography.ProtectedData 8.0.0 (MIT) per DPAPI; xunit (Apache 2.0) per i test | Cifratura locale su Windows | §2.2, §10 |
+| 22/10/2026 12:17 | Versione unica in `tools/release/version.properties`, prima versione 0.1.0; firma dell'AAB con `jarsigner` | Versionamento semantico | §13 |
+| 22/10/2026 12:17 | Mock: i ritorni a capo dei comandi vocali non vengono più persi dalla pulizia; `zz_result_free` azzera i testi prima di liberarli | Correzioni emerse in integrazione | §5.9, §10 |
+
+*Punti aperti dopo l'integrazione (22/10/2026 12:17): prima compilazione Android e Windows sulla macchina del titolare; benchmark con `zz_bench` su Galaxy S24 e Surface Snapdragon (eventuale `+i8mm` su ARM); conferma degli SHA-256 dei modelli; verifica dell'API `StoreBytesData.Builder.setKey` e delle firme di Billing 8; Publisher di Partner Center; URL definitivo dell'informativa privacy (segnaposto `https://zzitto.it/privacy`); percorsi dei modelli con caratteri non ASCII su Windows non supportati da whisper.cpp/llama.cpp (i percorsi del pacchetto MSIX sono ASCII); funzione facoltativa nel contratto per riusare la verifica degli hash già fatta.*

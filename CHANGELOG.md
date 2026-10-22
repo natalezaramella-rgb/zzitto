@@ -9,6 +9,11 @@ nella sezione della nuova versione con data e ora (ora italiana).
 
 ## [Non rilasciato]
 
+## [0.1.0] – 22/10/2026 12:16
+
+- Codice versione Android: 2; versione pacchetto Windows: 0.1.0.0
+- Modelli inclusi: `DA_IMPOSTARE`
+
 ### Aggiunto
 
 - Asset pack install-time dei modelli: `models` (Whisper) e `models_phi_1`, `models_phi_2` (Phi-4-mini diviso in due parti per il limite di 1,5 GB per asset pack di Google Play) (Spec §7).

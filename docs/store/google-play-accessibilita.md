@@ -121,20 +121,19 @@ Usare un'app di note di prova senza dati personali reali e nessun marchio ricono
 | 4 | Tocco su "Not now": l'informativa si chiude, il tour mostra che la dettatura nelle altre app non è attiva | "User declines: nothing is enabled" |
 | 5 | Riapertura dell'informativa dal tour o da Impostazioni → Permessi | "The disclosure can be reopened" |
 | 6 | Tocco su "Accept and turn on": si aprono le impostazioni di accessibilità di Android, attivazione di Zzitto, conferma di sistema | "User consents and enables the service" |
-| 7 | Concessione di "Mostra sopra altre app" | "Overlay permission for the microphone icon" |
-| 8 | Apertura di un'app di note, tocco su un campo vuoto: compare l'icona del microfono vicino al campo | "Core feature: the icon appears on the focused field" |
-| 9 | Tocco sull'icona, dettatura di una frase con esitazioni, secondo tocco, il testo corretto compare nel campo | "Dictated text is inserted into the field" |
-| 10 | Selezione di una frase, tocco sull'icona, istruzione "make it more formal", la selezione viene sostituita | "Voice rewriting reads only the selected text" |
-| 11 | Modalità aereo attiva, nuova dettatura che funziona | "Everything runs on the device, offline" |
-| 12 | Impostazioni di Android → Accessibilità → Zzitto → disattivazione | "The service can be turned off at any time" |
+| 7 | Apertura di un'app di note, tocco su un campo vuoto: compare l'icona del microfono vicino al campo | "Core feature: the icon appears on the focused field" |
+| 8 | Tocco sull'icona, dettatura di una frase con esitazioni, secondo tocco, il testo corretto compare nel campo | "Dictated text is inserted into the field" |
+| 9 | Selezione di una frase, tocco sull'icona, istruzione "make it more formal", la selezione viene sostituita | "Voice rewriting reads only the selected text" |
+| 10 | Modalità aereo attiva, nuova dettatura che funziona | "Everything runs on the device, offline" |
+| 11 | Impostazioni di Android → Accessibilità → Zzitto → disattivazione | "The service can be turned off at any time" |
 
 ## 4. Altre dichiarazioni che potrebbero servire
 
 - **Servizio in primo piano di tipo microfono**: se l'agente B usa un `ForegroundService` con
   `foregroundServiceType="microphone"` per registrare mentre l'app non è in primo piano, la Play Console chiede anche la
-  dichiarazione dei servizi in primo piano, con descrizione e video. La scena 9 del video può essere riutilizzata.
-- **Overlay** ("Mostra sopra altre app", `SYSTEM_ALERT_WINDOW`): non richiede dichiarazione nella Play Console, ma va
-  spiegato nel tour (Spec §5.1-bis).
+  dichiarazione dei servizi in primo piano, con descrizione e video. La scena 8 del video può essere riutilizzata.
+- **Overlay**: l'icona usa una finestra `TYPE_ACCESSIBILITY_OVERLAY` del servizio di accessibilità, quindi il permesso
+  "Mostra sopra altre app" (`SYSTEM_ALERT_WINDOW`) non serve e non viene richiesto. Aggiornato il 22/10/2026 alle 12:17.
 
 ## Fonti consultate (22/10/2026)
 

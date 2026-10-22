@@ -70,7 +70,6 @@ nothing else: no audio, no text, no information about how you use the app.
 |---|---|
 | Microphone (`RECORD_AUDIO`) | To hear your voice while you dictate. The microphone is active only after you tap the icon. |
 | Accessibility service | **Only** to detect which text field is active, show the microphone icon next to it, insert the dictated text and read the text you select for voice rewriting. Zzitto does not read the rest of the screen, does not log what you type on your keyboard, and does not store or transmit other apps' content. |
-| Display over other apps | To show the floating microphone icon. |
 | Internet | Only for the purchase check during the trial (§3). |
 | Battery optimisation exemption (optional) | To stop the system from closing the dictation service. |
 

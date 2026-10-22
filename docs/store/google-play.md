@@ -50,7 +50,6 @@ Scarica Zzitto e provalo gratis per 30 giorni con tutte le funzioni. Poi lo sblo
 Permessi, in trasparenza
 • Microfono: per ascoltarti, solo dopo il tuo tocco.
 • Servizio di accessibilità: solo per riconoscere il campo di testo attivo e inserire il testo dettato. Zzitto non legge il resto dello schermo e non salva né trasmette i contenuti delle altre app.
-• Mostra sopra altre app: per l'icona del microfono.
 
 Requisiti
 Smartphone recente di fascia alta con almeno 8 GB di RAM e circa 7 GB di spazio libero: i modelli AI sono inclusi nell'app e restano sul dispositivo. Lingua di dettatura: italiano.
@@ -100,7 +99,6 @@ Download Zzitto and try every feature free for 30 days. Then unlock it forever w
 Permissions, explained
 • Microphone: to hear you, only after you tap.
 • Accessibility service: only to detect the active text field and insert the dictated text. Zzitto does not read the rest of the screen and does not store or transmit other apps' content.
-• Display over other apps: for the microphone icon.
 
 Requirements
 A recent high-end smartphone with at least 8 GB of RAM and about 7 GB of free storage: the AI models ship inside the app and stay on the device. Dictation language: Italian.

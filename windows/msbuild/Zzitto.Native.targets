@@ -3,7 +3,7 @@
   Aggiunto il 22/10/2026 alle 11:32.
 
   Proprietà utili (da riga di comando: -p:Nome=Valore):
-    ZzEngineMock       ON (predefinito, motore finto Spec §16.1) oppure OFF (motore reale dell'agente A)
+    ZzEngineMock       predefinito ON in Debug (motore finto, Spec §16.1) e OFF in Release (motore reale)
     ZzSkipNativeBuild  true per non invocare CMake (usa la DLL già presente in ZzNativeOutDir)
     ZzEngineDir        cartella con una zz_engine.dll già compilata (es. dal rilascio dell'agente E,
                        tools/release/release-windows.ps1: build\core-win-<arch> oppure build\core-win-<arch>\Release).
@@ -14,7 +14,9 @@
     <ZzWindowsRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))</ZzWindowsRoot>
     <ZzNativePlatform Condition="'$(Platform)' == 'ARM64'">ARM64</ZzNativePlatform>
     <ZzNativePlatform Condition="'$(ZzNativePlatform)' == ''">x64</ZzNativePlatform>
-    <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">ON</ZzEngineMock>
+    <!-- Integrazione 22/10/2026 12:17: motore finto solo in Debug, motore reale in Release (Spec §16.1) -->
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == '' and '$(Configuration)' == 'Debug'">ON</ZzEngineMock>
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">OFF</ZzEngineMock>
     <ZzNativeOutDir>$(ZzWindowsRoot)build\native-bin\$(ZzNativePlatform)\$(Configuration)\</ZzNativeOutDir>
     <!-- DLL fornita dall'esterno (release-windows.ps1 dell'agente E). -->
     <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and Exists('$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))zz_engine.dll')">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))</ZzNativeOutDir>
