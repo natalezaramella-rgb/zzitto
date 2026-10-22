@@ -541,3 +541,12 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *22/10/2026 22:20 – Traduzione rimossa da Android e Windows su decisione del titolare (§5.12), per poter passare a un modello di correzione più leggero. Il contratto del motore non cambia. Avviato il confronto sul telefono tra Phi-4-mini e Qwen2.5-1.5B-Instruct (Apache 2.0).*
 
+*22/10/2026 22:47 – Confronto dei modelli di correzione sul telefono (Whisper small, 6 thread, audio da 10 s con autocorrezione "alle dieci… anzi no, alle 11"):*
+
+| Modello | Latenza dopo lo stop | Correzione | RAM di picco | Qualità |
+|---|---|---|---|---|
+| Phi-4-mini Q4_K_M | 2,5–4,5 s | 2,0–3,4 s | 5,4 GB | corretta ("domani alle 11") |
+| Qwen2.5-1.5B Q4_K_M | 2,6–3,3 s | 1,7–2,4 s | 2,3 GB | **cambia il senso**: inventa "alle 12" e "alle 10" |
+
+*Decisione: resta Phi-4-mini. Qwen2.5-1.5B fa risparmiare meno di 1 s ma altera i fatti dettati, e questo non è accettabile (§5.3). Con Whisper small la trascrizione dopo lo stop scende a 0,2–1,2 s (§11).*
+
