@@ -300,7 +300,8 @@ class DictationControllerTest {
         val c = controller(this)
         c.onIconTap()
         c.runToIdle()
-        assertEquals(DictationOptions("en", CorrectionMode.FORMAL, TranslateTarget.ES, false), engine.lastOptions)
+        // Spec §5.12: la traduzione è stata rimossa, al motore arriva sempre NONE.
+        assertEquals(DictationOptions("en", CorrectionMode.FORMAL, TranslateTarget.NONE, false), engine.lastOptions)
         c.close()
     }
 

@@ -41,7 +41,6 @@ internal sealed class AppHost : IDisposable
     private const int CmdHotkey = 9;            // 22/10/2026 17:19: scorciatoia visibile e modificabile dal menu
     private const int CmdOverlayBase = 300;     // + OverlayMode (22/10/2026 17:19)
     private const int CmdModeBase = 100;      // + CorrectionMode
-    private const int CmdTranslateBase = 200; // + TranslateTarget
 
     private readonly Action _exit;
     private readonly ShellHost _shell = new();
@@ -415,13 +414,7 @@ internal sealed class AppHost : IDisposable
             new MenuItemSpec(CmdModeBase + (int)CorrectionMode.Clean, Loc.Get("Mode_Clean"), settings.Mode == CorrectionMode.Clean),
             new MenuItemSpec(CmdModeBase + (int)CorrectionMode.Formal, Loc.Get("Mode_Formal"), settings.Mode == CorrectionMode.Formal),
         }));
-        // Spec §5.12: selettore della traduzione.
-        items.Add(new MenuItemSpec(0, Loc.Get("Menu_Translate"), Children: new[]
-        {
-            new MenuItemSpec(CmdTranslateBase + (int)TranslateTarget.None, Loc.Get("Translate_None"), settings.Translate == TranslateTarget.None),
-            new MenuItemSpec(CmdTranslateBase + (int)TranslateTarget.English, Loc.Get("Translate_English"), settings.Translate == TranslateTarget.English),
-            new MenuItemSpec(CmdTranslateBase + (int)TranslateTarget.Spanish, Loc.Get("Translate_Spanish"), settings.Translate == TranslateTarget.Spanish),
-        }));
+        // Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20: selettore tolto.
         // Spec §2.4, §2.6 (22/10/2026 17:19, richiesta del titolare): posizione dell'icona e scorciatoia
         // raggiungibili direttamente dal menu dell'area di notifica.
         items.Add(new MenuItemSpec(0, Loc.Get("Menu_Overlay"), Children: new[]
@@ -491,9 +484,6 @@ internal sealed class AppHost : IDisposable
                 break;
             case >= CmdModeBase and < CmdModeBase + 3:
                 Settings.Update(s => s with { Mode = (CorrectionMode)(id - CmdModeBase) });
-                break;
-            case >= CmdTranslateBase and < CmdTranslateBase + 3:
-                Settings.Update(s => s with { Translate = (TranslateTarget)(id - CmdTranslateBase) });
                 break;
         }
     }

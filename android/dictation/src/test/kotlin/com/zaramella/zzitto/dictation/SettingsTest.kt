@@ -74,7 +74,7 @@ class SettingsTest {
         repo.update { it.copy(mode = CorrectionMode.FORMAL, translate = TranslateTarget.EN, iconX = 10, iconY = 20) }
         val read = repo.settings.first()
         assertEquals(CorrectionMode.FORMAL, read.mode)
-        assertEquals(TranslateTarget.EN, read.translate)
+        assertEquals(TranslateTarget.NONE, read.translate) // Spec §5.12: traduzione rimossa
         assertEquals(10, read.iconX)
         assertEquals(20, read.iconY)
         scope.cancel()

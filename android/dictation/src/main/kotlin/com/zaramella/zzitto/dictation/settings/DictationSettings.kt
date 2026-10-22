@@ -16,7 +16,7 @@ data class DictationSettings(
     val language: String = DEFAULT_LANGUAGE,
     /** Spec §5.3. */
     val mode: CorrectionMode = CorrectionMode.DEFAULT,
-    /** Spec §5.12. */
+    /** Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20 (modello di correzione più leggero): resta sempre NONE. */
     val translate: TranslateTarget = TranslateTarget.NONE,
     /** Stop automatico dopo il silenzio (Spec §5.2). */
     val autoStopOnSilence: Boolean = true,
@@ -55,13 +55,14 @@ data class DictationSettings(
     fun toDictationOptions(): DictationOptions = DictationOptions(
         language = language,
         mode = mode,
-        translate = translate,
+        translate = TranslateTarget.NONE, // Spec §5.12: traduzione rimossa
         voiceCommandsEnabled = voiceCommandsEnabled,
     )
 
     /** Riporta i valori negli intervalli ammessi. */
     fun sanitized(): DictationSettings = copy(
         language = language.takeIf { it in SUPPORTED_LANGUAGES } ?: DEFAULT_LANGUAGE,
+        translate = TranslateTarget.NONE, // Spec §5.12: una traduzione salvata in precedenza si azzera
         silenceTimeoutMs = silenceTimeoutMs.coerceIn(MIN_SILENCE_MS, MAX_SILENCE_MS),
         maxDurationMs = maxDurationMs.coerceIn(MIN_MAX_DURATION_MS, MAX_MAX_DURATION_MS),
         historyRetentionDays = historyRetentionDays.coerceIn(MIN_RETENTION_DAYS, MAX_RETENTION_DAYS),

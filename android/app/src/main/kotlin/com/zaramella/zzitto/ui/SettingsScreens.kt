@@ -171,13 +171,7 @@ fun SettingsScreen(
                 onChange = { v -> onChange { it.copy(whisperModel = if (v) WhisperModel.MEDIUM else WhisperModel.SMALL) } },
             )
 
-            SectionTitle(stringResource(R.string.settings_translate))
-            RadioGroup(
-                options = TranslateTarget.entries,
-                selected = settings.translate,
-                label = { translateLabel(it) },
-                onSelect = { t -> onChange { it.copy(translate = t) } },
-            )
+            // Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20: niente selettore.
 
             SectionTitle(stringResource(R.string.settings_listening))
             SwitchRow(

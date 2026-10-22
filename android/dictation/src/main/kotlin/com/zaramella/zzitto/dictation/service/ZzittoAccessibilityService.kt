@@ -31,7 +31,6 @@ import com.zaramella.zzitto.dictation.state.DictationState
 import com.zaramella.zzitto.dictation.state.DictationStateMachine
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.EngineException
-import com.zaramella.zzitto.engine.TranslateTarget
 import com.zaramella.zzitto.engine.ZzEngine
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
@@ -254,12 +253,7 @@ class ZzittoAccessibilityService : AccessibilityService() {
                 s.copy(language = all[(all.indexOf(s.language) + 1).mod(all.size)])
             }
         }
-        items += OverlayMenuItem(getString(R.string.zz_menu_translate, translateName(cfg.translate))) {
-            updateSettings { s ->
-                val all = TranslateTarget.entries
-                s.copy(translate = all[(s.translate.ordinal + 1) % all.size])
-            }
-        }
+        // Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20: voce di menu tolta.
         items += OverlayMenuItem(getString(R.string.zz_menu_mode, modeName(cfg.mode))) {
             updateSettings { s ->
                 val all = CorrectionMode.entries
@@ -277,14 +271,6 @@ class ZzittoAccessibilityService : AccessibilityService() {
     private fun languageName(code: String): String =
         Locale.forLanguageTag(code).getDisplayLanguage(Locale.getDefault())
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-
-    private fun translateName(target: TranslateTarget): String = getString(
-        when (target) {
-            TranslateTarget.NONE -> R.string.zz_translate_none
-            TranslateTarget.EN -> R.string.zz_translate_en
-            TranslateTarget.ES -> R.string.zz_translate_es
-        },
-    )
 
     private fun modeName(mode: CorrectionMode): String = getString(
         when (mode) {

@@ -44,7 +44,6 @@ public sealed partial class GeneralPage : Page
             PageHelpers.SelectByTag(LanguageBox, s.Language);
             FillMicrophones(s.MicrophoneId);
             PageHelpers.SelectByTag(ModeBox, s.Mode.ToString());
-            PageHelpers.SelectByTag(TranslateBox, s.Translate.ToString());
             PageHelpers.SelectByTag(OverlayModeBox, s.OverlayMode.ToString());
             SilenceBox.Value = s.SilenceTimeoutMs / 1000.0;
             MaxDurationBox.Value = s.MaxDurationSeconds / 60.0;
@@ -73,7 +72,6 @@ public sealed partial class GeneralPage : Page
         string? language = PageHelpers.SelectedTag(LanguageBox);
         string? microphone = PageHelpers.SelectedTag(MicrophoneBox);
         bool hasMode = Enum.TryParse(PageHelpers.SelectedTag(ModeBox), out CorrectionMode mode);
-        bool hasTranslate = Enum.TryParse(PageHelpers.SelectedTag(TranslateBox), out TranslateTarget translate);
         bool hasOverlay = Enum.TryParse(PageHelpers.SelectedTag(OverlayModeBox), out OverlayMode overlay);
         double silence = SilenceBox.Value;
         double maxDuration = MaxDurationBox.Value;
@@ -88,7 +86,6 @@ public sealed partial class GeneralPage : Page
             Language = language ?? s.Language,
             MicrophoneId = microphone is null ? s.MicrophoneId : (microphone.Length == 0 ? null : microphone),
             Mode = hasMode ? mode : s.Mode,
-            Translate = hasTranslate ? translate : s.Translate,
             OverlayMode = hasOverlay ? overlay : s.OverlayMode,
             SilenceTimeoutMs = double.IsNaN(silence) ? s.SilenceTimeoutMs : (int)Math.Round(silence * 1000),
             MaxDurationSeconds = double.IsNaN(maxDuration) ? s.MaxDurationSeconds : (int)Math.Round(maxDuration * 60),

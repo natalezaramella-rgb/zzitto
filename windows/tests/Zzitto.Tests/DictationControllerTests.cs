@@ -316,7 +316,7 @@ public class DictationControllerTests
 
         await TestWait.UntilAsync(() => controller.State == DictationState.Idle && _target.Inserted.Count == 1);
         Assert.Equal(CorrectionMode.Formal, _engine.LastOptions!.Mode);
-        Assert.Equal(TranslateTarget.Spanish, _engine.LastOptions.Translate);
+        Assert.Equal(TranslateTarget.None, _engine.LastOptions.Translate); // Spec §5.12: traduzione rimossa
     }
 
     [Fact]

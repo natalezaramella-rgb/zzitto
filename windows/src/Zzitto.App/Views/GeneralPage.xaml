@@ -26,11 +26,7 @@
                 <ComboBoxItem x:Uid="ModeCleanItem" Tag="Clean" />
                 <ComboBoxItem x:Uid="ModeFormalItem" Tag="Formal" />
             </ComboBox>
-            <ComboBox x:Name="TranslateBox" x:Uid="GeneralTranslate" MinWidth="260" SelectionChanged="OnSettingChanged">
-                <ComboBoxItem x:Uid="TranslateNoneItem" Tag="None" />
-                <ComboBoxItem x:Uid="TranslateEnglishItem" Tag="English" />
-                <ComboBoxItem x:Uid="TranslateSpanishItem" Tag="Spanish" />
-            </ComboBox>
+            <!-- Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20. -->
             <NumberBox x:Name="SilenceBox" x:Uid="GeneralSilence" Minimum="0.5" Maximum="10" SmallChange="0.5" LargeChange="1"
                        SpinButtonPlacementMode="Inline" MaxWidth="260" HorizontalAlignment="Left" ValueChanged="OnNumberChanged" />
             <NumberBox x:Name="MaxDurationBox" x:Uid="GeneralMaxDuration" Minimum="1" Maximum="15" SmallChange="1" LargeChange="5"

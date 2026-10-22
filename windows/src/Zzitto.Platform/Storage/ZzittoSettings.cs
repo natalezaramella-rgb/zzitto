@@ -178,7 +178,7 @@ public sealed record ZzittoSettings
             Version = CurrentVersion,
             Language = SupportedLanguages.Contains(m.Language) ? m.Language : "it",
             Mode = Enum.IsDefined(m.Mode) ? m.Mode : CorrectionMode.Clean,
-            Translate = Enum.IsDefined(m.Translate) ? m.Translate : TranslateTarget.None,
+            Translate = TranslateTarget.None, // Spec §5.12: traduzione rimossa su decisione del titolare del 22/10/2026 alle 22:20
             SilenceTimeoutMs = Math.Clamp(m.SilenceTimeoutMs, 500, 10000),
             MaxDurationSeconds = Math.Clamp(m.MaxDurationSeconds, 10, 900),
             CorrectionTimeoutMs = Math.Clamp(m.CorrectionTimeoutMs, 1000, 60000),
@@ -208,5 +208,5 @@ public sealed record ZzittoSettings
     }
 
     public DictationOptions ToDictationOptions() =>
-        new(Language, Mode, Translate, VoiceCommandsEnabled, CorrectionTimeoutMs);
+        new(Language, Mode, TranslateTarget.None, VoiceCommandsEnabled, CorrectionTimeoutMs); // Spec §5.12: traduzione rimossa
 }

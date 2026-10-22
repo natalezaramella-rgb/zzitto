@@ -208,9 +208,11 @@ Stati: `Inattivo` → `Ascolto` → `Trascrizione` → `Correzione` → `Inserim
 - Quando la parola chiave viene pronunciata da sola, si inserisce il testo associato senza passare dalla correzione.
 - Le scorciatoie sono salvate cifrate come il dizionario personale (§10).
 
-### 5.12 Traduzione offline
+### 5.12 Traduzione offline (rimossa)
 
 *Aggiunto il 22/10/2026 alle 09:14.*
+
+**Rimossa il 22/10/2026 alle 22:20 su decisione del titolare.** La traduzione era il compito che richiedeva il modello di correzione più grande; senza traduzione si può usare un modello più leggero e veloce (§11). Le app non mostrano più il selettore e mandano sempre `ZZ_TRANSLATE_NONE`; una traduzione salvata nelle impostazioni si azzera. Il contratto del motore (§4.3) resta invariato. Il testo che segue vale solo come storico.
 
 - L'utente detta in italiano e ottiene il testo tradotto in inglese o in spagnolo, a scelta (aggiornato il 22/10/2026 alle 09:23).
 - La traduzione è fatta in locale da Phi-4-mini nella stessa fase di correzione, con un prompt dedicato.
@@ -536,4 +538,6 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 *Picco di RAM del motore circa 5,2 GB. Decisioni: su Android 6 thread (prima 4); i modelli si precaricano quando l'icona compare su un campo di testo, invece che al tap sul microfono, perché il caricamento di 10–13 s rendeva lenta la prima dettatura (oltre 20 s per un messaggio di 3 s, segnalazione del titolare) (§11, §4.2).*
 
 *22/10/2026 22:09 – Misure nell'app sul telefono, a modelli caricati: 4,7–7 s dallo stop al testo (trascrizione con Whisper medium circa 3 s, correzione 1,4–3,9 s), più 2 s di attesa del silenzio. Decisione del titolare: su Android Whisper small è il modello predefinito, mentre medium resta disponibile con l'opzione "Massima precisione"; lo stop automatico scatta dopo 1 s di silenzio invece di 2 s, e le impostazioni salvate con il vecchio valore predefinito passano a 1 s (§5.2, §5.7, §7, §11). Gli asset pack includono anche whisper-small-q5_1.bin (circa 190 MB). Il titolare propone anche di rinunciare alle traduzioni, per poter usare un modello di correzione più piccolo (da valutare con misure, §5.12).*
+
+*22/10/2026 22:20 – Traduzione rimossa da Android e Windows su decisione del titolare (§5.12), per poter passare a un modello di correzione più leggero. Il contratto del motore non cambia. Avviato il confronto sul telefono tra Phi-4-mini e Qwen2.5-1.5B-Instruct (Apache 2.0).*
 
