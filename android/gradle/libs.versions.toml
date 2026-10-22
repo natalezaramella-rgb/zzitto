@@ -62,7 +62,6 @@ espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref =
 junit5-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
-androidx-test-core = { module = "androidx.test:core", version = "1.6.1" }
 # --- Sezione agente D (Acquisti) ---
 # --- Sezione agente E (Conformità e rilascio) ---
 
