@@ -1,5 +1,6 @@
 // Implementazione reale di IZzNative: P/Invoke verso zz_engine.dll con marshalling UTF-8.
 // Spec §4.3, §10 (nessun testo o audio nei log). Aggiunto il 22/10/2026 alle 11:32.
+// Streaming (API 2, Spec §11) aggiunto il 22/10/2026 alle 16:15. Nessun await qui: la classe è unsafe (CS4004).
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -103,6 +104,61 @@ public sealed unsafe class ZzNativeLibrary : IZzNative
         result = TakeResult(status, &nativeResult);
         return status;
     }
+
+    // ---- Dettatura in streaming (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:15. ----
+
+    public ZzStatus StreamBegin(IntPtr engine, DictationOptions options, out IntPtr stream)
+    {
+        // Il motore copia le opzioni: le stringhe UTF-8 si possono liberare al ritorno.
+        using var strings = new Utf8StringBag();
+        ZzDictationOptionsNative nativeOptions = BuildOptions(options, strings);
+        IntPtr handle = IntPtr.Zero;
+        var status = (ZzStatus)ZzNativeMethods.zz_stream_begin(engine, &nativeOptions, &handle);
+        stream = status == ZzStatus.Ok ? handle : IntPtr.Zero;
+        return status;
+    }
+
+    public ZzStatus StreamFeed(IntPtr stream, ReadOnlySpan<float> pcm16kMono)
+    {
+        if (pcm16kMono.IsEmpty)
+        {
+            return ZzStatus.Ok;
+        }
+
+        // Puntatore fisso sul blocco del chiamante: nessuna copia gestita, il motore copia i campioni (Spec §10: solo in memoria).
+        fixed (float* p = pcm16kMono)
+        {
+            return (ZzStatus)ZzNativeMethods.zz_stream_feed(stream, p, (nuint)pcm16kMono.Length);
+        }
+    }
+
+    public ZzStatus StreamFinish(IntPtr stream, Action<EngineStage>? onStage, out EngineResult? result)
+    {
+        ZzResultNative nativeResult = default;
+        GCHandle callbackHandle = onStage is null ? default : GCHandle.Alloc(onStage);
+        try
+        {
+            IntPtr userData = onStage is null ? IntPtr.Zero : GCHandle.ToIntPtr(callbackHandle);
+            delegate* unmanaged[Cdecl]<int, IntPtr, void> callback = null;
+            if (onStage is not null)
+            {
+                callback = &OnStageNative;
+            }
+
+            var status = (ZzStatus)ZzNativeMethods.zz_stream_finish(stream, callback, userData, &nativeResult);
+            result = TakeResult(status, &nativeResult);
+            return status;
+        }
+        finally
+        {
+            if (callbackHandle.IsAllocated)
+            {
+                callbackHandle.Free();
+            }
+        }
+    }
+
+    public void StreamAbort(IntPtr stream) => ZzNativeMethods.zz_stream_abort(stream);
 
     public void Cancel(IntPtr engine) => ZzNativeMethods.zz_cancel(engine);
 

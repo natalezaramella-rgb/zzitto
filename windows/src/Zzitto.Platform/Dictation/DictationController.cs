@@ -1,6 +1,12 @@
 // Ciclo di dettatura completo: licenza → ascolto → trascrizione → correzione → inserimento → azioni.
 // Spec §5.2–§5.12, §8.1 (dettatura bloccata a prova scaduta), §10 (audio solo in memoria),
 // §4.2 (modelli caricati alla prima dettatura e scaricati per inattività). Aggiunto il 22/10/2026 alle 11:32.
+//
+// Streaming (Spec §11, API 2; aggiunto il 22/10/2026 alle 16:15): all'avvio dell'ascolto, dopo il precaricamento dei
+// modelli, si apre un flusso zz_stream_* e ogni blocco del microfono gli viene inoltrato dal thread di cattura (i blocchi
+// arrivati prima dell'apertura si inoltrano all'aggancio); allo stop resta solo zz_stream_finish. Il buffer in memoria
+// resta: serve per la riscrittura (Spec §5.10, sempre su zz_rewrite) e per il ripiego su zz_dictate se il flusso non si
+// apre o un feed fallisce. La macchina a stati (Spec §5.2) non cambia.
 using Zzitto.Core.Licensing;
 using Zzitto.Platform.Audio;
 using Zzitto.Platform.Engine;
@@ -111,6 +117,8 @@ public sealed class DictationController : IDisposable
                 if (session is not null && session.TryBeginStop())
                 {
                     _audio.Stop();
+                    // Spec §11: il flusso si annulla senza risultato (in background: zz_stream_abort può attendere il motore).
+                    AbortInBackground(session.TakeStream(out _));
                     session.Buffer.Clear();
                     session.Cancellation.Cancel();
                     StateMachine.FireIf(DictationState.Listening, DictationTrigger.Cancel);
@@ -229,8 +237,9 @@ public sealed class DictationController : IDisposable
         }
 
         _onListeningStarted?.Invoke();
-        session.Context = _target.CaptureAsync(settings.ClipboardSelectionFallback, session.Cancellation.Token);
-        session.Preload = PreloadAsync(session.Cancellation.Token);
+        Task<TargetContext> context = _target.CaptureAsync(settings.ClipboardSelectionFallback, session.Cancellation.Token);
+        session.Context = context;
+        session.Preload = OpenStreamAsync(session, context, session.Cancellation.Token);
     }
 
     private void OnSamples(Session session, ReadOnlySpan<float> samples)
@@ -240,7 +249,8 @@ public sealed class DictationController : IDisposable
             return;
         }
 
-        bool room = session.Buffer.Append(samples);
+        // Spec §10: audio solo in memoria; Spec §11: lo stesso blocco va subito al flusso del motore.
+        bool room = session.AppendAndFeed(samples);
         bool silenceAfterSpeech = session.Vad.Process(samples);
         if (!room)
         {
@@ -264,6 +274,7 @@ public sealed class DictationController : IDisposable
         _ = Task.Run(() =>
         {
             _audio.Stop();
+            AbortInBackground(session.TakeStream(out _));
             session.Buffer.Clear();
             EndSession(session);
             Fail(error is MicrophoneException { AccessDenied: true } ? DictationNotice.MicrophoneAccessDenied : DictationNotice.MicrophoneError);
@@ -315,12 +326,13 @@ public sealed class DictationController : IDisposable
                 throw new ZzEngineException(ZzStatus.NoSpeech, "Nessun audio.");
             }
 
+            // Precaricamento e apertura del flusso (non lanciano mai): dopo, nessun flusso viene più agganciato.
             if (session.Preload is not null)
             {
                 await session.Preload.ConfigureAwait(false);
             }
 
-            await engine.LoadAsync(token).ConfigureAwait(false);
+            IDictationStream? stream = session.TakeStream(out bool streamFaulted);
 
             DictationOptions options = session.Settings.ToDictationOptions();
             void OnStage(EngineStage stage)
@@ -331,9 +343,22 @@ public sealed class DictationController : IDisposable
                 }
             }
 
-            EngineResult result = context.IsRewrite
-                ? await engine.RewriteAsync(context.SelectedText!, samples, count, options, OnStage, token).ConfigureAwait(false)
-                : await engine.DictateAsync(samples, count, options, OnStage, token).ConfigureAwait(false);
+            EngineResult result;
+            if (stream is not null && !streamFaulted && !stream.IsFaulted && !context.IsRewrite)
+            {
+                // Spec §11: l'audio è già nel motore, resta da trascrivere solo l'ultimo pezzo.
+                result = await stream.FinishAsync(OnStage, token).ConfigureAwait(false);
+            }
+            else
+            {
+                // Flusso non aperto o feed fallito: ripiego su zz_dictate con l'audio in memoria (stesso risultato).
+                // Spec §5.10: la riscrittura usa sempre zz_rewrite.
+                stream?.Abort();
+                await engine.LoadAsync(token).ConfigureAwait(false);
+                result = context.IsRewrite
+                    ? await engine.RewriteAsync(context.SelectedText!, samples, count, options, OnStage, token).ConfigureAwait(false)
+                    : await engine.DictateAsync(samples, count, options, OnStage, token).ConfigureAwait(false);
+            }
 
             // Spec §10: l'audio si distrugge subito dopo la trascrizione.
             session.Buffer.Clear();
@@ -431,19 +456,57 @@ public sealed class DictationController : IDisposable
         }
     }
 
-    private async Task PreloadAsync(CancellationToken token)
+    private async Task OpenStreamAsync(Session session, Task<TargetContext> context, CancellationToken token)
     {
+        if (_engine is null)
+        {
+            return;
+        }
+
         // Spec §4.2: i modelli si caricano alla prima dettatura, mentre l'utente parla.
         try
         {
-            if (_engine is not null && !_engine.IsLoaded)
+            if (!_engine.IsLoaded)
             {
                 await _engine.LoadAsync(token).ConfigureAwait(false);
             }
         }
         catch (Exception)
         {
-            // L'errore riemerge con il messaggio corretto nel LoadAsync di ProcessAsync.
+            // L'errore riemerge con il messaggio corretto nel LoadAsync del ripiego in ProcessAsync.
+            return;
+        }
+
+        // Spec §11: flusso aperto durante l'ascolto. Con una selezione (riscrittura, Spec §5.10) non serve.
+        IDictationStream? stream = null;
+        try
+        {
+            TargetContext target = await context.ConfigureAwait(false);
+            if (target.IsRewrite || token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            stream = await _engine.BeginStreamAsync(session.Settings.ToDictationOptions(), token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Apertura non riuscita o annullata: ProcessAsync ripiega su zz_dictate (o riporta l'errore).
+            return;
+        }
+
+        if (!session.TryAttachStream(stream))
+        {
+            // Ascolto già annullato o elaborazione già partita senza flusso.
+            stream.Abort();
+        }
+    }
+
+    private static void AbortInBackground(IDictationStream? stream)
+    {
+        if (stream is not null)
+        {
+            _ = Task.Run(stream.Abort);
         }
     }
 
@@ -523,8 +586,12 @@ public sealed class DictationController : IDisposable
 
     private sealed class Session : IDisposable
     {
+        private readonly object _feedLock = new();
         private int _stopping;
         private int _disposed;
+        private IDictationStream? _stream;
+        private bool _streamClosed;
+        private bool _streamFaulted;
 
         public Session(ZzittoSettings settings, IVoiceActivityDetector vad, int maxSamples)
         {
@@ -550,6 +617,63 @@ public sealed class DictationController : IDisposable
         /// <summary>true solo per il primo che ferma l'ascolto (silenzio, durata massima, tocco, annulla).</summary>
         public bool TryBeginStop() => Interlocked.Exchange(ref _stopping, 1) == 0;
 
+        /// <summary>
+        /// Thread di cattura: aggiunge il blocco al buffer e inoltra al flusso la parte accettata (Spec §5.2, §11).
+        /// Restituisce false se la durata massima è stata raggiunta.
+        /// </summary>
+        public bool AppendAndFeed(ReadOnlySpan<float> samples)
+        {
+            lock (_feedLock)
+            {
+                int before = Buffer.Count;
+                bool room = Buffer.Append(samples);
+                int taken = Buffer.Count - before;
+                if (_stream is not null && !_streamFaulted && taken > 0 && !_stream.Feed(samples[..taken]))
+                {
+                    _streamFaulted = true;
+                }
+
+                return room;
+            }
+        }
+
+        /// <summary>
+        /// Aggancia il flusso appena aperto inoltrandogli l'audio già catturato; da qui in poi i blocchi arrivano dal
+        /// thread di cattura. false se il flusso non serve più (ascolto annullato o elaborazione già partita).
+        /// </summary>
+        public bool TryAttachStream(IDictationStream stream)
+        {
+            lock (_feedLock)
+            {
+                if (_streamClosed)
+                {
+                    return false;
+                }
+
+                (float[] data, int count) = Buffer.Snapshot();
+                if (count > 0 && !stream.Feed(new ReadOnlySpan<float>(data, 0, count)))
+                {
+                    _streamFaulted = true;
+                }
+
+                _stream = stream;
+                return true;
+            }
+        }
+
+        /// <summary>Stacca il flusso (se c'è) e impedisce di agganciarne altri; il chiamante lo chiude o lo annulla.</summary>
+        public IDictationStream? TakeStream(out bool faulted)
+        {
+            lock (_feedLock)
+            {
+                _streamClosed = true;
+                IDictationStream? stream = _stream;
+                _stream = null;
+                faulted = _streamFaulted;
+                return stream;
+            }
+        }
+
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -557,6 +681,8 @@ public sealed class DictationController : IDisposable
                 return;
             }
 
+            // Un flusso mai chiuso (errore prima dello stop) si annulla: il motore torna libero (Spec §11).
+            AbortInBackground(TakeStream(out _));
             Buffer.Clear();
             Vad.Dispose();
             Cancellation.Dispose();

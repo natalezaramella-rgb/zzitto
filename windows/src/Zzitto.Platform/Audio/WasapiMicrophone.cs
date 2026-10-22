@@ -2,6 +2,8 @@
 // predefinito; conversione in mono float e ricampionamento a 16 kHz in streaming.
 // Spec §4.3 "win-audio", §10 (audio solo in memoria), §11 (avvio dell'ascolto < 300 ms).
 // Aggiunto il 22/10/2026 alle 11:32.
+// Revisione del 22/10/2026 alle 16:15 (Spec §11, streaming): ogni pacchetto WASAPI (~10 ms) è consegnato subito, già a
+// 16 kHz mono, a VAD e flusso del motore; i buffer di lavoro si azzerano anche quando la cattura termina per errore.
 using System.Runtime.InteropServices;
 using Zzitto.Platform.Interop;
 
@@ -78,6 +80,8 @@ public sealed class WasapiMicrophone : IAudioSource
         IAudioCaptureClient? capture = null;
         IntPtr mixFormat = IntPtr.Zero;
         bool clientStarted = false;
+        float[]? mono = null;
+        float[]? resampled = null;
         using var dataReady = new AutoResetEvent(false);
 
         try
@@ -107,8 +111,8 @@ public sealed class WasapiMicrophone : IAudioSource
             init.Complete(null);
 
             var resampler = new StreamingResampler(format.SampleRate, IAudioSource.TargetSampleRate);
-            float[] mono = new float[format.SampleRate]; // 1 s, ampliato se serve
-            float[] resampled = new float[resampler.MaxOutputFor(mono.Length)];
+            mono = new float[format.SampleRate]; // 1 s, ampliato se serve
+            resampled = new float[resampler.MaxOutputFor(mono.Length)];
 
             while (!_stopRequested)
             {
@@ -137,6 +141,9 @@ public sealed class WasapiMicrophone : IAudioSource
                         int frameCount = checked((int)frames);
                         if (mono.Length < frameCount)
                         {
+                            // Spec §10: i buffer sostituiti si azzerano prima di abbandonarli.
+                            Array.Clear(mono);
+                            Array.Clear(resampled);
                             mono = new float[frameCount];
                             resampled = new float[resampler.MaxOutputFor(frameCount)];
                         }
@@ -160,6 +167,7 @@ public sealed class WasapiMicrophone : IAudioSource
                         int produced = resampler.Process(monoSpan, resampled);
                         if (produced > 0)
                         {
+                            // Spec §11: consegna immediata del blocco (VAD + zz_stream_feed, che copia e ritorna subito).
                             onSamples(new ReadOnlySpan<float>(resampled, 0, produced));
                         }
                     }
@@ -169,10 +177,6 @@ public sealed class WasapiMicrophone : IAudioSource
                     }
                 }
             }
-
-            // Spec §10: nessun residuo dell'audio nei buffer di lavoro.
-            Array.Clear(mono);
-            Array.Clear(resampled);
         }
         catch (Exception ex)
         {
@@ -183,6 +187,17 @@ public sealed class WasapiMicrophone : IAudioSource
         }
         finally
         {
+            // Spec §10: nessun residuo dell'audio nei buffer di lavoro, anche se la cattura termina per errore.
+            if (mono is not null)
+            {
+                Array.Clear(mono);
+            }
+
+            if (resampled is not null)
+            {
+                Array.Clear(resampled);
+            }
+
             if (clientStarted)
             {
                 client?.Stop();
