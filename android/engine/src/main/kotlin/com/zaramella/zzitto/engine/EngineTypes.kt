@@ -130,3 +130,9 @@ data class EngineConfig(
 data class VoiceShortcut(val keyword: String, val expansion: String) {
     override fun toString(): String = "VoiceShortcut(keywordLen=${keyword.length}, expansionLen=${expansion.length})"
 }
+
+/**
+ * Modello di trascrizione (Spec §5.7, §11; aggiunto il 22/10/2026 alle 22:06): [SMALL] veloce (predefinito su
+ * Android), [MEDIUM] "Massima precisione".
+ */
+enum class WhisperModel { SMALL, MEDIUM }

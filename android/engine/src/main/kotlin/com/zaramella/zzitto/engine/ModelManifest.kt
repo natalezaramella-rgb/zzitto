@@ -25,6 +25,14 @@ object ModelManifest {
     // zz-model-size: whisper-medium-q5_0.bin
     const val WHISPER_SIZE_BYTES = 0L
 
+    // Spec §11 (22/10/2026 22:06): Whisper small è il modello predefinito su Android (1,8 s contro 3–4 s di
+    // medium sul Galaxy S25 Ultra); medium resta come "Massima precisione".
+    const val WHISPER_SMALL_FILE = "whisper-small-q5_1.bin"
+    // zz-model-hash: whisper-small-q5_1.bin
+    const val WHISPER_SMALL_SHA256 = "DA_IMPOSTARE"
+    // zz-model-size: whisper-small-q5_1.bin
+    const val WHISPER_SMALL_SIZE_BYTES = 0L
+
     const val LLM_FILE = "phi-4-mini-instruct-q4_k_m.gguf"
     // zz-model-hash: phi-4-mini-instruct-q4_k_m.gguf
     const val LLM_SHA256 = "DA_IMPOSTARE"
@@ -36,12 +44,20 @@ object ModelManifest {
 
     /** Stime usate solo se le dimensioni non sono ancora impostate (barra di avanzamento, spazio). */
     private const val WHISPER_APPROX_BYTES = 540L * 1024 * 1024
+    private const val WHISPER_SMALL_APPROX_BYTES = 190L * 1024 * 1024
     private const val LLM_APPROX_BYTES = 2_500L * 1024 * 1024
 
     val whisper = ModelFile(WHISPER_FILE, WHISPER_SHA256, WHISPER_SIZE_BYTES, WHISPER_APPROX_BYTES)
+    val whisperSmall = ModelFile(WHISPER_SMALL_FILE, WHISPER_SMALL_SHA256, WHISPER_SMALL_SIZE_BYTES, WHISPER_SMALL_APPROX_BYTES)
     val llm = ModelFile(LLM_FILE, LLM_SHA256, LLM_SIZE_BYTES, LLM_APPROX_BYTES)
 
-    val all: List<ModelFile> = listOf(whisper, llm)
+    val all: List<ModelFile> = listOf(whisperSmall, whisper, llm)
+
+    /** File del modello Whisper per la scelta dell'utente (Spec §5.7, §11). */
+    fun whisperFileFor(model: WhisperModel): String = when (model) {
+        WhisperModel.SMALL -> WHISPER_SMALL_FILE
+        WhisperModel.MEDIUM -> WHISPER_FILE
+    }
 
     /** True se la versione dei modelli è stata impostata dallo script. */
     val hasModelsVersion: Boolean

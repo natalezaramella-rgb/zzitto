@@ -6,6 +6,7 @@ import com.zaramella.zzitto.dictation.settings.DictationSettings
 import com.zaramella.zzitto.dictation.settings.SettingsRepository
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.TranslateTarget
+import com.zaramella.zzitto.engine.WhisperModel
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +30,23 @@ class SettingsTest {
         val d = DictationSettings()
         assertEquals("it", d.language)
         assertEquals(CorrectionMode.CLEAN, d.mode)
-        assertEquals(2_000, d.silenceTimeoutMs)
+        assertEquals(1_000, d.silenceTimeoutMs) // Spec §5.2, predefinito 1 s dal 22/10/2026
+        assertEquals(WhisperModel.SMALL, d.whisperModel) // Spec §11
         assertEquals(5 * 60_000L, d.maxDurationMs)
         assertEquals(TranslateTarget.NONE, d.translate)
+    }
+
+    // Spec §5.2, §5.7, §11 (22/10/2026 22:09).
+    @Test
+    fun `migrazione del silenzio e lettura del modello`() {
+        assertEquals(1_000, SettingsRepository.migratedSilence(2_000, null))
+        assertEquals(1_000, SettingsRepository.migratedSilence(2_000, 1))
+        assertEquals(2_000, SettingsRepository.migratedSilence(2_000, 2))
+        assertEquals(3_500, SettingsRepository.migratedSilence(3_500, null))
+        assertEquals(null, SettingsRepository.migratedSilence(null, null))
+        assertEquals(WhisperModel.MEDIUM, SettingsRepository.whisperModelFrom("medium"))
+        assertEquals(WhisperModel.SMALL, SettingsRepository.whisperModelFrom("SMALL"))
+        assertEquals(null, SettingsRepository.whisperModelFrom("large"))
     }
 
     @Test

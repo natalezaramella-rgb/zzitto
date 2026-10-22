@@ -4,6 +4,7 @@ import com.zaramella.zzitto.audio.MicrophoneCatalog
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.DictationOptions
 import com.zaramella.zzitto.engine.TranslateTarget
+import com.zaramella.zzitto.engine.WhisperModel
 
 /**
  * Impostazioni dell'app (Spec §5.7), salvate con DataStore. Nessun testo dettato qui (Spec §10):
@@ -19,7 +20,7 @@ data class DictationSettings(
     val translate: TranslateTarget = TranslateTarget.NONE,
     /** Stop automatico dopo il silenzio (Spec §5.2). */
     val autoStopOnSilence: Boolean = true,
-    /** Silenzio che fa scattare lo stop, predefinito 2 s (Spec §5.2). */
+    /** Silenzio che fa scattare lo stop, predefinito 1 s (Spec §5.2; era 2 s, cambiato il 22/10/2026 alle 22:08). */
     val silenceTimeoutMs: Int = DEFAULT_SILENCE_MS,
     /** Durata massima, predefinita 5 minuti (Spec §5.2). */
     val maxDurationMs: Long = DEFAULT_MAX_DURATION_MS,
@@ -45,6 +46,11 @@ data class DictationSettings(
      * predefinito di sistema. Spec §5.7, aggiunto il 22/10/2026 alle 17:44.
      */
     val microphoneKey: String? = null,
+    /**
+     * Modello di trascrizione (Spec §5.7, §11; aggiunto il 22/10/2026 alle 22:08): small veloce (predefinito),
+     * medium "Massima precisione".
+     */
+    val whisperModel: WhisperModel = WhisperModel.SMALL,
 ) {
     fun toDictationOptions(): DictationOptions = DictationOptions(
         language = language,
@@ -69,7 +75,13 @@ data class DictationSettings(
         /** Lingue proposte; il motore Whisper ne supporta altre (Spec §2.1: principale italiano). */
         val SUPPORTED_LANGUAGES = listOf("it", "en", "es", "fr", "de")
 
-        const val DEFAULT_SILENCE_MS = 2_000
+        const val DEFAULT_SILENCE_MS = 1_000
+
+        /** Vecchio predefinito: le impostazioni salvate prima della versione 2 lo portano a 1 s. */
+        const val LEGACY_DEFAULT_SILENCE_MS = 2_000
+
+        /** Versione dello schema salvato (2: silenzio 1 s e scelta del modello, 22/10/2026). */
+        const val SETTINGS_VERSION = 2
         const val MIN_SILENCE_MS = 500
         const val MAX_SILENCE_MS = 10_000
         const val DEFAULT_MAX_DURATION_MS = 5 * 60_000L

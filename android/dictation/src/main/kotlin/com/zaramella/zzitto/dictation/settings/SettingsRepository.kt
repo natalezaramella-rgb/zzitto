@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.TranslateTarget
+import com.zaramella.zzitto.engine.WhisperModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -38,6 +39,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[Keys.TOUR_COMPLETED] = updated.tourCompleted
             prefs[Keys.ICON_X] = updated.iconX
             prefs[Keys.ICON_Y] = updated.iconY
+            // Spec §5.7, §11 (22/10/2026 22:08): modello di trascrizione e versione dello schema.
+            prefs[Keys.WHISPER_MODEL] = updated.whisperModel.name.lowercase()
+            prefs[Keys.VERSION] = DictationSettings.SETTINGS_VERSION
             // Spec §5.7: nessuna chiave = predefinito di sistema. Aggiunto il 22/10/2026 alle 17:44.
             val mic = updated.microphoneKey
             if (mic == null) {
@@ -55,7 +59,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             mode = this[Keys.MODE]?.let(CorrectionMode::fromCode) ?: d.mode,
             translate = this[Keys.TRANSLATE]?.let(TranslateTarget::fromCode) ?: d.translate,
             autoStopOnSilence = this[Keys.AUTO_STOP] ?: d.autoStopOnSilence,
-            silenceTimeoutMs = this[Keys.SILENCE_MS] ?: d.silenceTimeoutMs,
+            silenceTimeoutMs = migratedSilence(this[Keys.SILENCE_MS], this[Keys.VERSION]) ?: d.silenceTimeoutMs,
             maxDurationMs = this[Keys.MAX_DURATION_MS] ?: d.maxDurationMs,
             voiceCommandsEnabled = this[Keys.VOICE_COMMANDS] ?: d.voiceCommandsEnabled,
             historyEnabled = this[Keys.HISTORY_ENABLED] ?: d.historyEnabled,
@@ -67,7 +71,20 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             iconX = this[Keys.ICON_X] ?: d.iconX,
             iconY = this[Keys.ICON_Y] ?: d.iconY,
             microphoneKey = this[Keys.MICROPHONE] ?: d.microphoneKey, // Spec §5.7
+            whisperModel = whisperModelFrom(this[Keys.WHISPER_MODEL]) ?: d.whisperModel, // Spec §5.7, §11
         ).sanitized()
+    }
+
+    internal companion object {
+        /**
+         * Spec §5.2 (22/10/2026 22:08): chi aveva ancora il vecchio predefinito di 2 s passa a 1 s; un valore
+         * scelto dall'utente resta.
+         */
+        fun migratedSilence(saved: Int?, version: Int?): Int? =
+            if ((version ?: 1) < 2 && saved == DictationSettings.LEGACY_DEFAULT_SILENCE_MS) DictationSettings.DEFAULT_SILENCE_MS else saved
+
+        fun whisperModelFrom(value: String?): WhisperModel? =
+            WhisperModel.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
     }
 
     private object Keys {
@@ -87,5 +104,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val ICON_X = intPreferencesKey("icon_x")
         val ICON_Y = intPreferencesKey("icon_y")
         val MICROPHONE = stringPreferencesKey("microphone_key") // Spec §5.7
+        val WHISPER_MODEL = stringPreferencesKey("whisper_model") // Spec §5.7, §11
+        val VERSION = intPreferencesKey("settings_version")
     }
 }

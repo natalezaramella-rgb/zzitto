@@ -112,6 +112,9 @@
     <string name="settings_memory">Memory</string>
     <string name="settings_unload">Free memory after</string>
     <!-- Microphone choice (Spec §5.7). Aggiunto il 22/10/2026 alle 17:44. -->
+    <!-- Spec §5.7, §11: aggiunto il 22/10/2026 alle 22:09. -->
+    <string name="settings_max_precision">Maximum accuracy</string>
+    <string name="settings_max_precision_desc">More accurate but slower transcription (about 2–3 s more): uses Whisper medium instead of small.</string>
     <string name="settings_microphone">Microphone</string>
     <string name="mic_system_default">System default</string>
     <string name="mic_builtin">Phone microphone</string>

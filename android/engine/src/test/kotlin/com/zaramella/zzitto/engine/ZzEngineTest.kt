@@ -23,7 +23,15 @@ class ZzEngineTest {
     private val native = FakeEngineNative()
     private val configCalls = AtomicInteger()
     private val config = EngineConfig("/m/w.bin", "/m/l.gguf", null, null)
-    private val engine = ZzEngine(native, EngineConfigProvider { configCalls.incrementAndGet(); config })
+    private val requestedWhisper = mutableListOf<WhisperModel>()
+    private val engine = ZzEngine(
+        native,
+        EngineConfigProvider { whisper ->
+            configCalls.incrementAndGet()
+            synchronized(requestedWhisper) { requestedWhisper += whisper }
+            config
+        },
+    )
 
     @AfterEach
     fun tearDown() = engine.close()
@@ -37,6 +45,19 @@ class ZzEngineTest {
         assertEquals(1, configCalls.get())
         assertTrue(engine.loaded.value)
         assertEquals(config, native.lastConfig)
+    }
+
+    // Spec §5.7, §11: scelta del modello di trascrizione (22/10/2026 22:07).
+    @Test
+    fun `small predefinito, il cambio di modello ricrea l'istanza una sola volta`() = runBlocking {
+        engine.ensureLoaded()
+        engine.setWhisperModel(WhisperModel.MEDIUM)
+        engine.ensureLoaded()
+        engine.ensureLoaded()
+        assertEquals(listOf(WhisperModel.SMALL, WhisperModel.MEDIUM), requestedWhisper)
+        assertEquals(2, native.createCount.get())
+        assertEquals(1, native.destroyCount.get())
+        assertTrue(engine.loaded.value)
     }
 
     @Test

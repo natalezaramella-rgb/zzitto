@@ -18,7 +18,8 @@ import kotlinx.coroutines.withContext
 
 /** Fornisce i percorsi dei modelli pronti e verificati (Spec §7). */
 fun interface EngineConfigProvider {
-    suspend fun engineConfig(): EngineConfig
+    /** Spec §5.7, §11: configurazione con il modello Whisper scelto. */
+    suspend fun engineConfig(whisper: WhisperModel): EngineConfig
 }
 
 /**
@@ -54,6 +55,11 @@ class ZzEngine(
     @Volatile
     private var activeStream: ZzStream? = null
 
+    /** Spec §5.7, §11 (22/10/2026 22:06): modello Whisper voluto e quello dell'istanza nativa attuale. */
+    @Volatile
+    private var wantedWhisper: WhisperModel = WhisperModel.SMALL
+    private var handleWhisper: WhisperModel? = null
+
     private var dictionary: List<String> = emptyList()
     private var shortcuts: List<VoiceShortcut> = emptyList()
 
@@ -71,8 +77,17 @@ class ZzEngine(
      * in parallelo alla registrazione, per rispettare l'obiettivo dei 300 ms (Spec §11).
      */
     suspend fun ensureLoaded() {
-        val config = if (handle == 0L) configProvider.engineConfig() else null
+        val wanted = wantedWhisper
+        val config = if (handle == 0L || handleWhisper != wanted) configProvider.engineConfig(wanted) else null
         runOnEngine {
+            // Spec §5.7: cambio del modello di trascrizione → nuova istanza alla prossima dettatura
+            // (mai con un flusso aperto, Spec §11).
+            if (handle != 0L && handleWhisper != wanted && config != null && activeStream == null) {
+                native.destroy(handle)
+                handle = 0L
+                handleWhisper = null
+                _loaded.value = false
+            }
             if (handle == 0L) {
                 val cfg = config ?: throw EngineException(EngineStatus.INTERNAL, "configurazione mancante")
                 val api = native.apiVersion()
@@ -81,11 +96,20 @@ class ZzEngine(
                 }
                 val created = native.create(cfg)
                 handle = created
+                handleWhisper = wanted
                 applyPersonalizationOnEngineThread(created)
             }
             check(native.load(handle))
             _loaded.value = true
         }
+    }
+
+    /**
+     * Sceglie il modello di trascrizione (Spec §5.7, §11; 22/10/2026 22:06). Ha effetto al prossimo
+     * [ensureLoaded], che ricrea l'istanza nativa se il modello è cambiato.
+     */
+    fun setWhisperModel(model: WhisperModel) {
+        wantedWhisper = model
     }
 
     /** Scarica i modelli dalla RAM (Spec §4.2). L'istanza resta valida. */
@@ -230,6 +254,7 @@ class ZzEngine(
                     val h = handle
                     if (h != 0L) native.destroy(h)
                     handle = 0L
+                    handleWhisper = null
                     _loaded.value = false
                 },
             )

@@ -98,7 +98,7 @@ class ModelInstallerTest {
     @Test
     fun `ricompone le parti in ordine e passa gli hash al motore`() = runBlocking {
         val inst = installer()
-        val config = inst.engineConfig()
+        val config = inst.engineConfig(WhisperModel.MEDIUM)
         assertTrue(File(config.whisperModelPath).readBytes().contentEquals(whisperData))
         assertTrue(File(config.llmModelPath).readBytes().contentEquals(llmPart1 + llmPart2))
         assertEquals(sha(whisperData), config.whisperSha256)
@@ -107,10 +107,25 @@ class ModelInstallerTest {
         assertTrue(inst.isInstalled())
     }
 
+    // Spec §5.7, §11 (22/10/2026 22:07): senza small tra i modelli si usa medium, senza bloccare la dettatura.
+    @Test
+    fun `small richiesto ma assente usa medium`() = runBlocking {
+        val config = installer().engineConfig(WhisperModel.SMALL)
+        assertTrue(config.whisperModelPath.endsWith(ModelManifest.WHISPER_FILE))
+        assertEquals(sha(whisperData), config.whisperSha256)
+    }
+
+    @Test
+    fun `il manifesto mappa i modelli whisper`() {
+        assertEquals(ModelManifest.WHISPER_SMALL_FILE, ModelManifest.whisperFileFor(WhisperModel.SMALL))
+        assertEquals(ModelManifest.WHISPER_FILE, ModelManifest.whisperFileFor(WhisperModel.MEDIUM))
+        assertTrue(ModelManifest.all.any { it.fileName == ModelManifest.WHISPER_SMALL_FILE })
+    }
+
     @Test
     fun `usa l'indice in ordine numerico`() = runBlocking {
         val inst = installer(src = source(withIndex = true))
-        val config = inst.engineConfig()
+        val config = inst.engineConfig(WhisperModel.MEDIUM)
         assertTrue(File(config.llmModelPath).readBytes().contentEquals(llmPart1 + llmPart2))
     }
 
@@ -192,7 +207,7 @@ class ModelInstallerTest {
     @Test
     fun `hash segnaposto ammesso col motore finto, senza verifica nel motore`() = runBlocking {
         val p = ModelManifest.HASH_PLACEHOLDER
-        val config = installer(models = models(p, p), requireHashes = false).engineConfig()
+        val config = installer(models = models(p, p), requireHashes = false).engineConfig(WhisperModel.MEDIUM)
         assertNull(config.whisperSha256)
         assertNull(config.llmSha256)
     }

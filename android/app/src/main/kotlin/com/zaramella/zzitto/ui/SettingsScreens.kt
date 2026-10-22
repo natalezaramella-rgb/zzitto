@@ -46,6 +46,7 @@ import com.zaramella.zzitto.data.ShortcutItem
 import com.zaramella.zzitto.dictation.settings.DictationSettings
 import com.zaramella.zzitto.engine.CorrectionMode
 import com.zaramella.zzitto.engine.TranslateTarget
+import com.zaramella.zzitto.engine.WhisperModel
 import java.util.Date
 import java.util.Locale
 
@@ -161,6 +162,13 @@ fun SettingsScreen(
                 selected = settings.mode,
                 label = { modeLabel(it) },
                 onSelect = { mode -> onChange { it.copy(mode = mode) } },
+            )
+            // Spec §5.7, §11 (22/10/2026 22:09): Whisper small (veloce, predefinito) o medium (massima precisione).
+            SwitchRow(
+                label = stringResource(R.string.settings_max_precision),
+                description = stringResource(R.string.settings_max_precision_desc),
+                checked = settings.whisperModel == WhisperModel.MEDIUM,
+                onChange = { v -> onChange { it.copy(whisperModel = if (v) WhisperModel.MEDIUM else WhisperModel.SMALL) } },
             )
 
             SectionTitle(stringResource(R.string.settings_translate))

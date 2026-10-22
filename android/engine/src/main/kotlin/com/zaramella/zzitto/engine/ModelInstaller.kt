@@ -98,12 +98,18 @@ class ModelInstaller(
     private val _state = MutableStateFlow<ModelInstallState>(ModelInstallState.Idle)
     val state: StateFlow<ModelInstallState> = _state.asStateFlow()
 
-    override suspend fun engineConfig(): EngineConfig {
+    override suspend fun engineConfig(whisper: WhisperModel): EngineConfig {
         ensureInstalled()
+        // Spec §5.7, §11 (22/10/2026 22:06): Whisper scelto dall'utente; se non è tra i modelli installati
+        // (elenco senza small) si usa l'altro, così la dettatura non si blocca.
+        val wanted = ModelManifest.whisperFileFor(whisper)
+        val whisperFile = models.firstOrNull { it.fileName == wanted }
+            ?: models.firstOrNull { it.fileName == ModelManifest.WHISPER_FILE || it.fileName == ModelManifest.WHISPER_SMALL_FILE }
+        val whisperName = whisperFile?.fileName ?: wanted
         return EngineConfig(
-            whisperModelPath = fileFor(ModelManifest.WHISPER_FILE).absolutePath,
+            whisperModelPath = fileFor(whisperName).absolutePath,
             llmModelPath = fileFor(ModelManifest.LLM_FILE).absolutePath,
-            whisperSha256 = models.firstOrNull { it.fileName == ModelManifest.WHISPER_FILE }?.sha256OrNull,
+            whisperSha256 = whisperFile?.sha256OrNull,
             llmSha256 = models.firstOrNull { it.fileName == ModelManifest.LLM_FILE }?.sha256OrNull,
         )
     }

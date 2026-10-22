@@ -124,7 +124,12 @@ class ZzittoAccessibilityService : AccessibilityService() {
         )
         controller = dictation
 
-        scope.launch { settingsRepository.settings.collect { settingsState.value = it } }
+        scope.launch {
+            settingsRepository.settings.collect {
+                settingsState.value = it
+                zzEngine.setWhisperModel(it.whisperModel) // Spec §5.7, §11 (22/10/2026 22:09)
+            }
+        }
         // Spec §5.5, §5.11: dizionario e scorciatoie passati al motore a ogni modifica.
         scope.launch {
             personalization.dictionary.collect { words ->
