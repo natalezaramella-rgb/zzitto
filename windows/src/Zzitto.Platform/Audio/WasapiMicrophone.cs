@@ -1,9 +1,11 @@
-// Cattura del microfono con WASAPI in modalità condivisa, a eventi, sul dispositivo di registrazione
+﻿// Cattura del microfono con WASAPI in modalità condivisa, a eventi, sul dispositivo di registrazione
 // predefinito; conversione in mono float e ricampionamento a 16 kHz in streaming.
 // Spec §4.3 "win-audio", §10 (audio solo in memoria), §11 (avvio dell'ascolto < 300 ms).
 // Aggiunto il 22/10/2026 alle 11:32.
 // Revisione del 22/10/2026 alle 16:15 (Spec §11, streaming): ogni pacchetto WASAPI (~10 ms) è consegnato subito, già a
 // 16 kHz mono, a VAD e flusso del motore; i buffer di lavoro si azzerano anche quando la cattura termina per errore.
+// Revisione del 22/10/2026 alle 17:43 (Spec §5.7): si usa il microfono scelto nelle impostazioni, se è collegato;
+// altrimenti il predefinito di sistema.
 using System.Runtime.InteropServices;
 using Zzitto.Platform.Interop;
 
@@ -14,6 +16,13 @@ public sealed class WasapiMicrophone : IAudioSource
     private readonly object _lock = new();
     private Thread? _thread;
     private volatile bool _stopRequested;
+    private readonly Func<string?> _preferredDeviceId;
+
+    /// <param name="preferredDeviceId">Id dell'endpoint scelto dall'utente (null = predefinito), letto a ogni avvio.</param>
+    public WasapiMicrophone(Func<string?>? preferredDeviceId = null)
+    {
+        _preferredDeviceId = preferredDeviceId ?? (() => null);
+    }
 
     public void Start(SamplesAvailableHandler onSamples, Action<Exception> onError)
     {
@@ -87,7 +96,11 @@ public sealed class WasapiMicrophone : IAudioSource
         try
         {
             enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
-            Check(enumerator.GetDefaultAudioEndpoint(EDataFlow.Capture, ERole.Console, out device), "Nessun microfono disponibile.");
+            device = OpenPreferred(enumerator, _preferredDeviceId());
+            if (device is null)
+            {
+                Check(enumerator.GetDefaultAudioEndpoint(EDataFlow.Capture, ERole.Console, out device), "Nessun microfono disponibile.");
+            }
 
             Guid iidAudioClient = WasapiConstants.IidIAudioClient;
             Check(device.Activate(ref iidAudioClient, WasapiConstants.ClsctxAll, IntPtr.Zero, out object clientObject),
@@ -213,6 +226,23 @@ public sealed class WasapiMicrophone : IAudioSource
             Release(device);
             Release(enumerator);
         }
+    }
+
+    /// <summary>Spec §5.7: il microfono scelto, se esiste ed è attivo; null per usare il predefinito.</summary>
+    private static IMMDevice? OpenPreferred(IMMDeviceEnumerator enumerator, string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id) || enumerator.GetDevice(id, out IMMDevice device) < 0)
+        {
+            return null;
+        }
+
+        if (device.GetState(out uint state) >= 0 && state == 0x1) // DEVICE_STATE_ACTIVE
+        {
+            return device;
+        }
+
+        Release(device);
+        return null;
     }
 
     /// <summary>Esito dell'inizializzazione del thread di cattura.</summary>

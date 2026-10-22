@@ -1,4 +1,4 @@
-// Composizione dell'app residente: archivi, licenza, motore, microfono, inserimento, area di notifica,
+﻿// Composizione dell'app residente: archivi, licenza, motore, microfono, inserimento, area di notifica,
 // icona flottante, scorciatoia globale e finestra delle impostazioni.
 // Spec §2.4, §2.5, §2.6, §4.2, §4.3, §5, §8.1, §8.2, §10. Aggiunto il 22/10/2026 alle 11:32.
 using Microsoft.UI.Dispatching;
@@ -70,7 +70,7 @@ internal sealed class AppHost : IDisposable
         var clipboard = new ClipboardService(() => _shell.HostWindowHandle);
         Controller = new DictationController(
             _engine,
-            new WasapiMicrophone(),
+            new WasapiMicrophone(() => Settings.Current.MicrophoneId), // Spec §5.7: microfono scelto (22/10/2026 17:43)
             new ZzVadFactory(native),
             new WindowsTextTarget(clipboard),
             License,

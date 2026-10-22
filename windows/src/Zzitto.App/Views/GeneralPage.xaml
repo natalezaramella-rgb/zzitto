@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Impostazioni generali (Spec §5.7, §2.4, §2.6, §4.2, §5.3, §5.9, §5.12). Aggiunto il 22/10/2026 alle 11:32. -->
 <Page
     x:Class="Zzitto.App.Views.GeneralPage"
@@ -19,6 +19,8 @@
                 <ComboBoxItem Tag="fr" Content="Français" />
                 <ComboBoxItem Tag="de" Content="Deutsch" />
             </ComboBox>
+            <!-- Spec §5.7: scelta del microfono se ce n'è più di uno. Aggiunto il 22/10/2026 alle 17:43. -->
+            <ComboBox x:Name="MicrophoneBox" x:Uid="GeneralMicrophone" MinWidth="260" MaxWidth="520" SelectionChanged="OnSettingChanged" />
             <ComboBox x:Name="ModeBox" x:Uid="GeneralMode" MinWidth="260" SelectionChanged="OnSettingChanged">
                 <ComboBoxItem x:Uid="ModeFaithfulItem" Tag="Faithful" />
                 <ComboBoxItem x:Uid="ModeCleanItem" Tag="Clean" />

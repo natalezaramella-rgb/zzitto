@@ -125,6 +125,12 @@ public sealed record ZzittoSettings
 
     public bool StartSound { get; init; } = true;
 
+    /// <summary>
+    /// Spec §5.7 (22/10/2026 17:43): microfono scelto (id dell'endpoint WASAPI); null = predefinito di sistema.
+    /// Se non è collegato si usa il predefinito.
+    /// </summary>
+    public string? MicrophoneId { get; init; }
+
     public bool VoiceCommandsEnabled { get; init; } = true;
 
     public int CorrectionTimeoutMs { get; init; } = 10000;
@@ -181,6 +187,7 @@ public sealed record ZzittoSettings
             Hotkey = m.Hotkey is { IsValid: true } ? m.Hotkey : HotkeyBinding.Default,
             OverlayMode = Enum.IsDefined(m.OverlayMode) ? m.OverlayMode : OverlayMode.FixedPosition,
             ModelUnloadMinutes = Math.Clamp(m.ModelUnloadMinutes, 1, 120),
+            MicrophoneId = string.IsNullOrWhiteSpace(m.MicrophoneId) ? null : m.MicrophoneId,
         };
     }
 

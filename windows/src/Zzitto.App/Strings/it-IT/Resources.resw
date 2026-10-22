@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Testi dell'interfaccia in italiano (Spec §2.1: interfaccia predisposta per altre lingue tramite risorse).
      Generato e verificato dall'agente C. Aggiunto il 22/10/2026 alle 11:32. -->
 <root>
@@ -21,6 +21,10 @@
   <data name="GeneralGpu.Header" xml:space="preserve"><value>Usa la GPU o la NPU se disponibile</value></data>
   <data name="GeneralGpuNote.Text" xml:space="preserve"><value>La modifica dell'uso della GPU vale dal prossimo avvio di Zzitto.</value></data>
   <data name="GeneralHotkeyLabel.Text" xml:space="preserve"><value>Scorciatoia da tastiera:</value></data>
+  <data name="GeneralMicrophone.Header" xml:space="preserve"><value>Microfono</value></data>
+  <data name="Microphone_Default" xml:space="preserve"><value>Predefinito di sistema</value></data>
+  <data name="Microphone_DefaultWithName" xml:space="preserve"><value>Predefinito di sistema ({0})</value></data>
+  <data name="Microphone_Missing" xml:space="preserve"><value>Microfono scelto, ora non collegato (si usa il predefinito)</value></data>
   <data name="GeneralLanguage.Header" xml:space="preserve"><value>Lingua di dettatura</value></data>
   <data name="GeneralMaxDuration.Header" xml:space="preserve"><value>Durata massima di una dettatura (minuti)</value></data>
   <data name="GeneralMode.Header" xml:space="preserve"><value>Modalità di correzione</value></data>
@@ -43,7 +47,7 @@
   <data name="HelpDictionary_Title" xml:space="preserve"><value>Dizionario personale</value></data>
   <data name="HelpFallbackHeader.Text" xml:space="preserve"><value>Se il testo non compare</value></data>
   <data name="HelpFallbackText.Text" xml:space="preserve"><value>Alcune app non permettono l'inserimento diretto (per esempio le finestre avviate come amministratore). In quel caso Zzitto copia il testo negli appunti e te lo segnala: premi Ctrl+V per incollarlo. Se l'icona non compare vicino al campo, la trovi nell'ultima posizione in cui l'hai spostata; restano sempre disponibili l'icona nell'area di notifica e la scorciatoia.</value></data>
-  <data name="HelpGeneral_Body" xml:space="preserve"><value>Qui scegli lingua, modalità di correzione e traduzione, i tempi di stop automatico e la scorciatoia globale. "Fedele" toglie solo esitazioni evidenti, "Pulito" sistema anche ripetizioni e punteggiatura, "Formale" usa un registro più curato. L'icona del microfono può seguire il campo attivo, restare ferma o essere nascosta.</value></data>
+  <data name="HelpGeneral_Body" xml:space="preserve"><value>Qui scegli lingua, microfono (se ne hai più di uno), modalità di correzione e traduzione, i tempi di stop automatico e la scorciatoia globale. "Fedele" toglie solo esitazioni evidenti, "Pulito" sistema anche ripetizioni e punteggiatura, "Formale" usa un registro più curato. L'icona del microfono può seguire il campo attivo, restare ferma o essere nascosta.</value></data>
   <data name="HelpGeneral_Title" xml:space="preserve"><value>Impostazioni generali</value></data>
   <data name="HelpHistory_Body" xml:space="preserve"><value>Zzitto conserva le ultime dettature (testo grezzo e corretto) per il numero di giorni scelto. La cronologia è cifrata, si cancella con un clic e disattivandola viene eliminata.</value></data>
   <data name="HelpHistory_Title" xml:space="preserve"><value>Cronologia</value></data>
@@ -118,7 +122,7 @@
   <data name="Notice_LicenseUnknown" xml:space="preserve"><value>Licenza non verificata: apri Zzitto con il Microsoft Store raggiungibile per sbloccare la dettatura.</value></data>
   <data name="Notice_MaxDuration" xml:space="preserve"><value>Raggiunta la durata massima della dettatura.</value></data>
   <data name="Notice_MicrophoneDenied" xml:space="preserve"><value>Zzitto non può usare il microfono. Consenti l'accesso in Impostazioni di Windows → Privacy e sicurezza → Microfono.</value></data>
-  <data name="Notice_MicrophoneError" xml:space="preserve"><value>Microfono non disponibile. Controlla che sia collegato e impostato come dispositivo di registrazione predefinito.</value></data>
+  <data name="Notice_MicrophoneError" xml:space="preserve"><value>Microfono non disponibile. Controlla che sia collegato, oppure scegli un altro microfono nelle impostazioni di Zzitto.</value></data>
   <data name="Notice_ModelIntegrity" xml:space="preserve"><value>I file dei modelli AI risultano danneggiati. Reinstalla Zzitto dal Microsoft Store.</value></data>
   <data name="Notice_TrialExpired" xml:space="preserve"><value>La prova gratuita è terminata: acquista Zzitto per continuare a dettare.</value></data>
   <data name="OpenSourceIntro.Text" xml:space="preserve"><value>Zzitto usa componenti con licenze permissive. Il testo completo delle licenze è riportato qui sotto. Windows App SDK e i runtime Microsoft sono distribuiti con le condizioni di licenza Microsoft.</value></data>
