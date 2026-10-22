@@ -11,6 +11,13 @@
 #include <new>
 #include <thread>
 
+#if defined(_WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+#endif
+
 #include "zz_common.h"
 #include "zz_prompts.h"
 #include "zz_sha256.h"
@@ -101,6 +108,16 @@ zz_engine::zz_engine(const zz_engine_config &config, std::unique_ptr<zz::SttBack
     config_.whisper_model_path = config_.llm_model_path = config_.whisper_sha256 = config_.llm_sha256 = nullptr;
     settings_.n_threads = config.n_threads > 0 ? config.n_threads : zz::default_thread_count();
     settings_.use_gpu = config.use_gpu != 0;  // Spec §2.4, §11.1
+#if defined(_WIN32) && defined(PROCESS_POWER_THROTTLING_CURRENT_VERSION)
+    // Spec §11 (ottimizzazione del 22/10/2026 15:50): l'app vive nell'area di notifica, quindi Windows 11
+    // la considera in secondo piano e può rallentarla (EcoQoS). I benchmark sul Surface mostravano picchi
+    // da 2 a 10 s nella trascrizione: si chiede di non limitare la velocità di esecuzione del processo.
+    PROCESS_POWER_THROTTLING_STATE state{};
+    state.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+    state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+    state.StateMask = 0;
+    (void)SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &state, sizeof(state));
+#endif
 }
 
 zz_engine::~zz_engine() {

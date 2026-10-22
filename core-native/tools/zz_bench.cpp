@@ -123,7 +123,7 @@ void usage() {
     std::fprintf(stderr,
                  "Uso: zz_bench --audio file.wav --whisper whisper-medium-q5_0.bin --llm phi-4-mini-instruct-q4_k_m.gguf\n"
                  "              [--whisper-sha HEX] [--llm-sha HEX] [--lang it] [--mode fedele|pulito|formale]\n"
-                 "              [--translate en|es] [--threads N] [--gpu 0|1] [--parallel-load] [--runs N]\n"
+                 "              [--translate en|es] [--threads N] [--gpu 0|1] [--parallel-load] [--sequential] [--runs N]\n"
                  "              [--timeout MS] [--dict \"Parola1,Parola2\"] [--rewrite \"testo selezionato\"]\n"
                  "              [--print-text]\n"
                  "Spec §11: obiettivo < 5000 ms dalla fine di una dettatura di 15 s al testo corretto.\n");
@@ -134,7 +134,7 @@ void usage() {
 int main(int argc, char **argv) {
     std::string audio, whisper, llm, whisper_sha, llm_sha, lang = "it", dict, rewrite_sel;
     int threads = 0, gpu = 1, runs = 1, timeout = 0;
-    bool parallel = false, print_text = false, has_rewrite = false;
+    bool parallel = false, sequential = false, print_text = false, has_rewrite = false;
     zz_correction_mode mode = ZZ_MODE_CLEAN;
     zz_translate_target tr = ZZ_TRANSLATE_NONE;
     for (int i = 1; i < argc; ++i) {
@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
         else if (a == "--dict") dict = next();
         else if (a == "--rewrite") rewrite_sel = next(), has_rewrite = true;
         else if (a == "--parallel-load") parallel = true;
+        else if (a == "--sequential") sequential = true;
         else if (a == "--print-text") print_text = true;
         else if (a == "--mode") {
             std::string m = next();
@@ -200,7 +201,10 @@ int main(int argc, char **argv) {
     cfg.llm_sha256 = llm_sha.empty() ? nullptr : llm_sha.c_str();
     cfg.n_threads = threads;
     cfg.use_gpu = gpu;
-    cfg.sequential_loading = parallel ? 0 : 1;  // Spec §7
+    // Dal 22/10/2026 il predefinito del motore è con entrambi i modelli residenti (Spec §11);
+    // --sequential misura il caricamento sequenziale, --parallel-load resta per compatibilità.
+    if (sequential) cfg.sequential_loading = 1;
+    if (parallel) cfg.sequential_loading = 0;
     zz_engine *e = nullptr;
     zz_status st = zz_engine_create(&cfg, &e);
     if (st != ZZ_OK) {
@@ -223,7 +227,7 @@ int main(int argc, char **argv) {
 
     auto t0 = Clock::now();
     st = zz_engine_load(e);
-    std::printf("load (verifica SHA-256%s): %lld ms -> %s\n", parallel ? " + caricamento modelli" : "",
+    std::printf("load (verifica SHA-256%s): %lld ms -> %s\n", !sequential ? " + caricamento modelli" : "",
                 ms(Clock::now() - t0), zz_status_string(st));
     if (st != ZZ_OK) {
         zz_engine_destroy(e);
