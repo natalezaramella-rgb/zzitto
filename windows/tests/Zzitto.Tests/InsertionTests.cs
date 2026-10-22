@@ -1,4 +1,4 @@
-// Test della logica di inserimento (Spec §2.4, §2.6, §5.4, §5.9, §5.10, §12). Aggiunto il 22/10/2026 alle 11:32.
+﻿// Test della logica di inserimento (Spec §2.4, §2.6, §5.4, §5.9, §5.10, §12). Aggiunto il 22/10/2026 alle 11:32.
 using Zzitto.Platform.Dictation;
 using Zzitto.Platform.Input;
 
@@ -140,7 +140,7 @@ public class TextEditMathTests
     [Fact]
     public void ReplaceRange_InsertsAtCaretAndReplacesSelection()
     {
-        Assert.Equal(("Ciao bella gente", 10), TextEditMath.ReplaceRange("Ciao gente", 5, 0, "bella"));
+        Assert.Equal(("Ciao bella gente", 11), TextEditMath.ReplaceRange("Ciao gente", 5, 0, "bella "));
         Assert.Equal(("Ciao a tutti", 12), TextEditMath.ReplaceRange("Ciao mondo", 5, 5, "a tutti"));
     }
 

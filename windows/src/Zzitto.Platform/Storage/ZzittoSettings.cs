@@ -1,4 +1,4 @@
-// Impostazioni dell'app (Spec §5.7, §2.4, §2.6, §4.2, §5.6, §5.9, §5.12). Aggiunto il 22/10/2026 alle 11:32.
+﻿// Impostazioni dell'app (Spec §5.7, §2.4, §2.6, §4.2, §5.6, §5.9, §5.12). Aggiunto il 22/10/2026 alle 11:32.
 // Non contengono testo dettato: si salvano in chiaro. Dizionario, scorciatoie e cronologia sono cifrati
 // a parte (Spec §5.6, §5.11, §10).
 using System.Text.Json.Serialization;
@@ -162,21 +162,27 @@ public sealed record ZzittoSettings
     public static IReadOnlyList<string> SupportedLanguages { get; } = new[] { "it", "en", "es", "fr", "de" };
 
     /// <summary>Riporta i valori negli intervalli ammessi (file modificati a mano o versioni precedenti).</summary>
-    public ZzittoSettings Normalize() => Migrate() with
+    public ZzittoSettings Normalize()
     {
-        Version = CurrentVersion,
-        Language = SupportedLanguages.Contains(Language) ? Language : "it",
-        Mode = Enum.IsDefined(Mode) ? Mode : CorrectionMode.Clean,
-        Translate = Enum.IsDefined(Translate) ? Translate : TranslateTarget.None,
-        SilenceTimeoutMs = Math.Clamp(SilenceTimeoutMs, 500, 10000),
-        MaxDurationSeconds = Math.Clamp(MaxDurationSeconds, 10, 900),
-        CorrectionTimeoutMs = Math.Clamp(CorrectionTimeoutMs, 1000, 60000),
-        HistoryRetentionDays = Math.Clamp(HistoryRetentionDays, 1, 365),
-        HistoryMaxEntries = Math.Clamp(HistoryMaxEntries, 10, 1000),
-        Hotkey = Hotkey is { IsValid: true } ? Hotkey : HotkeyBinding.Default,
-        OverlayMode = Enum.IsDefined(OverlayMode) ? OverlayMode : OverlayMode.FixedPosition,
-        ModelUnloadMinutes = Math.Clamp(ModelUnloadMinutes, 1, 120),
-    };
+        // I valori si leggono dalle impostazioni già migrate (m), non da "this": dentro "with" i nomi
+        // semplici indicano l'istanza originale e annullerebbero la migrazione (correzione 22/10/2026 17:32).
+        ZzittoSettings m = Migrate();
+        return m with
+        {
+            Version = CurrentVersion,
+            Language = SupportedLanguages.Contains(m.Language) ? m.Language : "it",
+            Mode = Enum.IsDefined(m.Mode) ? m.Mode : CorrectionMode.Clean,
+            Translate = Enum.IsDefined(m.Translate) ? m.Translate : TranslateTarget.None,
+            SilenceTimeoutMs = Math.Clamp(m.SilenceTimeoutMs, 500, 10000),
+            MaxDurationSeconds = Math.Clamp(m.MaxDurationSeconds, 10, 900),
+            CorrectionTimeoutMs = Math.Clamp(m.CorrectionTimeoutMs, 1000, 60000),
+            HistoryRetentionDays = Math.Clamp(m.HistoryRetentionDays, 1, 365),
+            HistoryMaxEntries = Math.Clamp(m.HistoryMaxEntries, 10, 1000),
+            Hotkey = m.Hotkey is { IsValid: true } ? m.Hotkey : HotkeyBinding.Default,
+            OverlayMode = Enum.IsDefined(m.OverlayMode) ? m.OverlayMode : OverlayMode.FixedPosition,
+            ModelUnloadMinutes = Math.Clamp(m.ModelUnloadMinutes, 1, 120),
+        };
+    }
 
     /// <summary>Impostazioni salvate da versioni precedenti: si aggiornano solo i valori rimasti ai vecchi
     /// predefiniti, le scelte esplicite dell'utente restano (22/10/2026 17:19).</summary>
