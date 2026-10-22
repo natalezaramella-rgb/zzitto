@@ -53,8 +53,20 @@ con ID prodotto `zzitto_unlock`. Nessun abbonamento.
 | Dato | Dove | Protezione |
 |---|---|---|
 | Sblocco | `noBackupFilesDir/zzitto_unlock.bin` (escluso dal backup automatico) | AES-256-GCM, chiave non esportabile nell'Android Keystore (`zzitto_licensing_unlock_v1`). Contiene solo un testo fisso legato a pacchetto e prodotto; nessun token d'acquisto né dato personale |
-| Inizio prova e ultimo istante visto | Block Store, chiave `com.zaramella.zzitto.trial.v1` | Backup su cloud solo se Block Store offre la cifratura end-to-end |
+| Inizio prova e ultimo istante visto | Block Store, chiave `com.zaramella.zzitto.trial.v1` | Backup su cloud solo con cifratura end-to-end (vedi sotto) |
 | Copia locale della prova | SharedPreferences `zzitto_licensing` | In chiaro: solo due istanti, nessun dato personale |
+
+### Backup su cloud di Block Store solo con cifratura end-to-end
+
+*Aggiunto il 22/10/2026 alle 11:52, su richiesta dell'agente E tramite l'orchestratore (Spec §8.1, §10).*
+
+Per poter dichiarare "nessun dato raccolto" nella sezione Sicurezza dei dati di Google Play, la data di
+inizio prova va nel cloud **solo** se `BlockstoreClient.isEndToEndEncryptionAvailable()` restituisce true:
+solo allora si usa `setShouldBackupToCloud(true)` (`CloudBackupPolicy`). Se la cifratura end-to-end non è
+disponibile (es. nessun blocco schermo) o la verifica fallisce, il dato resta solo sul dispositivo
+(Block Store locale + copia locale). Conseguenza: senza cifratura end-to-end la prova non sopravvive al
+passaggio a un nuovo telefono tramite cloud; resta valida la protezione da disinstallazione e reinstallazione
+sullo stesso dispositivo. Test: `CloudBackupPolicyTest`.
 
 ### Permessi di rete: nessuno
 

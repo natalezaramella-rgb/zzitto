@@ -19,7 +19,8 @@ import javax.inject.Singleton
  * dispositivo. Nessun server proprio. Rischio residuo accettato: reset di fabbrica senza ripristino,
  * cambio di account Google, backup Google disattivato.
  *
- * Il backup su cloud si attiva solo se è disponibile la cifratura end-to-end, come raccomandato da Google.
+ * Il backup su cloud si attiva SOLO se è disponibile la cifratura end-to-end ([CloudBackupPolicy]);
+ * altrimenti il dato resta solo sul dispositivo (Block Store locale + copia locale). Spec §8.1, §10.
  * Le eccezioni (Play Services assente o non aggiornato) vengono propagate: [TrialRepository] passa
  * allora alla sola copia locale.
  */
@@ -42,11 +43,11 @@ class BlockStoreTrialStore @Inject constructor(
     override suspend fun write(record: TrialRecord) {
         val endToEnd = catchingNonCancellation {
             client.isEndToEndEncryptionAvailable().awaitTask()
-        }.getOrDefault(false)
+        }
         val data = StoreBytesData.Builder()
             .setBytes(record.encode().toByteArray(Charsets.UTF_8))
             .setKey(KEY)
-            .setShouldBackupToCloud(endToEnd)
+            .setShouldBackupToCloud(CloudBackupPolicy.shouldBackupToCloud(endToEnd))
             .build()
         client.storeBytes(data).awaitTask()
     }
