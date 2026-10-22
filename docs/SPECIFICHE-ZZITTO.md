@@ -68,6 +68,7 @@ Vincolo fondamentale: **tutta l'elaborazione AI avviene in locale sul telefono**
 - Su entrambe le piattaforme l'app deve essere semplice e discreta: in uso si vede solo un'icona.
 - Nessuna finestra, barra o pannello durante la dettatura. Stato comunicato solo da colore e animazione dell'icona.
 - Impostazioni, guida e tour sono in una schermata separata, aperta solo su richiesta.
+- L'icona flottante è un microfono bianco con la Z di Zzitto ritagliata nella capsula, su un disco colorato secondo lo stato, uguale su Android e Windows; nell'area di notifica di Windows (16 px) resta il solo microfono. *Aggiunto il 22/10/2026 alle 17:26.*
 
 ### 2.6 Fallback dell'icona su Windows
 
@@ -514,3 +515,4 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *22/10/2026 17:19 – Windows, su segnalazione del titolare dopo le prime prove: scorciatoia globale predefinita Ctrl+Alt+Z (Ctrl+Alt+Spazio attivava anche l'app Claude), modificabile dalle impostazioni e dal menu dell'area di notifica; l'icona del microfono resta ferma dove l'utente la trascina (predefinito) invece di seguire il cursore, con "vicino al testo" e "nascosta" come alternative; migrazione automatica delle impostazioni salvate (§2.4, §2.6).*
 
+*22/10/2026 17:26 – Icona flottante con il marchio: microfono con la Z di Zzitto ritagliata nella capsula, su richiesta del titolare, così l'icona è riconoscibile come Zzitto. Stessi colori e animazioni di stato; la Z compare da 24 px in su, quindi non nell'icona dell'area di notifica (§2.5).*

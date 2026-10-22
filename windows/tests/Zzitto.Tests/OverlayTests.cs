@@ -1,4 +1,4 @@
-// Test del posizionamento e del disegno dell'icona flottante (Spec §2.4, §2.5, §2.6, §12). Aggiunto il 22/10/2026 alle 11:32.
+﻿// Test del posizionamento e del disegno dell'icona flottante (Spec §2.4, §2.5, §2.6, §12). Aggiunto il 22/10/2026 alle 11:32.
 using Zzitto.Platform.Input;
 using Zzitto.Platform.Overlay;
 
@@ -115,6 +115,16 @@ public class MicIconRendererTests
         {
             Assert.True(pixels[i] <= pixels[i + 3] && pixels[i + 1] <= pixels[i + 3] && pixels[i + 2] <= pixels[i + 3]);
         }
+    }
+
+    [Fact]
+    public void LargeIcon_HasZCutOutOfCapsule_TrayIconDoesNot()
+    {
+        // Spec §2.5: icona riconoscibile come Zzitto (microfono con la Z); a 16 px solo il microfono.
+        // (0.5, 0.38) è sul tratto diagonale della Z; (0.42, 0.38) è capsula piena accanto alla Z.
+        Assert.True(MicIconRenderer.MicGlyphCoverage(0.5, 0.38, 64) < 0.1);
+        Assert.True(MicIconRenderer.MicGlyphCoverage(0.42, 0.38, 64) > 0.9);
+        Assert.True(MicIconRenderer.MicGlyphCoverage(0.5, 0.38, 16) > 0.9);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-// Disegno dell'icona del microfono: lo stato si comunica solo con colore e animazione (Spec §2.5).
+﻿// Disegno dell'icona del microfono: lo stato si comunica solo con colore e animazione (Spec §2.5).
 // Rendering software antialiasato in BGRA, usato sia dall'icona flottante (finestra a livelli) sia
 // dall'icona nell'area di notifica. Aggiunto il 22/10/2026 alle 11:32.
 namespace Zzitto.Platform.Overlay;
@@ -104,30 +104,50 @@ public static class MicIconRenderer
         return pixels;
     }
 
-    /// <summary>Copertura (0..1) del glifo del microfono nel punto normalizzato (u, v) ∈ [0, 1].</summary>
+    /// <summary>Dimensione minima (px) da cui la Z di Zzitto è leggibile dentro la capsula.</summary>
+    internal const int MinSizeForZ = 24;
+
+    /// <summary>
+    /// Copertura (0..1) del glifo nel punto normalizzato (u, v) ∈ [0, 1]: microfono con la Z di Zzitto
+    /// ritagliata nella capsula (Spec §2.5, icona riconoscibile come Zzitto). Sotto <see cref="MinSizeForZ"/>
+    /// (vassoio a 16 px) resta il solo microfono, perché la Z non sarebbe leggibile.
+    /// </summary>
     internal static double MicGlyphCoverage(double u, double v, int size)
     {
         double pixel = 1.0 / size; // larghezza di un pixel in coordinate normalizzate
 
-        // Capsula: centro x = 0.5, da y = 0.27 a 0.50, raggio 0.085.
-        double capsule = SegmentDistance(u, v, 0.5, 0.30, 0.5, 0.47) - 0.085;
+        // Capsula larga per ospitare la Z: centro x = 0.5, da y = 0.185 a 0.575, raggio 0.125.
+        double capsule = SegmentDistance(u, v, 0.5, 0.31, 0.5, 0.45) - 0.125;
 
-        // Arco a U sotto la capsula: circonferenza di raggio 0.16 centrata in (0.5, 0.47), metà inferiore.
-        double arcDist = Math.Abs(Math.Sqrt(((u - 0.5) * (u - 0.5)) + ((v - 0.47) * (v - 0.47))) - 0.16) - 0.03;
+        // Arco a U sotto la capsula: raggio 0.19 centrato in (0.5, 0.47), metà inferiore.
+        double arcDist = Math.Abs(Math.Sqrt(((u - 0.5) * (u - 0.5)) + ((v - 0.47) * (v - 0.47))) - 0.19) - 0.03;
         if (v < 0.47)
         {
             // Sopra il centro l'arco termina con estremità arrotondate.
-            double left = Math.Sqrt(((u - 0.34) * (u - 0.34)) + ((v - 0.47) * (v - 0.47))) - 0.03;
-            double right = Math.Sqrt(((u - 0.66) * (u - 0.66)) + ((v - 0.47) * (v - 0.47))) - 0.03;
+            double left = Math.Sqrt(((u - 0.31) * (u - 0.31)) + ((v - 0.47) * (v - 0.47))) - 0.03;
+            double right = Math.Sqrt(((u - 0.69) * (u - 0.69)) + ((v - 0.47) * (v - 0.47))) - 0.03;
             arcDist = Math.Min(left, right);
         }
 
         // Asta e base.
-        double stem = BoxDistance(u, v, 0.5, 0.685, 0.028, 0.06);
-        double foot = BoxDistance(u, v, 0.5, 0.745, 0.11, 0.028);
+        double stem = BoxDistance(u, v, 0.5, 0.705, 0.028, 0.045);
+        double foot = BoxDistance(u, v, 0.5, 0.765, 0.12, 0.028);
 
-        double d = Math.Min(Math.Min(capsule, arcDist), Math.Min(stem, foot));
-        return Coverage(-d / pixel);
+        double outline = Math.Min(Math.Min(arcDist, stem), foot);
+        double capsuleCoverage = Coverage(-capsule / pixel);
+        double mic = Math.Max(Coverage(-outline / pixel), capsuleCoverage);
+        if (size < MinSizeForZ)
+        {
+            return mic;
+        }
+
+        // Z ritagliata nella capsula (colore del disco): tratto alto, diagonale, tratto basso.
+        const double half = 0.022;
+        double zTop = SegmentDistance(u, v, 0.445, 0.285, 0.555, 0.285);
+        double zDiagonal = SegmentDistance(u, v, 0.555, 0.285, 0.445, 0.475);
+        double zBottom = SegmentDistance(u, v, 0.445, 0.475, 0.555, 0.475);
+        double zCoverage = Coverage(-(Math.Min(zTop, Math.Min(zDiagonal, zBottom)) - half) / pixel);
+        return mic * (1 - (zCoverage * capsuleCoverage));
     }
 
     private static double SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
