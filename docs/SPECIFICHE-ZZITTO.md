@@ -274,6 +274,8 @@ L'app funziona interamente offline e senza account, quindi **non prevede** multi
 
 ## 9. Mockup (obbligatorio prima dello sviluppo)
 
+*Aggiornato il 22/10/2026 alle 11:15: su decisione del titolare il mockup è stato saltato e lo sviluppo procede direttamente (vedi capitolo 14).*
+
 L'agente produce un mockup navigabile (Compose con dati finti oppure HTML) che comprende:
 
 - barra di dettatura in tutti gli stati del §5.2;
@@ -321,6 +323,8 @@ Se gli obiettivi non vengono raggiunti, l'agente propone alternative (quantizzaz
 - Tutti i test vengono eseguiti a ogni compilazione, sia in locale sia in CI. Una build con test falliti non si pubblica.
 
 ## 13. Build, installazione e rilascio
+
+*Aggiornato il 22/10/2026 alle 11:15: su decisione del titolare non si usa GitHub Actions. Al posto della pipeline CI ci sono script di build locali (Gradle per Android, CMake per il motore, MSBuild/dotnet per Windows) che eseguono i test a ogni compilazione. Le voci su CI qui sotto valgono solo se in futuro si attiverà una pipeline.*
 
 - Pipeline CI (es. GitHub Actions) che compila le librerie native, esegue i test, genera l'AAB firmato e lo carica sulla traccia di test interno della Play Console.
 - Firma con Play App Signing. Chiave di upload conservata in modo sicuro e fuori dal repository.
@@ -427,3 +431,13 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 *22/10/2026 09:30 – Piano di sviluppo (capitolo 16) allineato alle decisioni: icona flottante Android nella fase 3, fallback e build ARM64/x64 nella fase 5, prova di 30 giorni con Block Store e Store API nella fase 7.*
 
 *22/10/2026 09:42 – Scelto il nome commerciale Zzitto per Android e Windows, su decisione del titolare. Verifiche di nome, marchio e domini da completare prima della pubblicazione.*
+
+*22/10/2026 11:15 – Avvio dello sviluppo in modalità silenziosa, su decisione del titolare: mockup (§9) e gate di fase (capitolo 16) saltati; il titolare rivede il lavoro in un'unica pull request finale da `develop` a `main`.*
+
+*22/10/2026 11:15 – Niente GitHub Actions né pipeline CI (§13), su decisione del titolare. Build e test con script locali. Il codice Android e Windows viene scritto senza poterlo compilare nell'ambiente dell'agente (nessun accesso ad Android SDK, Maven, NuGet e Hugging Face): la prima compilazione avviene sulla macchina del titolare. Il motore C++ viene compilato e testato nell'ambiente dell'agente.*
+
+*22/10/2026 11:15 – Git: un branch per ogni agente (§16.1), unito nel branch `develop`; pull request finale `develop` → `main` per la revisione del titolare.*
+
+*22/10/2026 11:15 – Identificativi confermati dal titolare: package Android `com.zaramella.zzitto`, pacchetto Windows `Zaramella.Zzitto`, editore Zaramella Consulting Srl.*
+
+*22/10/2026 11:15 – Contratto del motore definito in `core-native/include/zz_engine.h` (API versione 1), con motore finto in `core-native/mock/` e interfacce condivise `LicenseGate` (Android, modulo `:core`) e `ILicenseService` (Windows, `Zzitto.Core`). Dettagli in `docs/engine-contract.md`.*

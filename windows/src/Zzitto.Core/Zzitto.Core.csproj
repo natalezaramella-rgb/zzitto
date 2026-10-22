@@ -1,0 +1,11 @@
+<!-- Zzitto.Core — interfacce condivise lato Windows (Spec §4.3, §16.1). Aggiunto il 22/10/2026 alle 11:15. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Zzitto.Core</RootNamespace>
+    <Platforms>x64;ARM64</Platforms>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
