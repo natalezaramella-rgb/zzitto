@@ -104,6 +104,30 @@ internal object ZzNative {
 
     @JvmStatic external fun cancel(handle: Long)
 
+    // Dettatura in streaming (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:20.
+    @JvmStatic external fun streamBegin(
+        handle: Long,
+        language: ByteArray,
+        mode: Int,
+        translate: Int,
+        voiceCommands: Boolean,
+        correctionTimeoutMs: Int,
+        outStream: LongArray,
+    ): Int
+
+    /** Non bloccante; chiamabile dal thread di registrazione. */
+    @JvmStatic external fun streamFeed(stream: Long, pcm: FloatArray, offset: Int, length: Int): Int
+
+    /** Bloccante; libera sempre il flusso. */
+    @JvmStatic external fun streamFinish(
+        stream: Long,
+        listener: NativeStageListener?,
+        outTexts: Array<ByteArray?>,
+        outNumbers: LongArray,
+    ): Int
+
+    @JvmStatic external fun streamAbort(stream: Long)
+
     @JvmStatic external fun vadCreate(silenceMs: Int): Long
     @JvmStatic external fun vadDestroy(vad: Long)
     @JvmStatic external fun vadReset(vad: Long)

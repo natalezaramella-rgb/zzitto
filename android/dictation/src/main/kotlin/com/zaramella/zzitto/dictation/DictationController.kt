@@ -23,8 +23,10 @@ import com.zaramella.zzitto.engine.EngineResult
 import com.zaramella.zzitto.engine.EngineStage
 import com.zaramella.zzitto.engine.EngineStatus
 import com.zaramella.zzitto.engine.ModelInstallException
+import com.zaramella.zzitto.engine.DictationOptions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -181,12 +183,17 @@ class DictationController(
         s: AudioCaptureSession,
     ) {
         var audio: CapturedAudio? = null
+        val options = cfg.toDictationOptions()
+        // Spec §11: la dettatura usa lo streaming (trascrizione durante l'ascolto); la riscrittura
+        // (Spec §5.10) resta su zz_rewrite, che ha bisogno del testo selezionato.
+        val feeder = if (rewrite) null else StreamFeeder()
         val levelJob = scope.launch { s.level.collect { _level.value = it } }
         try {
             coroutineScope {
-                // Spec §11: l'ascolto parte subito, i modelli si caricano in parallelo.
+                // Spec §11: l'ascolto parte subito, i modelli si caricano e il flusso si apre in parallelo.
                 val prepared = async { runCatching { engine.prepare() } }
-                val captured = s.record()
+                val opened = feeder?.let { f -> async { openStream(prepared, options, f) } }
+                val captured = s.record(feeder)
                 audio = captured
                 levelJob.cancel()
                 _level.value = 0f
@@ -197,18 +204,26 @@ class DictationController(
                 if (!captured.hadSpeech || captured.sampleCount < MIN_SAMPLES) {
                     throw EngineException(EngineStatus.NO_SPEECH)
                 }
-                val options = cfg.toDictationOptions()
                 val onStage: (EngineStage) -> Unit = { stage ->
                     if (stage == EngineStage.CORRECTING) dispatch(DictationEvent.CorrectionStarted)
                 }
-                val result = try {
-                    if (rewrite) {
-                        engine.rewrite(startSnapshot.selectedText, captured.samples, captured.sampleCount, options, onStage)
-                    } else {
-                        engine.dictate(captured.samples, captured.sampleCount, options, onStage)
+                val stream = if (feeder != null && opened?.await() == true) feeder.takeForFinish() else null
+                val result = if (stream != null) {
+                    // Spec §10: il motore ha già tutto l'audio, la copia locale si distrugge subito.
+                    captured.wipe()
+                    stream.finish(onStage)
+                } else {
+                    // Fallback: flusso non aperto o blocco rifiutato → dettatura classica sull'audio registrato.
+                    feeder?.abort()
+                    try {
+                        if (rewrite) {
+                            engine.rewrite(startSnapshot.selectedText, captured.samples, captured.sampleCount, options, onStage)
+                        } else {
+                            engine.dictate(captured.samples, captured.sampleCount, options, onStage)
+                        }
+                    } finally {
+                        captured.wipe() // Spec §10: audio distrutto subito dopo la trascrizione.
                     }
-                } finally {
-                    captured.wipe() // Spec §10: audio distrutto subito dopo la trascrizione.
                 }
                 dispatch(DictationEvent.ResultReady)
                 if (applyResult(field, startSnapshot, rewrite, result, cfg)) {
@@ -244,12 +259,33 @@ class DictationController(
                 fail(ErrorKind.MIC_UNAVAILABLE)
             }
         } finally {
+            feeder?.abort() // Spec §5.2: annullamento o errore → il flusso viene chiuso senza risultato.
             audio?.wipe()
             levelJob.cancel()
             _level.value = 0f
             if (session === s) session = null
             scheduleUnload(cfg)
         }
+    }
+
+    /**
+     * Apre il flusso del motore dopo il caricamento dei modelli (Spec §11). Restituisce false se non si
+     * apre: un errore dei modelli lo gestisce [prepared], ogni altro errore porta al fallback su dictate.
+     */
+    private suspend fun openStream(
+        prepared: Deferred<Result<Unit>>,
+        options: DictationOptions,
+        feeder: StreamFeeder,
+    ): Boolean {
+        if (prepared.await().isFailure) return false
+        val stream = try {
+            engine.beginStream(options)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return false
+        }
+        return feeder.attach(stream)
     }
 
     /**

@@ -6,10 +6,15 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 /** Fornisce i percorsi dei modelli pronti e verificati (Spec §7). */
 fun interface EngineConfigProvider {
@@ -26,6 +31,8 @@ fun interface EngineConfigProvider {
  *  - I modelli si caricano alla prima dettatura ([ensureLoaded]) e si scaricano con [unload]
  *    quando la piattaforma rileva l'inattività (Spec §4.2).
  *  - Il dizionario e le scorciatoie vengono memorizzati e riapplicati a ogni nuova istanza.
+ *  - Dettatura in streaming (API 2, Spec §11; aggiunto il 22/10/2026 alle 16:20): [beginStream] e
+ *    [ZzStream.finish] girano sul thread del motore, [ZzStream.feed] sul thread di registrazione.
  */
 class ZzEngine(
     private val native: EngineNative,
@@ -42,6 +49,10 @@ class ZzEngine(
 
     @Volatile
     private var closed = false
+
+    /** Flusso aperto (al massimo uno: il motore è occupato finché è aperto). Scritto solo dal thread del motore. */
+    @Volatile
+    private var activeStream: ZzStream? = null
 
     private var dictionary: List<String> = emptyList()
     private var shortcuts: List<VoiceShortcut> = emptyList()
@@ -144,6 +155,62 @@ class ZzEngine(
         return runOnEngine { unwrap(native.processText(handle, rawText, options)) }
     }
 
+    /**
+     * Apre un flusso di dettatura (Spec §11): carica i modelli se serve e chiama `zz_stream_begin` sul
+     * thread del motore. Da chiamare all'avvio dell'ascolto; poi [ZzStream.feed] a ogni blocco audio e
+     * [ZzStream.finish] allo stop, oppure [ZzStream.abort]. Lancia [EngineException].
+     */
+    suspend fun beginStream(options: DictationOptions): ZzStream {
+        ensureLoaded()
+        // zz_stream_begin non viene interrotto a metà: se nel frattempo la coroutine è stata annullata,
+        // il flusso appena aperto viene annullato subito, così non resta mai un flusso orfano (Spec §10).
+        val stream = withContext(NonCancellable) {
+            runOnEngine {
+                if (activeStream != null) throw EngineException(EngineStatus.BUSY, "flusso già aperto")
+                val h = native.streamBegin(handle, options)
+                ZzStream(this@ZzEngine, h).also { activeStream = it }
+            }
+        }
+        if (!currentCoroutineContext().isActive) {
+            stream.abort()
+            throw CancellationException("dettatura annullata")
+        }
+        return stream
+    }
+
+    /** Spec §11: non bloccante, dal thread di registrazione (vedi [ZzStream.feed]). */
+    internal fun feedStream(stream: Long, pcm: FloatArray, offset: Int, length: Int): EngineStatus =
+        native.streamFeed(stream, pcm, offset, length)
+
+    /**
+     * `zz_stream_finish` sul thread del motore. Se la coroutine viene annullata mentre è in coda il
+     * flusso viene annullato; se è in corso si chiama `zz_cancel` (Spec §5.2).
+     */
+    internal suspend fun finishStream(stream: ZzStream, h: Long, onStage: (EngineStage) -> Unit): EngineResult =
+        runOnEngine(onSkipped = { abortStream(stream, h) }) {
+            try {
+                unwrap(native.streamFinish(h, onStage))
+            } finally {
+                releaseStream(stream)
+            }
+        }
+
+    /** `zz_stream_abort` sul thread del motore, senza attendere. */
+    internal fun abortStream(stream: ZzStream, h: Long) {
+        try {
+            executor.execute {
+                native.streamAbort(h)
+                releaseStream(stream)
+            }
+        } catch (_: RejectedExecutionException) {
+            // Motore già chiuso: close() ha annullato il flusso prima di distruggere l'istanza.
+        }
+    }
+
+    private fun releaseStream(stream: ZzStream) {
+        if (activeStream === stream) activeStream = null
+    }
+
     /** Annulla l'operazione in corso, se c'è (thread-safe). */
     fun cancelRunning() {
         val h = handle
@@ -155,6 +222,8 @@ class ZzEngine(
         if (closed) return
         closed = true
         cancelRunning()
+        // Spec §11: un flusso ancora aperto viene annullato prima di distruggere l'istanza.
+        activeStream?.abort()
         try {
             executor.submit(
                 Runnable {
@@ -186,9 +255,9 @@ class ZzEngine(
 
     /**
      * Esegue [block] sul thread del motore. Se la coroutine viene annullata mentre il blocco
-     * è in esecuzione si chiama `zz_cancel`; se è ancora in coda il blocco non parte.
+     * è in esecuzione si chiama `zz_cancel`; se è ancora in coda il blocco non parte e si esegue [onSkipped].
      */
-    private suspend fun <T> runOnEngine(block: () -> T): T {
+    private suspend fun <T> runOnEngine(onSkipped: (() -> Unit)? = null, block: () -> T): T {
         if (closed) throw EngineException(EngineStatus.INTERNAL, "motore chiuso")
         return suspendCancellableCoroutine { cont ->
             val state = AtomicInteger(TASK_QUEUED)
@@ -208,6 +277,7 @@ class ZzEngine(
             cont.invokeOnCancellation {
                 if (state.compareAndSet(TASK_QUEUED, TASK_DONE)) {
                     future.cancel(false)
+                    onSkipped?.invoke()
                 } else if (state.get() == TASK_RUNNING) {
                     cancelRunning()
                 }
@@ -216,7 +286,8 @@ class ZzEngine(
     }
 
     companion object {
-        const val EXPECTED_API_VERSION = 1
+        /** Spec §11: API 2 = dettatura in streaming (22/10/2026 16:20). */
+        const val EXPECTED_API_VERSION = 2
         private const val ENGINE_THREAD_STACK_BYTES = 8L * 1024 * 1024
         private const val TASK_QUEUED = 0
         private const val TASK_RUNNING = 1

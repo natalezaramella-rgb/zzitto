@@ -44,6 +44,20 @@ interface EngineNative {
 
     /** Thread-safe (`zz_cancel`). */
     fun cancel(handle: Long)
+
+    // ---- Dettatura in streaming (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:20. ----
+
+    /** `zz_stream_begin`: bloccante. Restituisce l'handle del flusso o lancia [EngineException]. */
+    fun streamBegin(handle: Long, options: DictationOptions): Long
+
+    /** `zz_stream_feed`: non bloccante, dal thread di registrazione. */
+    fun streamFeed(stream: Long, pcm: FloatArray, offset: Int, length: Int): EngineStatus
+
+    /** `zz_stream_finish`: bloccante; libera sempre il flusso. */
+    fun streamFinish(stream: Long, onStage: (EngineStage) -> Unit): NativeOutcome
+
+    /** `zz_stream_abort`: annulla e libera il flusso. */
+    fun streamAbort(stream: Long)
 }
 
 /** Esito di un'operazione: [result] è valorizzato solo con [EngineStatus.OK]. */
@@ -190,6 +204,38 @@ internal class JniEngineNative : EngineNative {
     }
 
     override fun cancel(handle: Long) = ZzNative.cancel(handle)
+
+    // Spec §11: dettatura in streaming (API 2).
+    override fun streamBegin(handle: Long, options: DictationOptions): Long {
+        val out = LongArray(1)
+        val status = EngineStatus.fromCode(
+            ZzNative.streamBegin(
+                handle = handle,
+                language = options.language.toByteArray(Charsets.UTF_8),
+                mode = options.mode.code,
+                translate = options.translate.code,
+                voiceCommands = options.voiceCommandsEnabled,
+                correctionTimeoutMs = options.correctionTimeoutMs,
+                outStream = out,
+            ),
+        )
+        if (status != EngineStatus.OK || out[0] == 0L) {
+            throw EngineException(if (status == EngineStatus.OK) EngineStatus.INTERNAL else status)
+        }
+        return out[0]
+    }
+
+    override fun streamFeed(stream: Long, pcm: FloatArray, offset: Int, length: Int): EngineStatus =
+        EngineStatus.fromCode(ZzNative.streamFeed(stream, pcm, offset, length))
+
+    override fun streamFinish(stream: Long, onStage: (EngineStage) -> Unit): NativeOutcome {
+        val texts = arrayOfNulls<ByteArray>(ZzNative.TEXT_COUNT)
+        val numbers = LongArray(ZzNative.NUM_COUNT)
+        val code = ZzNative.streamFinish(stream, stageListener(onStage), texts, numbers)
+        return outcome(code, texts, numbers)
+    }
+
+    override fun streamAbort(stream: Long) = ZzNative.streamAbort(stream)
 
     private fun stageListener(onStage: (EngineStage) -> Unit) = NativeStageListener { code ->
         EngineStage.fromCode(code)?.let(onStage)

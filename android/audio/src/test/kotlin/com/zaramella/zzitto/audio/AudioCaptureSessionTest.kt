@@ -164,4 +164,56 @@ class AudioCaptureSessionTest {
         assertThrows<IllegalArgumentException> { CaptureParams(maxDurationMs = 10) }
         assertEquals(5 * 60 * AudioFormatSpec.SAMPLE_RATE, CaptureParams().maxSamples)
     }
+
+    // ---- Consegna dei blocchi per lo streaming (Spec §11). Aggiunto il 22/10/2026 alle 16:20. ----
+
+    /** Ricevitore che copia i blocchi, come fa il ciclo di dettatura. */
+    private class CollectingSink(val failAt: Int = -1) : PcmChunkSink {
+        val chunks = mutableListOf<FloatArray>()
+        val threads = mutableSetOf<String>()
+        override fun onChunk(samples: FloatArray, offset: Int, length: Int) {
+            threads += Thread.currentThread().name
+            if (chunks.size == failAt) {
+                chunks += FloatArray(0)
+                throw IllegalStateException("errore del ricevitore")
+            }
+            chunks += samples.copyOfRange(offset, offset + length)
+        }
+        val total: Int get() = chunks.sumOf { it.size }
+    }
+
+    @Test
+    fun `i blocchi arrivano al ricevitore man mano, compreso quello che fa scattare lo stop`() = runBlocking {
+        val sink = CollectingSink()
+        val audio = session(FakeSource(value = 0.25f), FakeDetector(endAt = 4)).record(sink)
+        assertEquals(StopReason.END_OF_SPEECH, audio.stopReason)
+        assertEquals(4, sink.chunks.size)
+        assertEquals(audio.sampleCount, sink.total)
+        assertTrue(sink.chunks.all { c -> c.all { it == 0.25f } })
+    }
+
+    @Test
+    fun `alla durata massima il ricevitore riceve solo i campioni registrati`() = runBlocking {
+        val sink = CollectingSink()
+        val audio = session(FakeSource(), null, CaptureParams(maxDurationMs = 1_000)).record(sink)
+        assertEquals(StopReason.MAX_DURATION, audio.stopReason)
+        assertEquals(AudioFormatSpec.SAMPLE_RATE, sink.total)
+    }
+
+    @Test
+    fun `un errore del ricevitore non interrompe la registrazione`() = runBlocking {
+        val sink = CollectingSink(failAt = 1)
+        val audio = session(FakeSource(chunksBeforeEnd = 5), null).record(sink)
+        assertEquals(StopReason.SOURCE_ENDED, audio.stopReason)
+        assertEquals(5 * AudioFormatSpec.CHUNK_SAMPLES, audio.sampleCount)
+        assertEquals(5, sink.chunks.size)
+    }
+
+    @Test
+    fun `il buffer passato al ricevitore viene azzerato alla fine`() = runBlocking {
+        val source = FakeSource(chunksBeforeEnd = 3)
+        var seen: FloatArray? = null
+        session(source, null).record { samples, _, _ -> seen = samples }
+        assertTrue(seen!!.all { it == 0f }, "Spec §10")
+    }
 }

@@ -123,3 +123,55 @@ Il build copia `THIRD_PARTY_LICENSES.md` (radice del repository, agente E) negli
   git. Senza `tools/models/prepare-models.*` e la configurazione di esecuzione "APK from app bundle", `ModelInstaller` segnala
   `MISSING_ASSET` anche con il motore finto.
 - **Lint** (`./gradlew check`): non eseguito; eventuali errori di lint non bloccano `assembleDebug`.
+
+## Dettatura in streaming (API 2 del motore)
+
+*Aggiunto il 22/10/2026 alle 16:20 (agente B, branch `agent/b2-android-stream`).*
+
+Obiettivo: ridurre la latenza percepita (Spec §11). Il motore trascrive mentre l'utente parla; allo stop resta da
+trascrivere solo l'ultimo pezzo. Contratto: `zz_stream_begin/feed/finish/abort` in `core-native/include/zz_engine.h`.
+
+### Modifiche
+
+- **`:engine`**: binding JNI `streamBegin`, `streamFeed`, `streamFinish`, `streamAbort` (`zz_engine_jni.cpp`, `ZzNative.kt`).
+  `streamFeed` riceve `FloatArray` + offset/lunghezza e usa `GetPrimitiveArrayCritical` (nessuna copia intermedia; se la VM
+  copia, la copia viene azzerata prima del rilascio con `JNI_ABORT`). `streamFinish` libera sempre il flusso, anche con
+  argomenti non validi (in quel caso chiama `zz_stream_abort`). Nuova API Kotlin `ZzEngine.beginStream(options): ZzStream`
+  con `feed` (non bloccante, thread di registrazione), `finish` (sospesa, thread del motore, `zz_cancel` se annullata) e
+  `abort` (non bloccante, idempotente; durante `finish` chiama `zz_cancel`). Un lock in `ZzStream` impedisce che `feed`
+  si sovrapponga a `finish`/`abort` sullo stesso handle. `begin` non viene interrotto a metà: se la coroutine è stata
+  annullata il flusso appena aperto viene annullato subito; `close()` annulla il flusso aperto prima di distruggere
+  l'istanza. `ZzEngine.EXPECTED_API_VERSION` = 2: una libreria nativa con API 1 viene rifiutata.
+- **`:audio`**: `AudioCaptureSession.record(onChunk: PcmChunkSink?)` consegna ogni blocco letto (anche quello che fa
+  scattare lo stop) al ricevitore, oltre che al buffer e al VAD. Il blocco è il buffer di lettura riusato e azzerato
+  (Spec §10); un'eccezione del ricevitore non ferma la registrazione.
+- **`:dictation`**: `DictationEngine.beginStream` e `DictationStream` (adattatori `ZzDictationEngine`/`ZzDictationStream`).
+  Nel ciclo (Spec §5.2) all'avvio dell'Ascolto si caricano i modelli (`prepare`) e poi si apre il flusso, in parallelo
+  alla registrazione; `StreamFeeder` inoltra i blocchi (quelli arrivati prima dell'apertura vengono copiati in un
+  arretrato, inoltrati in ordine e azzerati). Allo stop: `finish`; annullamento, errore o assenza di parlato: `abort`.
+  Fallback a `zz_dictate` sull'audio registrato se il flusso non si apre o se il motore rifiuta un blocco; un errore di
+  `finish` è invece un errore normale (nessun fallback). La riscrittura (Spec §5.10) resta su `zz_rewrite`. Gli stati
+  della macchina non cambiano.
+
+### Test
+
+`ZzStreamTest` (engine, 14 test), 4 nuovi test in `AudioCaptureSessionTest`, 10 nuovi test in `DictationControllerTest`
+(feed durante l'ascolto dal thread di registrazione, arretrato, finish allo stop, abort all'annullamento, annullamento
+durante finish, fallback per errore all'apertura e per blocco rifiutato, errori di finish, assenza di parlato, errore
+dei modelli), `ZzDictationStreamTest` (adattatori, MockK).
+
+### Verifiche fatte senza Android SDK
+
+- JNI compilato con gcc e clang (`-Wall -Wextra -Werror`, `-Wl,--no-undefined`) contro il mock `core-native` con lo
+  streaming ancora in sviluppo nel worktree dell'agente A (copia del 22/10/2026 16:20). Prova da JVM host (anche con
+  `-Xcheck:jni`): begin, feed da un thread "zz-audio", finish con fasi, `BUSY` di `zz_dictate` a flusso aperto,
+  abort, nuovo flusso dopo abort, `close()` con flusso aperto.
+- Kotlin 2.2.0 su `:engine`, `:audio`, `:dictation`, `:core` (senza i file Android): i test della logica pura passano
+  (engine 47, audio 17, dictation 56). `ZzDictationStreamTest` (MockK) solo compilato contro uno stub delle firme MockK.
+
+### Da fare fuori da `android/`
+
+- Registrare la decisione nel capitolo 14 della specifica (streaming su Android, fallback a `zz_dictate`, riscrittura
+  su `zz_rewrite`): spetta all'orchestratore.
+- Il build Android richiede il mock/motore con API 2 dell'agente A: con la libreria API 1 il link di
+  `libzz_engine_jni.so` fallisce (simboli `zz_stream_*` mancanti).
