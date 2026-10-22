@@ -1,0 +1,17 @@
+# Build e IDE
+build/
+.gradle/
+.idea/
+.vs/
+bin/
+obj/
+*.iml
+local.properties
+# Modelli AI (pesanti, non versionati in git)
+*.gguf
+*.bin
+# Segreti e chiavi di firma
+*.jks
+*.keystore
+*.pfx
+.env
