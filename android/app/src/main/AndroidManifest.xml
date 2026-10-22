@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Zzitto, app Android. Aggiunto il 22/10/2026 alle 11:59.
+
+  Permessi (Spec §10: minimizzazione):
+  - RECORD_AUDIO: dichiarato dal modulo :audio.
+  - VIBRATE: dichiarato dal modulo :dictation (conferma all'avvio dell'ascolto, Spec §5.7).
+  - Nessun SYSTEM_ALERT_WINDOW: l'icona usa l'overlay del servizio di accessibilità (Spec §5.1-bis).
+  - Nessun REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: il tour apre la schermata di sistema (Spec §5.1-bis).
+  - INTERNET: NON dichiarato qui. Serve solo alla verifica dell'acquisto (Spec §8.1) ed è una scelta
+    dell'agente D, che lo dichiara nel manifest del modulo :licensing se Google Play Billing lo richiede.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:name=".ZzittoApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Zzitto"
+        tools:targetApi="36">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Aperture dall'icona flottante (Spec §8.1, §2.5). Il servizio usa setPackage. -->
+            <intent-filter>
+                <action android:name="com.zaramella.zzitto.action.OPEN_PURCHASE" />
+                <action android:name="com.zaramella.zzitto.action.OPEN_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

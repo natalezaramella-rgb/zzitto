@@ -1,0 +1,52 @@
+<!--
+  Compila zz_engine.dll con CMake prima della build e la copia nell'output (Spec §4.3, §16.1).
+  Aggiunto il 22/10/2026 alle 11:32.
+
+  Proprietà utili (da riga di comando: -p:Nome=Valore):
+    ZzEngineMock       predefinito ON in Debug (motore finto, Spec §16.1) e OFF in Release (motore reale)
+    ZzSkipNativeBuild  true per non invocare CMake (usa la DLL già presente in ZzNativeOutDir)
+    ZzEngineDir        cartella con una zz_engine.dll già compilata (es. dal rilascio dell'agente E,
+                       tools/release/release-windows.ps1: build\core-win-<arch> oppure build\core-win-<arch>\Release).
+                       Se impostata, CMake non viene invocato e si usa quella DLL.
+-->
+<Project>
+  <PropertyGroup>
+    <ZzWindowsRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))</ZzWindowsRoot>
+    <ZzNativePlatform Condition="'$(Platform)' == 'ARM64'">ARM64</ZzNativePlatform>
+    <ZzNativePlatform Condition="'$(ZzNativePlatform)' == ''">x64</ZzNativePlatform>
+    <!-- Integrazione 22/10/2026 12:17: motore finto solo in Debug, motore reale in Release (Spec §16.1) -->
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == '' and '$(Configuration)' == 'Debug'">ON</ZzEngineMock>
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">OFF</ZzEngineMock>
+    <!-- Revisione 22/10/2026 12:30: cartella distinta per motore finto e reale, così in Release l'app (motore reale)
+         e i test (motore finto) non si sovrascrivono la DLL a vicenda. -->
+    <ZzEngineFlavor Condition="'$(ZzEngineMock)' == 'ON'">mock</ZzEngineFlavor>
+    <ZzEngineFlavor Condition="'$(ZzEngineMock)' != 'ON'">real</ZzEngineFlavor>
+    <ZzNativeOutDir>$(ZzWindowsRoot)build\native-bin\$(ZzNativePlatform)\$(Configuration)-$(ZzEngineFlavor)\</ZzNativeOutDir>
+    <!-- DLL fornita dall'esterno (release-windows.ps1 dell'agente E). -->
+    <!-- Build locale del 22/10/2026 14:30: MSBuild non accetta una funzione di proprietà annidata dentro Exists();
+         la cartella con la barra finale si calcola prima in una proprietà a parte. -->
+    <_ZzEngineDirSlash Condition="'$(ZzEngineDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))</_ZzEngineDirSlash>
+    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and Exists('$(_ZzEngineDirSlash)zz_engine.dll')">$(_ZzEngineDirSlash)</ZzNativeOutDir>
+    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and !Exists('$(_ZzEngineDirSlash)zz_engine.dll')">$(_ZzEngineDirSlash)Release\</ZzNativeOutDir>
+    <ZzSkipNativeBuild Condition="'$(ZzEngineDir)' != ''">true</ZzSkipNativeBuild>
+    <ZzSkipNativeBuild Condition="'$(ZzSkipNativeBuild)' == ''">false</ZzSkipNativeBuild>
+    <ZzHostArch>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)</ZzHostArch>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- La DLL va nella radice dell'output e del pacchetto MSIX, accanto all'eseguibile. -->
+    <Content Include="$(ZzNativeOutDir)zz_engine.dll" Link="zz_engine.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+  <Target Name="ZzCheckNativeEngine" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' and '$(ZzSkipNativeBuild)' == 'true'">
+    <Error Condition="!Exists('$(ZzNativeOutDir)zz_engine.dll')" Text="zz_engine.dll non trovata in $(ZzNativeOutDir) (ZzEngineDir=$(ZzEngineDir))" />
+  </Target>
+
+  <Target Name="ZzBuildNativeEngine"
+          BeforeTargets="BeforeBuild"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(ZzSkipNativeBuild)' != 'true'">
+    <Message Importance="high" Text="Zzitto: compilazione zz_engine.dll ($(ZzNativePlatform), $(Configuration), mock=$(ZzEngineMock))" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ZzWindowsRoot)build-native.ps1&quot; -Platform $(ZzNativePlatform) -Configuration $(Configuration) -EngineMock $(ZzEngineMock) -OutDir &quot;$(ZzNativeOutDir.TrimEnd('\'))&quot;" />
+    <Error Condition="!Exists('$(ZzNativeOutDir)zz_engine.dll')" Text="zz_engine.dll non trovata in $(ZzNativeOutDir)" />
+  </Target>
+</Project>

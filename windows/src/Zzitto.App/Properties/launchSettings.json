@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Zzitto (Package)": {
+      "commandName": "MsixPackage"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tema di base della finestra; i colori Compose arrivano da Material 3 dinamico. Aggiunto il 22/10/2026 alle 11:59. -->
+<resources>
+    <style name="Theme.Zzitto" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

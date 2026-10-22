@@ -1,0 +1,321 @@
+package com.zaramella.zzitto.engine
+
+import java.io.Closeable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+
+/** Fornisce i percorsi dei modelli pronti e verificati (Spec §7). */
+fun interface EngineConfigProvider {
+    /** Spec §5.7, §11: configurazione con il modello Whisper scelto. */
+    suspend fun engineConfig(whisper: WhisperModel): EngineConfig
+}
+
+/**
+ * Wrapper Kotlin del motore, adatto alle coroutine.
+ * Spec §4.2, §4.3. Aggiunto il 22/10/2026 alle 11:25.
+ *
+ *  - Tutte le chiamate native girano su un solo thread dedicato in background (Spec §4.2),
+ *    così il contratto "una sola operazione alla volta" è rispettato per costruzione.
+ *  - L'annullamento della coroutine chiama `zz_cancel` sull'operazione in corso (Spec §5.2).
+ *  - I modelli si caricano alla prima dettatura ([ensureLoaded]) e si scaricano con [unload]
+ *    quando la piattaforma rileva l'inattività (Spec §4.2).
+ *  - Il dizionario e le scorciatoie vengono memorizzati e riapplicati a ogni nuova istanza.
+ *  - Dettatura in streaming (API 2, Spec §11; aggiunto il 22/10/2026 alle 16:20): [beginStream] e
+ *    [ZzStream.finish] girano sul thread del motore, [ZzStream.feed] sul thread di registrazione.
+ */
+class ZzEngine(
+    private val native: EngineNative,
+    private val configProvider: EngineConfigProvider,
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+        // Stack ampio: il codice nativo di inferenza gira su questo thread.
+        Thread(null, runnable, "zz-engine", ENGINE_THREAD_STACK_BYTES).apply { isDaemon = true }
+    },
+) : Closeable {
+
+    /** Handle nativo; letto e scritto solo dal thread del motore, tranne [cancelRunning]. */
+    @Volatile
+    private var handle: Long = 0L
+
+    @Volatile
+    private var closed = false
+
+    /** Flusso aperto (al massimo uno: il motore è occupato finché è aperto). Scritto solo dal thread del motore. */
+    @Volatile
+    private var activeStream: ZzStream? = null
+
+    /** Spec §5.7, §11 (22/10/2026 22:06): modello Whisper voluto e quello dell'istanza nativa attuale. */
+    @Volatile
+    private var wantedWhisper: WhisperModel = WhisperModel.SMALL
+    private var handleWhisper: WhisperModel? = null
+
+    private var dictionary: List<String> = emptyList()
+    private var shortcuts: List<VoiceShortcut> = emptyList()
+
+    private val _loaded = MutableStateFlow(false)
+
+    /** True quando i modelli sono in memoria. */
+    val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
+
+    /** Versione dichiarata dalla libreria nativa (motore e modelli attesi). */
+    suspend fun versionString(): String = runOnEngine { native.versionString() }
+
+    /**
+     * Crea l'istanza se serve, verifica gli hash e carica i modelli (Spec §7). Idempotente.
+     * Può richiedere tempo alla prima chiamata: chiamarla appena l'utente avvia l'ascolto,
+     * in parallelo alla registrazione, per rispettare l'obiettivo dei 300 ms (Spec §11).
+     */
+    suspend fun ensureLoaded() {
+        val wanted = wantedWhisper
+        val config = if (handle == 0L || handleWhisper != wanted) configProvider.engineConfig(wanted) else null
+        runOnEngine {
+            // Spec §5.7: cambio del modello di trascrizione → nuova istanza alla prossima dettatura
+            // (mai con un flusso aperto, Spec §11).
+            if (handle != 0L && handleWhisper != wanted && config != null && activeStream == null) {
+                native.destroy(handle)
+                handle = 0L
+                handleWhisper = null
+                _loaded.value = false
+            }
+            if (handle == 0L) {
+                val cfg = config ?: throw EngineException(EngineStatus.INTERNAL, "configurazione mancante")
+                val api = native.apiVersion()
+                if (api != EXPECTED_API_VERSION) {
+                    throw EngineException(EngineStatus.INTERNAL, "API motore $api, attesa $EXPECTED_API_VERSION")
+                }
+                val created = native.create(cfg)
+                handle = created
+                handleWhisper = wanted
+                applyPersonalizationOnEngineThread(created)
+            }
+            check(native.load(handle))
+            _loaded.value = true
+        }
+    }
+
+    /**
+     * Sceglie il modello di trascrizione (Spec §5.7, §11; 22/10/2026 22:06). Ha effetto al prossimo
+     * [ensureLoaded], che ricrea l'istanza nativa se il modello è cambiato.
+     */
+    fun setWhisperModel(model: WhisperModel) {
+        wantedWhisper = model
+    }
+
+    /** Scarica i modelli dalla RAM (Spec §4.2). L'istanza resta valida. */
+    suspend fun unload() {
+        runOnEngine {
+            if (handle != 0L) check(native.unload(handle))
+            _loaded.value = false
+        }
+    }
+
+    /** Dizionario personale (Spec §5.5). Sostituisce il precedente. */
+    suspend fun setDictionary(words: List<String>) {
+        val copy = words.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        runOnEngine {
+            dictionary = copy
+            if (handle != 0L) check(native.setDictionary(handle, copy))
+        }
+    }
+
+    /** Scorciatoie vocali (Spec §5.11). Sostituisce le precedenti. */
+    suspend fun setShortcuts(items: List<VoiceShortcut>) {
+        val copy = items.filter { it.keyword.isNotBlank() && it.expansion.isNotEmpty() }
+            .map { VoiceShortcut(it.keyword.trim(), it.expansion) }
+        runOnEngine {
+            shortcuts = copy
+            if (handle != 0L) check(native.setShortcuts(handle, copy))
+        }
+    }
+
+    /**
+     * Dettatura completa: trascrizione, comandi, scorciatoie, correzione o traduzione (Spec §5.2–§5.12).
+     * [onStage] viene chiamata sul thread del motore.
+     * Lancia [EngineException] (es. [EngineStatus.NO_SPEECH], [EngineStatus.CANCELLED]).
+     */
+    suspend fun dictate(
+        pcm: FloatArray,
+        sampleCount: Int = pcm.size,
+        options: DictationOptions,
+        onStage: (EngineStage) -> Unit = {},
+    ): EngineResult {
+        require(sampleCount in 0..pcm.size) { "sampleCount fuori intervallo" }
+        ensureLoaded()
+        return runOnEngine {
+            unwrap(native.dictate(handle, pcm, sampleCount, options, onStage))
+        }
+    }
+
+    /** Riscrittura a voce del testo selezionato (Spec §5.10). */
+    suspend fun rewrite(
+        selectedText: String,
+        pcm: FloatArray,
+        sampleCount: Int = pcm.size,
+        options: DictationOptions,
+        onStage: (EngineStage) -> Unit = {},
+    ): EngineResult {
+        require(sampleCount in 0..pcm.size) { "sampleCount fuori intervallo" }
+        require(selectedText.isNotEmpty()) { "selezione vuota" }
+        ensureLoaded()
+        return runOnEngine {
+            unwrap(native.rewrite(handle, selectedText, pcm, sampleCount, options, onStage))
+        }
+    }
+
+    /** Variante testuale (istruzioni già trascritte, test). */
+    suspend fun processText(rawText: String, options: DictationOptions): EngineResult {
+        ensureLoaded()
+        return runOnEngine { unwrap(native.processText(handle, rawText, options)) }
+    }
+
+    /**
+     * Apre un flusso di dettatura (Spec §11): carica i modelli se serve e chiama `zz_stream_begin` sul
+     * thread del motore. Da chiamare all'avvio dell'ascolto; poi [ZzStream.feed] a ogni blocco audio e
+     * [ZzStream.finish] allo stop, oppure [ZzStream.abort]. Lancia [EngineException].
+     */
+    suspend fun beginStream(options: DictationOptions): ZzStream {
+        ensureLoaded()
+        // zz_stream_begin non viene interrotto a metà: se nel frattempo la coroutine è stata annullata,
+        // il flusso appena aperto viene annullato subito, così non resta mai un flusso orfano (Spec §10).
+        val stream = withContext(NonCancellable) {
+            runOnEngine {
+                if (activeStream != null) throw EngineException(EngineStatus.BUSY, "flusso già aperto")
+                val h = native.streamBegin(handle, options)
+                ZzStream(this@ZzEngine, h).also { activeStream = it }
+            }
+        }
+        if (!currentCoroutineContext().isActive) {
+            stream.abort()
+            throw CancellationException("dettatura annullata")
+        }
+        return stream
+    }
+
+    /** Spec §11: non bloccante, dal thread di registrazione (vedi [ZzStream.feed]). */
+    internal fun feedStream(stream: Long, pcm: FloatArray, offset: Int, length: Int): EngineStatus =
+        native.streamFeed(stream, pcm, offset, length)
+
+    /**
+     * `zz_stream_finish` sul thread del motore. Se la coroutine viene annullata mentre è in coda il
+     * flusso viene annullato; se è in corso si chiama `zz_cancel` (Spec §5.2).
+     */
+    internal suspend fun finishStream(stream: ZzStream, h: Long, onStage: (EngineStage) -> Unit): EngineResult =
+        runOnEngine(onSkipped = { abortStream(stream, h) }) {
+            try {
+                unwrap(native.streamFinish(h, onStage))
+            } finally {
+                releaseStream(stream)
+            }
+        }
+
+    /** `zz_stream_abort` sul thread del motore, senza attendere. */
+    internal fun abortStream(stream: ZzStream, h: Long) {
+        try {
+            executor.execute {
+                native.streamAbort(h)
+                releaseStream(stream)
+            }
+        } catch (_: RejectedExecutionException) {
+            // Motore già chiuso: close() ha annullato il flusso prima di distruggere l'istanza.
+        }
+    }
+
+    private fun releaseStream(stream: ZzStream) {
+        if (activeStream === stream) activeStream = null
+    }
+
+    /** Annulla l'operazione in corso, se c'è (thread-safe). */
+    fun cancelRunning() {
+        val h = handle
+        if (h != 0L) native.cancel(h)
+    }
+
+    /** Distrugge l'istanza nativa e ferma il thread. Non riutilizzabile dopo. */
+    override fun close() {
+        if (closed) return
+        closed = true
+        cancelRunning()
+        // Spec §11: un flusso ancora aperto viene annullato prima di distruggere l'istanza.
+        activeStream?.abort()
+        try {
+            executor.submit(
+                Runnable {
+                    val h = handle
+                    if (h != 0L) native.destroy(h)
+                    handle = 0L
+                    handleWhisper = null
+                    _loaded.value = false
+                },
+            )
+        } catch (_: RejectedExecutionException) {
+            // già chiuso
+        }
+        executor.shutdown()
+    }
+
+    private fun applyPersonalizationOnEngineThread(h: Long) {
+        if (dictionary.isNotEmpty()) check(native.setDictionary(h, dictionary))
+        if (shortcuts.isNotEmpty()) check(native.setShortcuts(h, shortcuts))
+    }
+
+    private fun check(status: EngineStatus) {
+        if (status != EngineStatus.OK) throw EngineException(status)
+    }
+
+    private fun unwrap(outcome: NativeOutcome): EngineResult {
+        if (outcome.status != EngineStatus.OK) throw EngineException(outcome.status)
+        return outcome.result ?: throw EngineException(EngineStatus.INTERNAL, "risultato mancante")
+    }
+
+    /**
+     * Esegue [block] sul thread del motore. Se la coroutine viene annullata mentre il blocco
+     * è in esecuzione si chiama `zz_cancel`; se è ancora in coda il blocco non parte e si esegue [onSkipped].
+     */
+    private suspend fun <T> runOnEngine(onSkipped: (() -> Unit)? = null, block: () -> T): T {
+        if (closed) throw EngineException(EngineStatus.INTERNAL, "motore chiuso")
+        return suspendCancellableCoroutine { cont ->
+            val state = AtomicInteger(TASK_QUEUED)
+            val future: Future<*> = try {
+                executor.submit(
+                    Runnable {
+                        if (!state.compareAndSet(TASK_QUEUED, TASK_RUNNING)) return@Runnable
+                        val result = runCatching(block)
+                        state.set(TASK_DONE)
+                        cont.resumeWith(result)
+                    },
+                )
+            } catch (e: RejectedExecutionException) {
+                cont.resumeWith(Result.failure(EngineException(EngineStatus.INTERNAL, "motore chiuso")))
+                return@suspendCancellableCoroutine
+            }
+            cont.invokeOnCancellation {
+                if (state.compareAndSet(TASK_QUEUED, TASK_DONE)) {
+                    future.cancel(false)
+                    onSkipped?.invoke()
+                } else if (state.get() == TASK_RUNNING) {
+                    cancelRunning()
+                }
+            }
+        }
+    }
+
+    companion object {
+        /** Spec §11: API 2 = dettatura in streaming (22/10/2026 16:20). */
+        const val EXPECTED_API_VERSION = 2
+        private const val ENGINE_THREAD_STACK_BYTES = 8L * 1024 * 1024
+        private const val TASK_QUEUED = 0
+        private const val TASK_RUNNING = 1
+        private const val TASK_DONE = 2
+    }
+}

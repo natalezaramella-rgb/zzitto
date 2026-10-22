@@ -1,0 +1,53 @@
+<!--
+  Test xUnit della parte Windows (Spec §12): macchina a stati, wrapper del motore (con motore finto gestito e
+  con zz_engine.dll del mock), logica di inserimento e posizionamento, archiviazione cifrata, audio.
+  Aggiunto il 22/10/2026 alle 11:32.
+
+  I test girano a ogni build in Visual Studio (target ZzRunTestsAfterBuild) e con `dotnet test`.
+  Da riga di comando con msbuild/dotnet build: -p:ZzRunTestsOnBuild=true.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\msbuild\Zzitto.Common.props" />
+
+  <PropertyGroup>
+    <RootNamespace>Zzitto.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- ZZ_MOCK_FAST=1 per il motore finto nativo: niente attese artificiali nei test. -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)zzitto.runsettings</RunSettingsFilePath>
+    <!-- Revisione 22/10/2026 12:30: i test di integrazione sono scritti per il motore finto (Spec §16.1) anche in Release;
+         con il motore reale senza modelli fallirebbero e, girando a ogni build, bloccherebbero la build Release. -->
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">ON</ZzEngineMock>
+    <ZzRunTestsOnBuild Condition="'$(ZzRunTestsOnBuild)' == '' and '$(BuildingInsideVisualStudio)' == 'true'">true</ZzRunTestsOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Licenze: Microsoft.NET.Test.Sdk MIT, xunit e xunit.runner.visualstudio Apache 2.0 (Spec §2.2). -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Zzitto.Platform\Zzitto.Platform.csproj" />
+    <ProjectReference Include="..\..\src\Zzitto.Core\Zzitto.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- zz_engine.dll (motore finto) accanto ai test, per i test di integrazione del P/Invoke. -->
+  <Import Project="..\..\msbuild\Zzitto.Native.targets" />
+
+  <!-- Spec §12: i test girano a ogni compilazione; una build con test falliti fallisce. -->
+  <Target Name="ZzRunTestsAfterBuild"
+          AfterTargets="Build"
+          Condition="'$(ZzRunTestsOnBuild)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(ZzInsideTestRun)' != 'true' and '$(ZzHostArch)' == '$(ZzNativePlatform)'">
+    <Message Importance="high" Text="Zzitto: esecuzione dei test (Spec §12)" />
+    <Exec Command="dotnet test &quot;$(MSBuildProjectFullPath)&quot; --no-build --nologo -c $(Configuration) -p:Platform=$(Platform) -p:ZzInsideTestRun=true" />
+  </Target>
+</Project>

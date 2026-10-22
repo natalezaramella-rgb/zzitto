@@ -1,0 +1,22 @@
+<!-- Zzitto.Licensing — licenza Microsoft Store: prova 30 giorni e acquisto una tantum (Spec §8.1, §8.2).
+     Proprietario: agente D (Spec §16.1). Aggiunto il 22/10/2026 alle 11:28. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- 10.0.19041.0: include la proiezione C#/WinRT di Windows.Services.Store e WinRT.Interop.InitializeWithWindow. -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Zzitto.Licensing</RootNamespace>
+    <Platforms>x64;ARM64</Platforms>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Zzitto.Core/Zzitto.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DPAPI (ProtectedData) per lo stato d'acquisto cifrato. Licenza MIT (Spec §2.2). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Testi dell'interfaccia in italiano (Spec §2.1: interfaccia predisposta per altre lingue tramite risorse).
+     Generato e verificato dall'agente C. Aggiunto il 22/10/2026 alle 11:32. -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Dialog_Close" xml:space="preserve"><value>Chiudi</value></data>
+  <data name="DictionaryAdd.Content" xml:space="preserve"><value>Aggiungi</value></data>
+  <data name="DictionaryIntro.Text" xml:space="preserve"><value>Parole e nomi propri (aziende, persone, termini tecnici) che Zzitto deve scrivere correttamente. Vengono usati sia dal riconoscimento vocale sia dalla correzione.</value></data>
+  <data name="DictionaryRemove.Content" xml:space="preserve"><value>Rimuovi selezionate</value></data>
+  <data name="DictionaryTitle.Text" xml:space="preserve"><value>Dizionario personale</value></data>
+  <data name="DictionaryWordBox.Header" xml:space="preserve"><value>Nuova parola</value></data>
+  <data name="DictionaryWordBox.PlaceholderText" xml:space="preserve"><value>es. Zaramella</value></data>
+  <data name="Error_EngineUnavailable" xml:space="preserve"><value>Il motore di dettatura non è disponibile (zz_engine.dll mancante o non compatibile).</value></data>
+  <data name="Error_ModelsNotVerified" xml:space="preserve"><value>I modelli AI non sono verificati (hash SHA-256 non impostati): la dettatura è disattivata in questa build.</value></data>
+  <data name="GeneralAppHeader.Text" xml:space="preserve"><value>App</value></data>
+  <data name="GeneralClipboardSelection.Header" xml:space="preserve"><value>Leggi il testo selezionato anche con una copia temporanea negli appunti</value></data>
+  <data name="GeneralDictationHeader.Text" xml:space="preserve"><value>Dettatura</value></data>
+  <data name="GeneralGpu.Header" xml:space="preserve"><value>Usa la GPU o la NPU se disponibile</value></data>
+  <data name="GeneralGpuNote.Text" xml:space="preserve"><value>La modifica dell'uso della GPU vale dal prossimo avvio di Zzitto.</value></data>
+  <data name="GeneralHotkeyLabel.Text" xml:space="preserve"><value>Scorciatoia da tastiera:</value></data>
+  <data name="GeneralMaxPrecision.Header" xml:space="preserve"><value>Massima precisione (trascrizione più accurata ma più lenta; vale dal prossimo avvio di Zzitto)</value></data>
+  <data name="GeneralMicrophone.Header" xml:space="preserve"><value>Microfono</value></data>
+  <data name="Microphone_Default" xml:space="preserve"><value>Predefinito di sistema</value></data>
+  <data name="Microphone_DefaultWithName" xml:space="preserve"><value>Predefinito di sistema ({0})</value></data>
+  <data name="Microphone_Missing" xml:space="preserve"><value>Microfono scelto, ora non collegato (si usa il predefinito)</value></data>
+  <data name="GeneralLanguage.Header" xml:space="preserve"><value>Lingua di dettatura</value></data>
+  <data name="GeneralMaxDuration.Header" xml:space="preserve"><value>Durata massima di una dettatura (minuti)</value></data>
+  <data name="GeneralMode.Header" xml:space="preserve"><value>Modalità di correzione</value></data>
+  <data name="GeneralOverlayMode.Header" xml:space="preserve"><value>Icona del microfono</value></data>
+  <data name="GeneralPrivacyHeader.Text" xml:space="preserve"><value>Privacy</value></data>
+  <data name="GeneralPrivacyText.Text" xml:space="preserve"><value>Tutta l'elaborazione avviene su questo PC: l'audio resta in memoria e viene cancellato subito dopo la trascrizione, nessun testo o audio lascia il dispositivo. Dizionario, scorciatoie e cronologia sono cifrati con il tuo account Windows. Zzitto si collega a internet solo tramite il Microsoft Store, per verificare la licenza durante la prova.</value></data>
+  <data name="GeneralRepeatTour.Content" xml:space="preserve"><value>Ripeti il tour</value></data>
+  <data name="GeneralSilence.Header" xml:space="preserve"><value>Stop automatico dopo un silenzio di (secondi)</value></data>
+  <data name="GeneralStartSound.Header" xml:space="preserve"><value>Suono all'avvio dell'ascolto</value></data>
+  <data name="GeneralStartup.Header" xml:space="preserve"><value>Avvia Zzitto con Windows</value></data>
+  <data name="GeneralTitle.Text" xml:space="preserve"><value>Impostazioni generali</value></data>
+  <data name="GeneralTranslate.Header" xml:space="preserve"><value>Traduzione</value></data>
+  <data name="GeneralUnload.Header" xml:space="preserve"><value>Libera la memoria dei modelli dopo (minuti di inattività)</value></data>
+  <data name="GeneralVoiceCommands.Header" xml:space="preserve"><value>Comandi vocali ("a capo", "punto", "annulla", "invia"...)</value></data>
+  <data name="HelpColorsHeader.Text" xml:space="preserve"><value>Colori dell'icona</value></data>
+  <data name="HelpColorsText.Text" xml:space="preserve"><value>Blu scuro: pronto. Rosso pulsante: ascolto. Arancione: trascrizione. Viola: correzione. Verde: inserimento. Rosso scuro: errore. Grigio: prova scaduta o licenza non verificata. Azzurro (lampo): comando eseguito o testo copiato negli appunti.</value></data>
+  <data name="HelpCommandsHeader.Text" xml:space="preserve"><value>Comandi vocali</value></data>
+  <data name="HelpCommandsText.Text" xml:space="preserve"><value>"a capo", "nuovo paragrafo", "punto", "virgola", "punto e virgola", "due punti", "punto interrogativo", "punto esclamativo", "cancella l'ultima frase", "annulla" (da solo: annulla l'ultimo inserimento), "invia" (alla fine: preme Invio).</value></data>
+  <data name="HelpDictionary_Body" xml:space="preserve"><value>Aggiungi nomi propri e termini tecnici scritti esattamente come vuoi vederli. Il dizionario è salvato cifrato e non lascia il PC.</value></data>
+  <data name="HelpDictionary_Title" xml:space="preserve"><value>Dizionario personale</value></data>
+  <data name="HelpFallbackHeader.Text" xml:space="preserve"><value>Se il testo non compare</value></data>
+  <data name="HelpFallbackText.Text" xml:space="preserve"><value>Alcune app non permettono l'inserimento diretto (per esempio le finestre avviate come amministratore). In quel caso Zzitto copia il testo negli appunti e te lo segnala: premi Ctrl+V per incollarlo. Se l'icona non compare vicino al campo, la trovi nell'ultima posizione in cui l'hai spostata; restano sempre disponibili l'icona nell'area di notifica e la scorciatoia.</value></data>
+  <data name="HelpGeneral_Body" xml:space="preserve"><value>Qui scegli lingua, microfono (se ne hai più di uno), modalità di correzione, i tempi di stop automatico e la scorciatoia globale. "Fedele" toglie solo esitazioni evidenti, "Pulito" sistema anche ripetizioni e punteggiatura, "Formale" usa un registro più curato. L'icona del microfono può seguire il campo attivo, restare ferma o essere nascosta.</value></data>
+  <data name="HelpGeneral_Title" xml:space="preserve"><value>Impostazioni generali</value></data>
+  <data name="HelpHistory_Body" xml:space="preserve"><value>Zzitto conserva le ultime dettature (testo grezzo e corretto) per il numero di giorni scelto. La cronologia è cifrata, si cancella con un clic e disattivandola viene eliminata.</value></data>
+  <data name="HelpHistory_Title" xml:space="preserve"><value>Cronologia</value></data>
+  <data name="HelpLicense_Body" xml:space="preserve"><value>Zzitto offre 30 giorni di prova gestiti dal Microsoft Store. Alla scadenza la dettatura si blocca finché non acquisti l'app, con un pagamento una tantum. L'acquisto si ripristina reinstallando Zzitto con lo stesso account Microsoft.</value></data>
+  <data name="HelpLicense_Title" xml:space="preserve"><value>Prova e acquisto</value></data>
+  <data name="HelpOpenSource_Body" xml:space="preserve"><value>Elenco dei componenti di terze parti inclusi in Zzitto, con le rispettive licenze.</value></data>
+  <data name="HelpOpenSource_Title" xml:space="preserve"><value>Licenze open source</value></data>
+  <data name="HelpPrivacyHeader.Text" xml:space="preserve"><value>Privacy</value></data>
+  <data name="HelpPrivacyText.Text" xml:space="preserve"><value>L'intelligenza artificiale di Zzitto lavora solo su questo PC. L'audio non viene mai salvato; la cronologia (disattivabile) e il dizionario sono cifrati. Nei campi password la cronologia non viene salvata.</value></data>
+  <data name="HelpRewriteHeader.Text" xml:space="preserve"><value>Riscrivere un testo</value></data>
+  <data name="HelpRewriteText.Text" xml:space="preserve"><value>Seleziona un testo, avvia la dettatura e di' cosa fare, per esempio "rendilo più formale", "accorcialo" o "correggi gli errori". Il risultato sostituisce la selezione; "Annulla" nel menu dell'icona ripristina il testo.</value></data>
+  <data name="HelpShortcuts_Body" xml:space="preserve"><value>Una scorciatoia si attiva quando pronunci solo la parola chiave, senza altro testo. Usa parole che non diresti per caso. Le scorciatoie sono salvate cifrate.</value></data>
+  <data name="HelpShortcuts_Title" xml:space="preserve"><value>Scorciatoie vocali</value></data>
+  <data name="HelpStartHeader.Text" xml:space="preserve"><value>Dettare</value></data>
+  <data name="HelpStartText" xml:space="preserve"><value>Clicca nel campo in cui vuoi scrivere, poi clicca l'icona del microfono oppure premi {0}. Parla normalmente: Zzitto si ferma da solo dopo una breve pausa, oppure clicca di nuovo l'icona. Il testo corretto viene inserito nel campo. Esc annulla la dettatura in corso; tieni premuta l'icona (o clic destro) per il menu.</value></data>
+  <data name="HelpTitle.Text" xml:space="preserve"><value>Guida</value></data>
+  <data name="HistoryClear.Content" xml:space="preserve"><value>Cancella tutto</value></data>
+  <data name="HistoryCopy.Content" xml:space="preserve"><value>Copia il testo corretto</value></data>
+  <data name="HistoryEnabled.Header" xml:space="preserve"><value>Conserva la cronologia delle dettature (cifrata)</value></data>
+  <data name="HistoryRawLabel.Text" xml:space="preserve"><value>Testo prima della correzione</value></data>
+  <data name="HistoryRetention.Header" xml:space="preserve"><value>Conserva per (giorni)</value></data>
+  <data name="HistoryTitle.Text" xml:space="preserve"><value>Cronologia</value></data>
+  <data name="Hotkey_Invalid" xml:space="preserve"><value>Usa almeno Ctrl, Alt o Win insieme a un altro tasto.</value></data>
+  <data name="Hotkey_PressKeys" xml:space="preserve"><value>Premi la nuova combinazione… (Esc per annullare)</value></data>
+  <data name="LicenseBuy.Content" xml:space="preserve"><value>Acquista Zzitto</value></data>
+  <data name="LicensePrivacy.Text" xml:space="preserve"><value>La licenza è gestita dal Microsoft Store. Durante la prova Zzitto la verifica a ogni avvio; dopo l'acquisto non si collega più a internet.</value></data>
+  <data name="LicenseRetry.Content" xml:space="preserve"><value>Verifica di nuovo</value></data>
+  <data name="LicenseTitle.Text" xml:space="preserve"><value>Prova e acquisto</value></data>
+  <data name="License_Expired" xml:space="preserve"><value>La prova gratuita è terminata</value></data>
+  <data name="License_ExpiredDetail" xml:space="preserve"><value>La dettatura è bloccata. Acquista Zzitto per continuare a usarlo: l'acquisto è una tantum.</value></data>
+  <data name="License_Purchased" xml:space="preserve"><value>Zzitto è attivato</value></data>
+  <data name="License_PurchasedDetail" xml:space="preserve"><value>Grazie per l'acquisto. Zzitto non si collegherà più a internet.</value></data>
+  <data name="License_Trial" xml:space="preserve"><value>Prova gratuita: {0} giorni rimasti</value></data>
+  <data name="License_TrialDetail" xml:space="preserve"><value>Durante la prova tutte le funzioni sono disponibili. Con l'acquisto una tantum Zzitto resta tuo per sempre, senza abbonamenti.</value></data>
+  <data name="License_Unknown" xml:space="preserve"><value>Licenza non verificata</value></data>
+  <data name="License_UnknownDetail" xml:space="preserve"><value>Non è stato possibile leggere la licenza dal Microsoft Store e non c'è una verifica precedente: la dettatura è bloccata finché la verifica non riesce. Controlla di aver effettuato l'accesso al Microsoft Store e la connessione, poi premi "Verifica di nuovo".</value></data>
+  <data name="Menu_Buy" xml:space="preserve"><value>Acquista Zzitto…</value></data>
+  <data name="Menu_Cancel" xml:space="preserve"><value>Annulla dettatura</value></data>
+  <data name="Menu_Exit" xml:space="preserve"><value>Esci</value></data>
+  <data name="Menu_Help" xml:space="preserve"><value>Guida</value></data>
+  <data name="Menu_Mode" xml:space="preserve"><value>Modalità di correzione</value></data>
+  <data name="Menu_Settings" xml:space="preserve"><value>Impostazioni…</value></data>
+  <data name="Menu_ShowOverlay" xml:space="preserve"><value>Mostra l'icona del microfono</value></data>
+  <data name="Menu_Overlay" xml:space="preserve"><value>Icona del microfono</value></data>
+  <data name="Overlay_Fixed" xml:space="preserve"><value>Ferma dove la trascini</value></data>
+  <data name="Overlay_Follow" xml:space="preserve"><value>Vicino al testo che scrivi</value></data>
+  <data name="Overlay_Hidden" xml:space="preserve"><value>Nascosta</value></data>
+  <data name="Menu_Hotkey" xml:space="preserve"><value>Scorciatoia: {0} (cambia…)</value></data>
+  <data name="Menu_Start" xml:space="preserve"><value>Avvia dettatura ({0})</value></data>
+  <data name="Menu_Stop" xml:space="preserve"><value>Ferma dettatura ({0})</value></data>
+  <data name="Menu_Translate" xml:space="preserve"><value>Traduzione</value></data>
+  <data name="Menu_Undo" xml:space="preserve"><value>Annulla ultimo inserimento</value></data>
+  <data name="ModeCleanItem.Content" xml:space="preserve"><value>Pulito – consigliata</value></data>
+  <data name="ModeFaithfulItem.Content" xml:space="preserve"><value>Fedele – solo pulizia minima</value></data>
+  <data name="ModeFormalItem.Content" xml:space="preserve"><value>Formale</value></data>
+  <data name="Mode_Clean" xml:space="preserve"><value>Pulito</value></data>
+  <data name="Mode_Faithful" xml:space="preserve"><value>Fedele</value></data>
+  <data name="Mode_Formal" xml:space="preserve"><value>Formale</value></data>
+  <data name="NavDictionary.Content" xml:space="preserve"><value>Dizionario</value></data>
+  <data name="NavGeneral.Content" xml:space="preserve"><value>Generali</value></data>
+  <data name="NavHelp.Content" xml:space="preserve"><value>Guida</value></data>
+  <data name="NavHistory.Content" xml:space="preserve"><value>Cronologia</value></data>
+  <data name="NavLicense.Content" xml:space="preserve"><value>Prova e acquisto</value></data>
+  <data name="NavOpenSource.Content" xml:space="preserve"><value>Licenze open source</value></data>
+  <data name="NavShortcuts.Content" xml:space="preserve"><value>Scorciatoie vocali</value></data>
+  <data name="NavTour.Content" xml:space="preserve"><value>Tour</value></data>
+  <data name="Notice_ClipboardFallback" xml:space="preserve"><value>Non è stato possibile inserire il testo in questa app: è negli appunti. Premi Ctrl+V per incollarlo.</value></data>
+  <data name="Notice_CorrectionFallback" xml:space="preserve"><value>Correzione non disponibile: è stato inserito il testo non corretto.</value></data>
+  <data name="Notice_EngineError" xml:space="preserve"><value>Si è verificato un errore durante l'elaborazione. Riprova.</value></data>
+  <data name="Notice_HotkeyBusy" xml:space="preserve"><value>La scorciatoia {0} è già usata da un'altra app. Scegline un'altra in Impostazioni; intanto usa l'icona del microfono.</value></data>
+  <data name="Notice_InsertionFailed" xml:space="preserve"><value>Non è stato possibile inserire né copiare il testo.</value></data>
+  <data name="Notice_LicenseUnknown" xml:space="preserve"><value>Licenza non verificata: apri Zzitto con il Microsoft Store raggiungibile per sbloccare la dettatura.</value></data>
+  <data name="Notice_MaxDuration" xml:space="preserve"><value>Raggiunta la durata massima della dettatura.</value></data>
+  <data name="Notice_MicrophoneDenied" xml:space="preserve"><value>Zzitto non può usare il microfono. Consenti l'accesso in Impostazioni di Windows → Privacy e sicurezza → Microfono.</value></data>
+  <data name="Notice_MicrophoneError" xml:space="preserve"><value>Microfono non disponibile. Controlla che sia collegato, oppure scegli un altro microfono nelle impostazioni di Zzitto.</value></data>
+  <data name="Notice_ModelIntegrity" xml:space="preserve"><value>I file dei modelli AI risultano danneggiati. Reinstalla Zzitto dal Microsoft Store.</value></data>
+  <data name="Notice_TrialExpired" xml:space="preserve"><value>La prova gratuita è terminata: acquista Zzitto per continuare a dettare.</value></data>
+  <data name="OpenSourceIntro.Text" xml:space="preserve"><value>Zzitto usa componenti con licenze permissive. Il testo completo delle licenze è riportato qui sotto. Windows App SDK e i runtime Microsoft sono distribuiti con le condizioni di licenza Microsoft.</value></data>
+  <data name="OpenSourceTitle.Text" xml:space="preserve"><value>Licenze open source</value></data>
+  <data name="OpenSource_Missing" xml:space="preserve"><value>Il file delle licenze non è incluso in questa build.</value></data>
+  <data name="OverlayFixedItem.Content" xml:space="preserve"><value>Sempre nella posizione scelta da me</value></data>
+  <data name="OverlayFollowItem.Content" xml:space="preserve"><value>Vicino al campo di testo attivo</value></data>
+  <data name="OverlayHiddenItem.Content" xml:space="preserve"><value>Nascosta (uso area di notifica e scorciatoia)</value></data>
+  <data name="Purchase_AlreadyOwned" xml:space="preserve"><value>Zzitto risulta già acquistato con il tuo account Microsoft.</value></data>
+  <data name="Purchase_Cancelled" xml:space="preserve"><value>Acquisto annullato.</value></data>
+  <data name="Purchase_Done" xml:space="preserve"><value>Acquisto completato. Grazie!</value></data>
+  <data name="Purchase_Error" xml:space="preserve"><value>Acquisto non riuscito. Riprova più tardi.</value></data>
+  <data name="Settings_WindowTitle" xml:space="preserve"><value>Zzitto – Impostazioni</value></data>
+  <data name="ShortcutsAdd.Content" xml:space="preserve"><value>Aggiungi o sostituisci</value></data>
+  <data name="ShortcutsExpansionBox.Header" xml:space="preserve"><value>Testo da inserire</value></data>
+  <data name="ShortcutsIntro.Text" xml:space="preserve"><value>Quando pronunci da sola la parola chiave, Zzitto inserisce il testo associato senza correggerlo. Esempio: "firma" → nome e recapiti.</value></data>
+  <data name="ShortcutsKeywordBox.Header" xml:space="preserve"><value>Parola chiave</value></data>
+  <data name="ShortcutsKeywordBox.PlaceholderText" xml:space="preserve"><value>es. firma</value></data>
+  <data name="ShortcutsRemove.Content" xml:space="preserve"><value>Rimuovi selezionate</value></data>
+  <data name="ShortcutsTitle.Text" xml:space="preserve"><value>Scorciatoie vocali</value></data>
+  <data name="Startup_DisabledByUser" xml:space="preserve"><value>L'avvio automatico è stato disattivato da Gestione attività. Riattivalo da Gestione attività → App di avvio.</value></data>
+  <data name="TourBack.Content" xml:space="preserve"><value>Indietro</value></data>
+  <data name="TourDoneHeader.Text" xml:space="preserve"><value>Tutto pronto</value></data>
+  <data name="TourDoneText.Text" xml:space="preserve"><value>Puoi rivedere il tour e cambiare le impostazioni quando vuoi dall'icona nell'area di notifica. Buona dettatura!</value></data>
+  <data name="TourFinish.Content" xml:space="preserve"><value>Inizia a usare Zzitto</value></data>
+  <data name="TourIconHeader.Text" xml:space="preserve"><value>L'icona e la scorciatoia</value></data>
+  <data name="TourIconText" xml:space="preserve"><value>L'icona del microfono compare vicino al campo in cui stai scrivendo: cliccala per dettare, cliccala di nuovo per fermarti. In alternativa premi {0}. Puoi trascinare l'icona dove preferisci: se un'app non indica dove si trova il campo, l'icona resta lì. Zzitto vive anche nell'area di notifica, vicino all'orologio.</value></data>
+  <data name="TourMicButton.Content" xml:space="preserve"><value>Consenti il microfono</value></data>
+  <data name="TourMicDenied" xml:space="preserve"><value>Accesso al microfono non consentito o nessun microfono collegato. Apri le impostazioni della privacy e attiva il microfono per le app desktop e per Zzitto.</value></data>
+  <data name="TourMicGranted" xml:space="preserve"><value>Microfono pronto.</value></data>
+  <data name="TourMicHeader.Text" xml:space="preserve"><value>Permesso del microfono</value></data>
+  <data name="TourMicPrivacyButton.Content" xml:space="preserve"><value>Apri le impostazioni della privacy</value></data>
+  <data name="TourMicText.Text" xml:space="preserve"><value>Zzitto ha bisogno solo del microfono. Premi il pulsante e consenti l'accesso quando Windows lo chiede.</value></data>
+  <data name="TourNext.Content" xml:space="preserve"><value>Avanti</value></data>
+  <data name="TourStepCounter" xml:space="preserve"><value>Passo {0} di {1}</value></data>
+  <data name="TourTitle.Text" xml:space="preserve"><value>Benvenuto in Zzitto</value></data>
+  <data name="TourTryBox.PlaceholderText" xml:space="preserve"><value>Il testo dettato comparirà qui</value></data>
+  <data name="TourTryHeader.Text" xml:space="preserve"><value>Prova la prima dettatura</value></data>
+  <data name="TourTryText" xml:space="preserve"><value>Clicca nel riquadro qui sotto, premi {0} e di' qualcosa, per esempio "Ciao, questa è la mia prima dettatura con Zzitto". Fermati qualche secondo: il testo corretto comparirà nel riquadro.</value></data>
+  <data name="TourWelcomeHeader.Text" xml:space="preserve"><value>Detta in qualsiasi app, in privato</value></data>
+  <data name="TourWelcomeText.Text" xml:space="preserve"><value>Zzitto trascrive la tua voce e la corregge con un'intelligenza artificiale che funziona interamente su questo PC: nessun audio e nessun testo lascia il dispositivo. In uso vedrai solo una piccola icona del microfono.</value></data>
+  <data name="TranslateEnglishItem.Content" xml:space="preserve"><value>In inglese</value></data>
+  <data name="TranslateNoneItem.Content" xml:space="preserve"><value>Nessuna</value></data>
+  <data name="TranslateSpanishItem.Content" xml:space="preserve"><value>In spagnolo</value></data>
+  <data name="Translate_English" xml:space="preserve"><value>In inglese</value></data>
+  <data name="Translate_None" xml:space="preserve"><value>Nessuna</value></data>
+  <data name="Translate_Spanish" xml:space="preserve"><value>In spagnolo</value></data>
+  <data name="Tray_LicenseUnknown" xml:space="preserve"><value>Licenza non verificata</value></data>
+  <data name="Tray_Tooltip" xml:space="preserve"><value>Zzitto – dettatura: {0}</value></data>
+  <data name="Tray_Trial" xml:space="preserve"><value>Prova: {0} giorni rimasti</value></data>
+  <data name="Tray_TrialExpired" xml:space="preserve"><value>Prova terminata</value></data>
+</root>

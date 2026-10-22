@@ -1,0 +1,8 @@
+# Segnaposto: verrà riscritto da tools/models/prepare-models.* alla prima preparazione dei modelli.
+# Aggiunto il 22/10/2026 alle 11:29. Spec §7, §13.
+MODELS_VERSION="DA_IMPOSTARE"
+WHISPER_FILE="whisper-medium-q5_0.bin"
+WHISPER_SHA256="DA_IMPOSTARE"
+PHI_FILE="phi-4-mini-instruct-q4_k_m.gguf"
+PHI_SHA256="DA_IMPOSTARE"
+PHI_PART_COUNT="2"

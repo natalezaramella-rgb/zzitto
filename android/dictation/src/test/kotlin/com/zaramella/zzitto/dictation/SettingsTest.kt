@@ -1,0 +1,111 @@
+package com.zaramella.zzitto.dictation
+
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import com.zaramella.zzitto.dictation.overlay.IconPlacement
+import com.zaramella.zzitto.dictation.settings.DictationSettings
+import com.zaramella.zzitto.dictation.settings.SettingsRepository
+import com.zaramella.zzitto.engine.CorrectionMode
+import com.zaramella.zzitto.engine.TranslateTarget
+import com.zaramella.zzitto.engine.WhisperModel
+import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+
+/** Impostazioni (Spec §5.7) e posizione dell'icona (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 11:59. */
+class SettingsTest {
+
+    @TempDir
+    lateinit var dir: File
+
+    @Test
+    fun `valori predefiniti della specifica`() {
+        val d = DictationSettings()
+        assertEquals("it", d.language)
+        assertEquals(CorrectionMode.CLEAN, d.mode)
+        assertEquals(1_000, d.silenceTimeoutMs) // Spec §5.2, predefinito 1 s dal 22/10/2026
+        assertEquals(WhisperModel.SMALL, d.whisperModel) // Spec §11
+        assertEquals(5 * 60_000L, d.maxDurationMs)
+        assertEquals(TranslateTarget.NONE, d.translate)
+    }
+
+    // Spec §5.2, §5.7, §11 (22/10/2026 22:09).
+    @Test
+    fun `migrazione del silenzio e lettura del modello`() {
+        assertEquals(1_000, SettingsRepository.migratedSilence(2_000, null))
+        assertEquals(1_000, SettingsRepository.migratedSilence(2_000, 1))
+        assertEquals(2_000, SettingsRepository.migratedSilence(2_000, 2))
+        assertEquals(3_500, SettingsRepository.migratedSilence(3_500, null))
+        assertEquals(null, SettingsRepository.migratedSilence(null, null))
+        assertEquals(WhisperModel.MEDIUM, SettingsRepository.whisperModelFrom("medium"))
+        assertEquals(WhisperModel.SMALL, SettingsRepository.whisperModelFrom("SMALL"))
+        assertEquals(null, SettingsRepository.whisperModelFrom("large"))
+    }
+
+    @Test
+    fun `valori fuori intervallo vengono corretti`() {
+        val s = DictationSettings(
+            language = "xx",
+            silenceTimeoutMs = 10,
+            maxDurationMs = 99_999_999,
+            historyRetentionDays = 0,
+            unloadAfterMinutes = 1_000,
+        ).sanitized()
+        assertEquals("it", s.language)
+        assertEquals(DictationSettings.MIN_SILENCE_MS, s.silenceTimeoutMs)
+        assertEquals(DictationSettings.MAX_MAX_DURATION_MS, s.maxDurationMs)
+        assertEquals(1, s.historyRetentionDays)
+        assertEquals(60, s.unloadAfterMinutes)
+    }
+
+    @Test
+    fun `repository salva e rilegge`() = runTest {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val store = PreferenceDataStoreFactory.create(scope = scope) { File(dir, "test.preferences_pb") }
+        val repo = SettingsRepository(store)
+        assertEquals(DictationSettings(), repo.settings.first())
+        repo.update { it.copy(mode = CorrectionMode.FORMAL, translate = TranslateTarget.EN, iconX = 10, iconY = 20) }
+        val read = repo.settings.first()
+        assertEquals(CorrectionMode.FORMAL, read.mode)
+        assertEquals(TranslateTarget.NONE, read.translate) // Spec §5.12: traduzione rimossa
+        assertEquals(10, read.iconX)
+        assertEquals(20, read.iconY)
+        scope.cancel()
+    }
+
+    // ---- Microfono scelto (Spec §5.7). Aggiunto il 22/10/2026 alle 17:44. ----
+
+    @Test
+    fun `microfono predefinito di sistema e chiavi non valide`() {
+        assertNull(DictationSettings().microphoneKey)
+        assertNull(DictationSettings(microphoneKey = " ").sanitized().microphoneKey)
+        assertNull(DictationSettings(microphoneKey = "x".repeat(10_000)).sanitized().microphoneKey)
+        assertEquals("usb|Mic|card=1", DictationSettings(microphoneKey = "usb|Mic|card=1").sanitized().microphoneKey)
+    }
+
+    @Test
+    fun `repository salva e azzera il microfono scelto`() = runTest {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val store = PreferenceDataStoreFactory.create(scope = scope) { File(dir, "mic.preferences_pb") }
+        val repo = SettingsRepository(store)
+        repo.update { it.copy(microphoneKey = "bt_sco|Jabra|AA:BB") }
+        assertEquals("bt_sco|Jabra|AA:BB", repo.settings.first().microphoneKey)
+        repo.update { it.copy(microphoneKey = null) }
+        assertNull(repo.settings.first().microphoneKey)
+        scope.cancel()
+    }
+
+    @Test
+    fun `posizione dell'icona sempre sullo schermo`() {
+        assertEquals(0 to 0, IconPlacement.clamp(-50, -10, 1080, 2340, 150))
+        assertEquals(930 to 2190, IconPlacement.clamp(5000, 9000, 1080, 2340, 150))
+        assertEquals(918 to 1404, IconPlacement.default(1080, 2340, 150, 12))
+    }
+}
