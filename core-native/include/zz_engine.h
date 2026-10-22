@@ -39,7 +39,7 @@ extern "C" {
 #  define ZZ_API __attribute__((visibility("default")))
 #endif
 
-#define ZZ_ENGINE_API_VERSION 1
+#define ZZ_ENGINE_API_VERSION 2  /* 2: dettatura in streaming (22/10/2026 16:05) */
 
 /* ---- Codici di stato ------------------------------------------------- */
 typedef enum zz_status {
@@ -168,6 +168,30 @@ ZZ_API zz_status zz_rewrite(zz_engine *engine, const char *selected_text,
 /* Variante testuale per test e per istruzioni già trascritte. */
 ZZ_API zz_status zz_process_text(zz_engine *engine, const char *raw_text,
                                  const zz_dictation_options *options, zz_result *out_result);
+
+/* ---- Dettatura in streaming (API 2, Spec §11) ------------------------ */
+/* Aggiunto il 22/10/2026 alle 16:05. La trascrizione avviene MENTRE l'utente parla: il motore taglia
+ * l'audio nelle pause e trascrive i pezzi in un thread proprio; allo stop resta solo l'ultimo pezzo,
+ * poi comandi, scorciatoie e correzione come in zz_dictate. Il risultato è equivalente a zz_dictate
+ * sullo stesso audio. Per tutta la durata del flusso il motore è occupato (ZZ_ERR_BUSY alle altre
+ * operazioni); zz_cancel interrompe anche il flusso. */
+typedef struct zz_stream zz_stream;
+
+/* Apre un flusso. Carica i modelli se serve (bloccante: chiamare fuori dal thread UI). Le opzioni
+ * vengono copiate. */
+ZZ_API zz_status zz_stream_begin(zz_engine *engine, const zz_dictation_options *options, zz_stream **out_stream);
+
+/* Aggiunge audio PCM float32 mono 16 kHz. Non bloccante: copia i campioni e ritorna subito; si può
+ * chiamare dal thread di cattura audio. */
+ZZ_API zz_status zz_stream_feed(zz_stream *stream, const float *pcm_16k_mono, size_t n_samples);
+
+/* Chiude il flusso: trascrive l'audio rimanente, applica comandi/scorciatoie/correzione e riempie
+ * out_result come zz_dictate. Libera sempre il flusso (anche in caso di errore). Bloccante. */
+ZZ_API zz_status zz_stream_finish(zz_stream *stream, zz_stage_callback on_stage, void *user_data,
+                                  zz_result *out_result);
+
+/* Annulla e libera il flusso senza risultato. */
+ZZ_API void zz_stream_abort(zz_stream *stream);
 
 /* Annulla l'operazione in corso (thread-safe). */
 ZZ_API void zz_cancel(zz_engine *engine);
