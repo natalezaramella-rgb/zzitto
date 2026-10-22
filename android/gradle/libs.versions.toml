@@ -59,6 +59,9 @@ espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref =
 
 # --- Sezione agente B (Android) ---
 # --- Sezione agente D (Acquisti) ---
+# Aggiunto il 22/10/2026 alle 11:28. BOM di JUnit 5: fornisce la versione a junit-platform-launcher
+# (voce senza versione nel catalogo comune), Spec §12.
+licensing-junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
 # --- Sezione agente E (Conformità e rilascio) ---
 
 [plugins]

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Modulo :licensing — Spec §8.1, §10. Aggiunto il 22/10/2026 alle 11:28.
+
+  Permessi di rete: il modulo NON dichiara INTERNET né ACCESS_NETWORK_STATE.
+  Google Play Billing e Block Store comunicano con l'app Play Store / Google Play Services
+  tramite IPC (bindService/AIDL): è il processo di Google a collegarsi a internet, non l'app.
+  L'assenza di rete si riconosce dai codici di risposta (SERVICE_UNAVAILABLE, NETWORK_ERROR, ...),
+  quindi non serve leggere lo stato della connessione. Così resta valido il §10 ("solo RECORD_AUDIO").
+
+  Il permesso com.android.vending.BILLING è dichiarato anche dall'AAR di Play Billing;
+  qui lo si rende esplicito per chiarezza. Non è un permesso di runtime e non compare all'utente.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+</manifest>
