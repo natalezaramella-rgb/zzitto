@@ -154,6 +154,7 @@ zz_git_rev(${ZZ_THIRD_PARTY}/llama.cpp ZZ_LLAMA_REV)
 set(ZZ_ENGINE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_engine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_engine_core.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_stream.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_prompts.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_backend_whisper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_backend_llama.cpp)

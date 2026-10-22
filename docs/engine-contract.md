@@ -28,6 +28,47 @@ questo documento e il registro decisioni.
 6. `zz_result_free`.
 7. Dopo l'inattività configurata: `zz_engine_unload`.
 
+## API 2: dettatura in streaming (Spec §11)
+
+*Aggiunto il 22/10/2026 alle 16:12 (agente A). Contratto: `ZZ_ENGINE_API_VERSION = 2`, funzioni
+`zz_stream_begin/feed/finish/abort` (introdotte dall'orchestratore alle 16:05).*
+
+Riduce la latenza percepita: il motore trascrive l'audio a pezzi mentre l'utente parla, quindi dopo lo
+stop restano solo l'ultimo pezzo e la correzione. Il risultato è equivalente a `zz_dictate` sullo stesso
+audio (stessi comandi, scorciatoie, correzione, `used_fallback`, azioni e stadi).
+
+Flusso tipico sulla piattaforma:
+
+1. All'inizio dell'ascolto, su un thread di background: `zz_stream_begin(engine, &opt, &stream)`
+   (bloccante se deve caricare i modelli; restituisce `ZZ_ERR_NOT_LOADED` senza `zz_engine_load`,
+   `ZZ_ERR_BUSY` se un'altra operazione è in corso). Le opzioni, compresa la stringa `language`, sono
+   copiate.
+2. Dal thread di cattura audio, per ogni blocco (anche da 10–20 ms): `zz_stream_feed(stream, pcm, n)`
+   (non bloccante) e, come prima, `zz_vad_process` per lo stop automatico.
+3. Allo stop, su un thread di background: `zz_stream_finish(stream, on_stage, ud, &result)`. Callback:
+   `TRANSCRIBING` (subito), `CORRECTING`, `DONE`. `ms_transcribe` = trascrizione dopo lo stop.
+   Il flusso è sempre liberato, anche in caso di errore: non va più usato.
+4. Se l'utente annulla: `zz_stream_abort(stream)` (libera tutto, nessun risultato), oppure `zz_cancel`
+   seguito da `zz_stream_finish` → `ZZ_ERR_CANCELLED`.
+
+Regole:
+
+- Per tutta la vita del flusso il motore è occupato: `zz_dictate`, `zz_rewrite`, `zz_process_text`,
+  `zz_engine_load`/`unload` e un secondo `zz_stream_begin` restituiscono `ZZ_ERR_BUSY`.
+- `zz_stream_feed` restituisce `ZZ_ERR_CANCELLED` dopo `zz_cancel` e l'errore di un pezzo fallito
+  (es. `ZZ_ERR_OUT_OF_MEMORY`): la piattaforma può fermare l'ascolto, ma deve comunque chiudere il flusso
+  con `finish` (che restituisce lo stesso errore) o `abort`.
+- Non chiamare `zz_stream_feed` in concorrenza con `finish`/`abort` dello stesso flusso, né
+  `zz_engine_destroy` con un flusso aperto.
+- Audio < 0,1 s, solo silenzio o trascrizione vuota → `ZZ_ERR_NO_SPEECH`, come `zz_dictate`.
+- Spec §10: l'audio resta solo in RAM e viene scartato man mano che è trascritto.
+- Il motore finto (`-DZZ_ENGINE_MOCK=ON`) implementa la stessa API: `finish` restituisce il testo di prova
+  dopo 200 ms di "trascrizione" (invece di 1 s) più 1,5 s di correzione; con `ZZ_MOCK_FAST=1` niente
+  ritardi.
+
+Dettagli del taglio nelle pause e del prompt di continuità: `core-native/README.md`, sezione
+"Dettatura in streaming".
+
 ## Comandi vocali gestiti dal motore (Spec §5.9)
 
 | Detto | Risultato |

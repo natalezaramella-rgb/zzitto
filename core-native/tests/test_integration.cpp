@@ -7,6 +7,7 @@
 // Verificano il codice dei backend (caricamento, verifica hash su file veri, template
 // tokenizzato a pezzi, cache del prefisso, timeout, annullamento, contesto superato),
 // non la qualità del testo. Saltato (77) se i modelli minuscoli non ci sono.
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdio>
@@ -153,6 +154,36 @@ int main() {
         opt.language = "xx";
         ZZ_CHECK(zz_dictate(e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_ERR_INVALID_ARG);
         opt.language = "it";
+
+        // API 2 (Spec §11, aggiunto il 22/10/2026 alle 16:12): flusso con whisper.cpp vero, pezzi trascritti
+        // nel thread del flusso (parlato da 2 s e pause da 0,5 s, 9 s in tutto), poi abort durante il lavoro.
+        {
+            std::vector<float> talk;
+            for (int k = 0; k < 4; ++k) {
+                talk.insert(talk.end(), pcm.begin(), pcm.end());
+                talk.resize(talk.size() + 8000, 0.0f);
+            }
+            for (int round = 0; round < 2; ++round) {
+                zz_stream *s = nullptr;
+                ZZ_CHECK(zz_stream_begin(e, &opt, &s) == ZZ_OK);
+                std::thread feeder([&]() {
+                    for (size_t off = 0; off < talk.size(); off += 320)
+                        ZZ_CHECK(zz_stream_feed(s, talk.data() + off, std::min<size_t>(320, talk.size() - off)) == ZZ_OK);
+                });
+                feeder.join();
+                if (round == 0) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+                    stages.clear();
+                    st = zz_stream_finish(s, on_stage, &stages, &r);
+                    ZZ_CHECK(st == ZZ_OK || st == ZZ_ERR_NO_SPEECH);
+                    ZZ_CHECK(!stages.empty() && stages.front() == ZZ_STAGE_TRANSCRIBING);
+                    zz_result_free(&r);
+                } else {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                    zz_stream_abort(s);
+                }
+            }
+        }
 
         // Correzione con il modello vero (output casuale: o corretto o fallback, mai errori).
         ZZ_CHECK(zz_process_text(e, "ehm ciao a capo come stai", &opt, &r) == ZZ_OK);

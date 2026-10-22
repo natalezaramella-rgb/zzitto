@@ -13,6 +13,8 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <new>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -125,7 +127,7 @@ extern "C" {
 ZZ_API uint32_t zz_api_version(void) { return ZZ_ENGINE_API_VERSION; }
 
 ZZ_API const char *zz_version_string(void) {
-    return "zzitto-engine MOCK api=1 (whisper=none, llm=none)";
+    return "zzitto-engine MOCK api=2 (whisper=none, llm=none)";
 }
 
 ZZ_API zz_status zz_engine_create(const zz_engine_config *config, zz_engine **out_engine) {
@@ -221,6 +223,83 @@ ZZ_API zz_status zz_process_text(zz_engine *engine, const char *raw_text,
     if (!guard.ok) return ZZ_ERR_BUSY;
     return finish(engine, raw_text, options, nullptr, nullptr, out, false, "");
 }
+
+// ---- Dettatura in streaming (API 2, Spec §11) -----------------------------------------
+// Aggiunto il 22/10/2026 alle 16:12 (agente A). Come zz_dictate, ma la "trascrizione" avviene durante
+// il flusso: in finish resta un ritardo ridotto (200 ms invece di 1000 ms) prima della correzione.
+
+}  // extern "C"
+
+struct zz_stream {
+    zz_engine *engine = nullptr;
+    zz_dictation_options opt{};
+    std::string language;  // copia delle opzioni (contratto)
+    std::mutex mutex;
+    size_t total_samples = 0;
+    ~zz_stream() {
+        if (engine) engine->busy.store(false);  // il motore è occupato per tutta la vita del flusso
+    }
+};
+
+extern "C" {
+
+ZZ_API zz_status zz_stream_begin(zz_engine *engine, const zz_dictation_options *options, zz_stream **out_stream) {
+    if (!out_stream) return ZZ_ERR_INVALID_ARG;
+    *out_stream = nullptr;
+    if (!engine) return ZZ_ERR_INVALID_ARG;
+    bool expected = false;
+    if (!engine->busy.compare_exchange_strong(expected, true)) return ZZ_ERR_BUSY;
+    engine->cancel.store(false);
+    auto *s = new (std::nothrow) zz_stream();
+    if (!s) {
+        engine->busy.store(false);
+        return ZZ_ERR_OUT_OF_MEMORY;
+    }
+    s->engine = engine;
+    if (!engine->loaded.load()) {
+        delete s;
+        return ZZ_ERR_NOT_LOADED;
+    }
+    zz_dictation_options_init(&s->opt);
+    if (options) s->opt = *options;
+    if (s->opt.language) {
+        s->language = s->opt.language;
+        s->opt.language = s->language.c_str();
+    }
+    *out_stream = s;
+    return ZZ_OK;
+}
+
+ZZ_API zz_status zz_stream_feed(zz_stream *stream, const float *pcm_16k_mono, size_t n_samples) {
+    if (!stream || (n_samples && !pcm_16k_mono)) return ZZ_ERR_INVALID_ARG;
+    if (stream->engine->cancel.load()) return ZZ_ERR_CANCELLED;
+    std::lock_guard<std::mutex> lock(stream->mutex);  // il mock conta soltanto i campioni
+    stream->total_samples += n_samples;
+    return ZZ_OK;
+}
+
+ZZ_API zz_status zz_stream_finish(zz_stream *stream, zz_stage_callback on_stage, void *user_data,
+                                  zz_result *out) {
+    if (!stream) return ZZ_ERR_INVALID_ARG;
+    std::unique_ptr<zz_stream> s(stream);  // finish libera sempre il flusso
+    if (!out) return ZZ_ERR_INVALID_ARG;
+    std::memset(out, 0, sizeof(*out));
+    zz_engine *e = s->engine;
+    if (on_stage) on_stage(ZZ_STAGE_TRANSCRIBING, user_data);
+    if (e->cancel.load()) return ZZ_ERR_CANCELLED;
+    size_t total;
+    {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        total = s->total_samples;
+    }
+    if (total < 1600) return ZZ_ERR_NO_SPEECH;  // < 0,1 s, come zz_dictate
+    if (!wait_cancellable(e, 200)) return ZZ_ERR_CANCELLED;
+    const zz_status st = finish(e, kMockTranscript, &s->opt, on_stage, user_data, out, false, "");
+    if (st == ZZ_OK) out->ms_transcribe = fast_mode() ? 0 : 200;
+    return st;
+}
+
+ZZ_API void zz_stream_abort(zz_stream *stream) { delete stream; }
 
 ZZ_API void zz_cancel(zz_engine *engine) {
     if (engine) engine->cancel.store(true);

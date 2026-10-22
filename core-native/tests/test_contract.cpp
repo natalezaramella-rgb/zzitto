@@ -3,6 +3,7 @@
 // Aggiornato il 22/10/2026 alle 11:40 (agente A): con il motore reale (ZZ_TEST_REAL_ENGINE)
 // si usano i modelli indicati da ZZ_TEST_WHISPER_MODEL e ZZ_TEST_LLM_MODEL; senza modelli
 // si verificano gli errori attesi. I controlli sul mock sono invariati.
+// Aggiornato il 22/10/2026 alle 16:12 (agente A): API 2, dettatura in streaming (Spec §11).
 #include <atomic>
 #include <cstdlib>
 #include <string>
@@ -35,6 +36,20 @@ bool synthetic_no_speech(zz_status st) {
 
 static void on_stage(zz_stage stage, void *ud) {
     static_cast<std::vector<int> *>(ud)->push_back(static_cast<int>(stage));
+}
+
+// API 2: alimenta il flusso a blocchi da 20 ms da un altro thread, come il thread di cattura audio.
+static zz_status feed_20ms(zz_stream *s, const std::vector<float> &pcm) {
+    zz_status last = ZZ_OK;
+    std::thread t([&]() {
+        for (size_t off = 0; off < pcm.size(); off += 320) {
+            const size_t n = pcm.size() - off < 320 ? pcm.size() - off : 320;
+            const zz_status st = zz_stream_feed(s, pcm.data() + off, n);
+            if (st != ZZ_OK) last = st;
+        }
+    });
+    t.join();
+    return last;
 }
 
 int main() {
@@ -73,6 +88,13 @@ int main() {
 
     // Senza caricamento: errore esplicito
     ZZ_CHECK(zz_dictate(e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_ERR_NOT_LOADED);
+    zz_stream *stream = nullptr;
+    ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_ERR_NOT_LOADED && stream == nullptr);
+    ZZ_CHECK(zz_stream_begin(nullptr, &opt, &stream) == ZZ_ERR_INVALID_ARG);
+    ZZ_CHECK(zz_stream_begin(e, &opt, nullptr) == ZZ_ERR_INVALID_ARG);
+    ZZ_CHECK(zz_stream_feed(nullptr, pcm.data(), 1) == ZZ_ERR_INVALID_ARG);
+    ZZ_CHECK(zz_stream_finish(nullptr, nullptr, nullptr, &r) == ZZ_ERR_INVALID_ARG);
+    zz_stream_abort(nullptr);
 
     if (have_models) {
         ZZ_CHECK(zz_engine_load(e) == ZZ_OK);
@@ -94,12 +116,56 @@ int main() {
 
         // Audio troppo corto
         ZZ_CHECK(zz_dictate(e, pcm.data(), 100, &opt, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH);
+
+        // ---- API 2: dettatura in streaming (Spec §11) ----
+        std::string dictated;  // risultato di zz_dictate sullo stesso audio (mock: deve coincidere)
+        if (zz_dictate(e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_OK) {
+            dictated = r.final_text;
+            zz_result_free(&r);
+        }
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK && stream);
+        zz_stream *other = nullptr;
+        ZZ_CHECK(zz_stream_begin(e, &opt, &other) == ZZ_ERR_BUSY && other == nullptr);
+        ZZ_CHECK(zz_dictate(e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_ERR_BUSY);
+        ZZ_CHECK(feed_20ms(stream, pcm) == ZZ_OK);
+        std::vector<int> sstages;
+        const zz_status sst = zz_stream_finish(stream, on_stage, &sstages, &r);
+        if (!synthetic_no_speech(sst)) {
+            ZZ_CHECK(sst == ZZ_OK);
+            ZZ_CHECK(r.raw_text && r.final_text && r.ms_transcribe >= 0);
+            ZZ_CHECK(!sstages.empty() && sstages.front() == ZZ_STAGE_TRANSCRIBING && sstages.back() == ZZ_STAGE_DONE);
+#if !defined(ZZ_TEST_REAL_ENGINE)
+            ZZ_CHECK_EQ_STR(r.final_text, dictated);
+#endif
+            zz_result_free(&r);
+        }
+        // abort: nessun risultato, motore di nuovo libero.
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK);
+        ZZ_CHECK(feed_20ms(stream, pcm) == ZZ_OK);
+        zz_stream_abort(stream);
+        // zz_cancel durante il flusso.
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK);
+        ZZ_CHECK(feed_20ms(stream, pcm) == ZZ_OK);
+        zz_cancel(e);
+        ZZ_CHECK(zz_stream_feed(stream, pcm.data(), 320) == ZZ_ERR_CANCELLED);
+        ZZ_CHECK(zz_stream_finish(stream, nullptr, nullptr, &r) == ZZ_ERR_CANCELLED);
+        ZZ_CHECK(r.raw_text == nullptr && r.final_text == nullptr);
+        // Audio troppo corto.
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(stream, pcm.data(), 100) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(stream, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH);
+        // finish libera sempre, anche con argomenti non validi.
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(stream, nullptr, nullptr, nullptr) == ZZ_ERR_INVALID_ARG);
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_OK);
+        zz_stream_abort(stream);
     } else {
         // Motore reale senza modelli: caricamento fallito, nessuna dettatura possibile.
         ZZ_CHECK(zz_engine_load(e) == ZZ_ERR_MODEL_LOAD);
         ZZ_CHECK(zz_engine_is_loaded(e) == 0);
         ZZ_CHECK(zz_dictate(e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_ERR_NOT_LOADED);
         ZZ_CHECK(zz_dictate(e, pcm.data(), 100, &opt, nullptr, nullptr, &r) == ZZ_ERR_NOT_LOADED);
+        ZZ_CHECK(zz_stream_begin(e, &opt, &stream) == ZZ_ERR_NOT_LOADED && stream == nullptr);
         ZZ_CHECK(zz_process_text(e, "ehm ciao", &opt, &r) == ZZ_ERR_NOT_LOADED);
         ZZ_CHECK(r.raw_text == nullptr && r.final_text == nullptr);
     }

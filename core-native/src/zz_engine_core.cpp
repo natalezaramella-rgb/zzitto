@@ -56,8 +56,11 @@ bool has_alnum(const std::string &s) {
     return false;
 }
 
+}  // namespace
+
 // Spec §5.2: silenzio digitale o quasi (nessun blocco da 30 ms sopra la soglia).
-bool is_silence(const float *pcm, size_t n) {
+// Usata anche dal flusso (zz_stream.cpp): stessa griglia di blocchi, stesso esito di zz_dictate.
+bool zz::is_silence(const float *pcm, size_t n) {
     const size_t frame = 480;
     for (size_t off = 0; off + frame <= n; off += frame) {
         double sum = 0;
@@ -68,19 +71,23 @@ bool is_silence(const float *pcm, size_t n) {
 }
 
 // Opzioni con i valori predefiniti del contratto; false se non valide.
-bool resolve_options(const zz_dictation_options *in, zz_dictation_options *out) {
+bool zz::resolve_options(const zz_dictation_options *in, zz_dictation_options *out) {
     zz_dictation_options_init(out);
     if (!in) return true;
     if (in->struct_size < sizeof(zz_dictation_options)) return false;
     std::memcpy(out, in, sizeof(zz_dictation_options));
     out->struct_size = sizeof(zz_dictation_options);
-    if (out->mode < ZZ_MODE_FAITHFUL || out->mode > ZZ_MODE_FORMAL) return false;
-    if (out->translate < ZZ_TRANSLATE_NONE || out->translate > ZZ_TRANSLATE_ES) return false;
+    // Valori letti come interi: un enum fuori intervallo letto come enum è comportamento indefinito
+    // (UBSAN, build del 22/10/2026 16:12); dall'app (JNI/P/Invoke) può arrivare qualsiasi intero.
+    int32_t mode = 0, translate = 0;
+    static_assert(sizeof(out->mode) == sizeof(mode) && sizeof(out->translate) == sizeof(translate), "enum a 32 bit");
+    std::memcpy(&mode, &out->mode, sizeof(mode));
+    std::memcpy(&translate, &out->translate, sizeof(translate));
+    if (mode < ZZ_MODE_FAITHFUL || mode > ZZ_MODE_FORMAL) return false;
+    if (translate < ZZ_TRANSLATE_NONE || translate > ZZ_TRANSLATE_ES) return false;
     if (out->correction_timeout_ms <= 0) out->correction_timeout_ms = zz::kDefaultCorrectionTimeoutMs;  // Spec §5.3
     return true;
 }
-
-}  // namespace
 
 // ---- Occupazione del motore: una sola operazione alla volta (contratto) ----------
 
@@ -269,14 +276,14 @@ zz_status zz_engine::set_shortcuts(const char *const *keywords, const char *cons
 // ---- Trascrizione (Spec §5.2, §5.5) -----------------------------------------------
 
 zz_status zz_engine::transcribe(const float *pcm, size_t n, const zz_dictation_options &opt,
-                                const std::vector<std::string> &dict, std::string *out) {
+                                const std::string &initial_prompt, const zz::AbortCheck &abort, std::string *out) {
     zz_status st = ensure_whisper();
     if (st != ZZ_OK) return st;
-    if (cancel_.load()) return ZZ_ERR_CANCELLED;
+    if (abort() == zz::AbortReason::Cancelled) return ZZ_ERR_CANCELLED;
     zz::SttRequest req;
     req.language = (opt.language && opt.language[0]) ? opt.language : "auto";
-    req.initial_prompt = zz::whisper_initial_prompt(dict);  // Spec §5.5
-    st = stt_->transcribe(pcm, n, req, cancel_check(), out);
+    req.initial_prompt = initial_prompt;  // Spec §5.5
+    st = stt_->transcribe(pcm, n, req, abort, out);
     if (st == ZZ_OK) *out = zz::trim(*out);
     return st;
 }
@@ -380,16 +387,16 @@ zz_status zz_engine::dictate(const float *pcm, size_t n, const zz_dictation_opti
     Guard g(this);
     if (!g.ok) return ZZ_ERR_BUSY;
     zz_dictation_options opt;
-    if (!resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
+    if (!zz::resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
     if (!loaded_.load()) return ZZ_ERR_NOT_LOADED;
-    if (n < zz::kMinSamples || is_silence(pcm, n)) return ZZ_ERR_NO_SPEECH;
+    if (n < zz::kMinSamples || zz::is_silence(pcm, n)) return ZZ_ERR_NO_SPEECH;
 
     std::vector<std::string> dict;
     snapshot(&dict, nullptr);
     if (cb) cb(ZZ_STAGE_TRANSCRIBING, ud);
     const auto t0 = Clock::now();
     std::string raw;
-    zz_status st = transcribe(pcm, n, opt, dict, &raw);
+    zz_status st = transcribe(pcm, n, opt, zz::whisper_initial_prompt(dict), cancel_check(), &raw);
     const int64_t ms_tr = ms_since(t0);
     if (st != ZZ_OK) return st;
     if (raw.empty()) return ZZ_ERR_NO_SPEECH;
@@ -405,16 +412,16 @@ zz_status zz_engine::rewrite(const char *selected, const float *pcm, size_t n, c
     Guard g(this);
     if (!g.ok) return ZZ_ERR_BUSY;
     zz_dictation_options opt;
-    if (!resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
+    if (!zz::resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
     if (!loaded_.load()) return ZZ_ERR_NOT_LOADED;
-    if (n < zz::kMinSamples || is_silence(pcm, n)) return ZZ_ERR_NO_SPEECH;
+    if (n < zz::kMinSamples || zz::is_silence(pcm, n)) return ZZ_ERR_NO_SPEECH;
 
     std::vector<std::string> dict;
     snapshot(&dict, nullptr);
     if (cb) cb(ZZ_STAGE_TRANSCRIBING, ud);
     auto t0 = Clock::now();
     std::string instruction;
-    zz_status st = transcribe(pcm, n, opt, dict, &instruction);
+    zz_status st = transcribe(pcm, n, opt, zz::whisper_initial_prompt(dict), cancel_check(), &instruction);
     const int64_t ms_tr = ms_since(t0);
     if (st != ZZ_OK) return st;
     if (instruction.empty()) return ZZ_ERR_NO_SPEECH;
@@ -464,7 +471,7 @@ zz_status zz_engine::process_text(const char *raw, const zz_dictation_options *o
     Guard g(this);
     if (!g.ok) return ZZ_ERR_BUSY;
     zz_dictation_options opt;
-    if (!resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
+    if (!zz::resolve_options(options, &opt)) return ZZ_ERR_INVALID_ARG;
     return finish_text(zz::sanitize_text(raw), opt, nullptr, nullptr, out);
 }
 

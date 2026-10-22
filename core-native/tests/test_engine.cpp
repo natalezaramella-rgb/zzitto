@@ -4,7 +4,9 @@
 // scorciatoie prima della correzione (Spec §5.9, §5.11), traduzione (§5.12),
 // riscrittura (§5.10) e dizionario (§5.5). Aggiunto il 22/10/2026 alle 11:35.
 #include <atomic>
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -13,9 +15,11 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "zz_engine_core.h"
+#include "zz_stream.h"
 #include "zz_test.h"
 #include "zz_wav.h"
 
@@ -57,6 +61,12 @@ struct FakeStt : zz::SttBackend {
     zz_status load_status = ZZ_OK;
     bool is = false;
     std::vector<zz::SttRequest> requests;
+    // Flusso (API 2, aggiunto il 22/10/2026 alle 16:12): testo calcolato dall'audio, durate dei pezzi,
+    // chiamate contate in modo atomico (il test le legge mentre il thread del flusso trascrive).
+    std::function<std::string(const float *, size_t)> by_audio;
+    std::vector<size_t> sizes;
+    std::atomic<int> calls{0};
+    zz_status fail_status = ZZ_OK;
 
     explicit FakeStt(std::shared_ptr<Shared> s) : shared(std::move(s)) {}
     ~FakeStt() override { unload(); }
@@ -71,16 +81,19 @@ struct FakeStt : zz::SttBackend {
         is = false;
     }
     bool is_loaded() const override { return is; }
-    zz_status transcribe(const float *, size_t, const zz::SttRequest &req, const AbortCheck &abort,
+    zz_status transcribe(const float *pcm, size_t n, const zz::SttRequest &req, const AbortCheck &abort,
                          std::string *out) override {
         requests.push_back(req);
+        sizes.push_back(n);
+        ++calls;
+        if (fail_status != ZZ_OK) return fail_status;
         if (gate)
             while (!gate->load()) {
                 if (abort() == AbortReason::Cancelled) return ZZ_ERR_CANCELLED;
                 std::this_thread::sleep_for(1ms);
             }
         if (wait_abortable(abort, delay_ms) == AbortReason::Cancelled) return ZZ_ERR_CANCELLED;
-        *out = text;
+        *out = by_audio ? by_audio(pcm, n) : text;
         return ZZ_OK;
     }
 };
@@ -188,6 +201,74 @@ std::string sha_of(const char *text) {
     zz_sha256_file(p, hex);
     std::remove(p);
     return hex;
+}
+
+
+// ---- Flusso (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:12. --------------------------
+
+// Audio di prova: parole (onda quadra di ampiezza 0,05·(k+1), k = indice della parola mod 8)
+// separate da pause di silenzio. La durata di ogni parola e pausa è in secondi.
+struct Speech {
+    std::vector<float> pcm;
+    std::vector<std::pair<size_t, size_t>> pauses;  // [inizio, fine) in campioni
+};
+Speech words_with_pauses(int n_words, double word_s, double pause_s) {
+    Speech sp;
+    for (int k = 0; k < n_words; ++k) {
+        const float amp = 0.05f * float(k % 8 + 1);
+        const size_t w = static_cast<size_t>(word_s * 16000);
+        for (size_t i = 0; i < w; ++i) sp.pcm.push_back((i % 40 < 20) ? amp : -amp);
+        const size_t p0 = sp.pcm.size();
+        sp.pcm.resize(p0 + static_cast<size_t>(pause_s * 16000), 0.0f);
+        sp.pauses.emplace_back(p0, sp.pcm.size());
+    }
+    return sp;
+}
+
+// Finto Whisper "che capisce" l'audio di prova: una parola "pK" per ogni tratto non silenzioso da 30 ms in su.
+std::string decode_words(const float *pcm, size_t n) {
+    std::string out;
+    size_t i = 0;
+    while (i < n) {
+        if (pcm[i] == 0.0f) {
+            ++i;
+            continue;
+        }
+        size_t j = i;
+        double sum = 0;
+        while (j < n && pcm[j] != 0.0f) sum += double(pcm[j]) * pcm[j], ++j;
+        if (j - i >= 480) {
+            const int k = int(std::lround(std::sqrt(sum / double(j - i)) / 0.05)) - 1;
+            if (!out.empty()) out += ' ';
+            out += "p" + std::to_string(k);
+        }
+        i = j;
+    }
+    return out;
+}
+
+// Alimenta il flusso a blocchi da 20 ms da un altro thread, come il thread di cattura audio.
+zz_status feed_in_thread(zz_stream *s, const std::vector<float> &pcm, bool paced) {
+    zz_status last = ZZ_OK;
+    std::thread t([&]() {
+        const size_t block = 320;  // 20 ms
+        for (size_t off = 0; off < pcm.size(); off += block) {
+            const zz_status st = zz_stream_feed(s, pcm.data() + off, std::min(block, pcm.size() - off));
+            if (st != ZZ_OK) last = st;
+            if (paced && (off / block) % 25 == 0) std::this_thread::sleep_for(1ms);
+        }
+    });
+    t.join();
+    return last;
+}
+
+bool wait_calls(FakeStt *stt, int n, std::chrono::milliseconds max = 5000ms) {
+    const auto end = std::chrono::steady_clock::now() + max;
+    while (stt->calls.load() < n) {
+        if (std::chrono::steady_clock::now() > end) return false;
+        std::this_thread::sleep_for(2ms);
+    }
+    return true;
 }
 
 }  // namespace
@@ -587,6 +668,272 @@ int main() {
         ZZ_CHECK_EQ_STR(r.final_text, "ciao come va");
         zz_result_free(&r);
         ZZ_CHECK(zz_rewrite(rig.e, nullptr, pcm.data(), pcm.size(), &o, nullptr, nullptr, &r) == ZZ_ERR_INVALID_ARG);
+    }
+
+    // ---- Flusso: taglio nelle pause, logica pura (Spec §11) ------------------------------
+    {
+        // Parole da 1,5 s e pause da 0,5 s: nessun taglio prima di ~4 s, poi a metà della prima pausa
+        // che termina dopo 4 s. Analisi incrementale a blocchi irregolari, tagli su multipli di 30 ms.
+        Speech sp = words_with_pauses(12, 1.5, 0.5);
+        zz::PauseSegmenter seg;
+        std::vector<float> pending;
+        std::vector<size_t> cuts;
+        size_t base = 0;
+        for (size_t off = 0; off < sp.pcm.size(); off += 777) {
+            pending.insert(pending.end(), sp.pcm.begin() + long(off), sp.pcm.begin() + long(std::min(off + 777, sp.pcm.size())));
+            seg.analyze(pending.data(), pending.size());
+            if (size_t cut = seg.find_cut()) {
+                ZZ_CHECK(cut % zz::kStreamFrame == 0);
+                ZZ_CHECK(cut + 1600 >= zz::kStreamMinPiece);
+                cuts.push_back(base + cut);
+                base += cut;
+                pending.erase(pending.begin(), pending.begin() + long(cut));
+                seg.consume(cut);
+                ZZ_CHECK(seg.analyzed_samples() <= pending.size());
+            }
+        }
+        ZZ_CHECK(cuts.size() >= 3);
+        for (size_t c : cuts) {
+            bool in_pause = false;
+            for (auto &p : sp.pauses) in_pause = in_pause || (c > p.first && c < p.second);
+            ZZ_CHECK(in_pause);
+        }
+        // Pause brevi (300 ms) non bastano; senza pause il taglio è forzato tra 15 e 20 s.
+        Speech shortp = words_with_pauses(20, 1.0, 0.3);
+        zz::PauseSegmenter s2;
+        s2.analyze(shortp.pcm.data(), std::min<size_t>(shortp.pcm.size(), 16000 * 19));
+        ZZ_CHECK(s2.find_cut() == 0);
+        s2.analyze(shortp.pcm.data(), shortp.pcm.size());
+        const size_t forced = s2.find_cut();
+        ZZ_CHECK(forced >= zz::kStreamForcedSearchFrom && forced < zz::kStreamMaxPiece);
+        // Silenzio iniziale lungo: tagliato (il pezzo di solo silenzio non andrà a Whisper).
+        std::vector<float> quiet(16000 * 5, 0.0f);
+        zz::PauseSegmenter s3;
+        s3.analyze(quiet.data(), quiet.size());
+        ZZ_CHECK(s3.find_cut() > 0);
+    }
+
+    // ---- Flusso: equivalenza con zz_dictate, pezzi, prompt di continuità (Spec §11, §5.5) ----------
+    for (int sequential = 0; sequential <= 1; ++sequential) {
+        Rig rig(sequential);
+        zz_stream *s = nullptr;
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_ERR_NOT_LOADED && !s);
+        ZZ_CHECK(zz_engine_load(rig.e) == ZZ_OK);
+        const char *words[] = {"Zzitto"};
+        ZZ_CHECK(zz_engine_set_dictionary(rig.e, words, 1) == ZZ_OK);
+        rig.stt->by_audio = decode_words;
+        Speech sp = words_with_pauses(12, 1.5, 0.5);
+
+        ZZ_CHECK(zz_dictate(rig.e, sp.pcm.data(), sp.pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_OK);
+        const std::string raw_d = r.raw_text, final_d = r.final_text;
+        zz_result_free(&r);
+        ZZ_CHECK(raw_d.rfind("p0 p1 p2 p3 p4 p5 p6 p7 p0", 0) == 0);
+        rig.stt->calls.store(0);
+        rig.stt->requests.clear();
+        rig.stt->sizes.clear();
+
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK && s);
+        ZZ_CHECK(rig.stt->is_loaded());  // Whisper in RAM prima che l'utente parli
+        if (sequential) ZZ_CHECK(!rig.llm->is_loaded());
+        ZZ_CHECK(feed_in_thread(s, sp.pcm, true) == ZZ_OK);
+        ZZ_CHECK(wait_calls(rig.stt, 3));  // pezzi trascritti durante il "parlato"
+        std::vector<int> stages;
+        ZZ_CHECK(zz_stream_finish(s, on_stage, &stages, &r) == ZZ_OK);
+        ZZ_CHECK_EQ_STR(r.raw_text, raw_d);
+        ZZ_CHECK_EQ_STR(r.final_text, final_d);
+        ZZ_CHECK(r.used_fallback == 0 && r.from_shortcut == 0 && r.actions == 0);
+        ZZ_CHECK(r.ms_transcribe >= 0 && r.ms_correct >= 0);
+        ZZ_CHECK((stages == std::vector<int>{ZZ_STAGE_TRANSCRIBING, ZZ_STAGE_CORRECTING, ZZ_STAGE_DONE}));
+        zz_result_free(&r);
+        ZZ_CHECK(rig.stt->calls.load() >= 4);
+        // Pezzi tagliati nelle pause (somma = audio intero) e prompt = dizionario + coda del testo.
+        size_t pos = 0, total = 0;
+        for (size_t i = 0; i + 1 < rig.stt->sizes.size(); ++i) {
+            pos += rig.stt->sizes[i];
+            bool in_pause = false;
+            for (auto &p : sp.pauses) in_pause = in_pause || (pos > p.first && pos < p.second);
+            ZZ_CHECK(in_pause);
+        }
+        for (size_t n : rig.stt->sizes) total += n;
+        ZZ_CHECK(total == sp.pcm.size());
+        ZZ_CHECK_EQ_STR(rig.stt->requests[0].initial_prompt, "Zzitto.");
+        ZZ_CHECK(rig.stt->requests[1].initial_prompt.rfind("Zzitto. p0 p1", 0) == 0);
+        ZZ_CHECK(rig.stt->requests.back().initial_prompt.size() <= std::string("Zzitto. ").size() + zz::kStreamPromptTail);
+        if (sequential) ZZ_CHECK(rig.shared->max_in_ram.load() == 1);  // Spec §7
+        // Dopo finish il motore è libero.
+        ZZ_CHECK(zz_process_text(rig.e, "ciao", &opt, &r) == ZZ_OK);
+        zz_result_free(&r);
+    }
+
+    // ---- Flusso: opzioni copiate, comandi, scorciatoie, nessun parlato, argomenti -----------------
+    {
+        Rig rig;
+        ZZ_CHECK(zz_engine_load(rig.e) == ZZ_OK);
+        zz_stream *s = nullptr;
+        ZZ_CHECK(zz_stream_begin(nullptr, &opt, &s) == ZZ_ERR_INVALID_ARG && !s);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, nullptr) == ZZ_ERR_INVALID_ARG);
+        zz_dictation_options bad = opt;
+        bad.mode = static_cast<zz_correction_mode>(9);
+        ZZ_CHECK(zz_stream_begin(rig.e, &bad, &s) == ZZ_ERR_INVALID_ARG && !s);
+        ZZ_CHECK(zz_stream_feed(nullptr, pcm.data(), 10) == ZZ_ERR_INVALID_ARG);
+        ZZ_CHECK(zz_stream_finish(nullptr, nullptr, nullptr, &r) == ZZ_ERR_INVALID_ARG);
+        zz_stream_abort(nullptr);
+
+        // La lingua è copiata: il buffer del chiamante può cambiare dopo begin.
+        char lang[3] = {'e', 'n', 0};
+        zz_dictation_options o = opt;
+        o.language = lang;
+        rig.stt->text = "ehm ciao a capo come stai invia";
+        ZZ_CHECK(zz_stream_begin(rig.e, &o, &s) == ZZ_OK);
+        lang[0] = 'x';
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), pcm.size()) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), 0) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, nullptr, 5) == ZZ_ERR_INVALID_ARG);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_OK);
+        ZZ_CHECK(rig.stt->requests.back().language == "en");
+        ZZ_CHECK_EQ_STR(r.final_text, "Ciao.\nCome stai.");
+        ZZ_CHECK(r.actions == ZZ_ACTION_SEND);
+        zz_result_free(&r);
+
+        // Scorciatoia (Spec §5.11): niente correzione.
+        const char *keys[] = {"firma"};
+        const char *vals[] = {"Natale Zaramella"};
+        ZZ_CHECK(zz_engine_set_shortcuts(rig.e, keys, vals, 1) == ZZ_OK);
+        rig.stt->text = "Firma.";
+        std::vector<int> stages;
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), pcm.size()) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, on_stage, &stages, &r) == ZZ_OK);
+        ZZ_CHECK_EQ_STR(r.final_text, "Natale Zaramella");
+        ZZ_CHECK(r.from_shortcut == 1);
+        ZZ_CHECK((stages == std::vector<int>{ZZ_STAGE_TRANSCRIBING, ZZ_STAGE_DONE}));
+        zz_result_free(&r);
+
+        // Nessun parlato: audio troppo corto, solo silenzio (Whisper non parte), trascrizione vuota, niente audio.
+        rig.stt->text = "ciao";
+        const int before = rig.stt->calls.load();
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), 1000) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH && r.raw_text == nullptr);
+        std::vector<float> silence(16000 * 9, 0.0f);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(feed_in_thread(s, silence, false) == ZZ_OK);
+        std::this_thread::sleep_for(100ms);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH);
+        ZZ_CHECK(rig.stt->calls.load() == before);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH);
+        rig.stt->text = "  ";
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), pcm.size()) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_NO_SPEECH);
+        // finish senza risultato: errore ma il flusso è liberato e il motore torna libero.
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, nullptr) == ZZ_ERR_INVALID_ARG);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        zz_stream_abort(s);
+    }
+
+    // ---- Flusso: busy, cancel, abort, errori dei pezzi (contratto; Spec §5.2) --------------------
+    {
+        Rig rig;
+        ZZ_CHECK(zz_engine_load(rig.e) == ZZ_OK);
+        rig.stt->by_audio = decode_words;
+        Speech sp = words_with_pauses(6, 1.5, 0.5);
+        zz_stream *s = nullptr, *s2 = nullptr;
+        zz_result r2{};
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s2) == ZZ_ERR_BUSY && !s2);
+        ZZ_CHECK(zz_dictate(rig.e, pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r2) == ZZ_ERR_BUSY);
+        ZZ_CHECK(zz_rewrite(rig.e, "x", pcm.data(), pcm.size(), &opt, nullptr, nullptr, &r2) == ZZ_ERR_BUSY);
+        ZZ_CHECK(zz_process_text(rig.e, "ciao", &opt, &r2) == ZZ_ERR_BUSY);
+        ZZ_CHECK(zz_engine_load(rig.e) == ZZ_ERR_BUSY);
+        ZZ_CHECK(zz_engine_unload(rig.e) == ZZ_ERR_BUSY);
+        zz_stream_abort(s);  // senza audio
+        ZZ_CHECK(zz_process_text(rig.e, "ciao", &opt, &r2) == ZZ_OK);
+        zz_result_free(&r2);
+
+        // zz_cancel mentre Whisper trascrive un pezzo: feed e finish restituiscono CANCELLED, subito.
+        rig.stt->delay_ms = 5000;
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(feed_in_thread(s, sp.pcm, false) == ZZ_OK);
+        ZZ_CHECK(wait_calls(rig.stt, 1));
+        auto t0 = std::chrono::steady_clock::now();
+        zz_cancel(rig.e);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), 320) == ZZ_ERR_CANCELLED);
+        std::vector<int> stages;
+        ZZ_CHECK(zz_stream_finish(s, on_stage, &stages, &r) == ZZ_ERR_CANCELLED);
+        ZZ_CHECK(std::chrono::steady_clock::now() - t0 < 2s);
+        ZZ_CHECK(r.raw_text == nullptr && r.final_text == nullptr);
+        ZZ_CHECK((stages == std::vector<int>{ZZ_STAGE_TRANSCRIBING}));
+
+        // abort mentre Whisper trascrive: interrompe il pezzo, libera tutto, motore di nuovo libero.
+        rig.stt->calls.store(0);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(feed_in_thread(s, sp.pcm, false) == ZZ_OK);
+        ZZ_CHECK(wait_calls(rig.stt, 1));
+        t0 = std::chrono::steady_clock::now();
+        zz_stream_abort(s);
+        ZZ_CHECK(std::chrono::steady_clock::now() - t0 < 2s);
+        rig.stt->delay_ms = 0;
+        ZZ_CHECK(zz_dictate(rig.e, sp.pcm.data(), sp.pcm.size(), &opt, nullptr, nullptr, &r) == ZZ_OK);
+        zz_result_free(&r);
+
+        // zz_cancel durante la correzione in finish.
+        rig.llm->respond = [](const zz::ChatPrompt &, const AbortCheck &abort, std::string *) {
+            return wait_abortable(abort, 10000) == AbortReason::Timeout ? ZZ_ERR_TIMEOUT : ZZ_ERR_CANCELLED;
+        };
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), pcm.size()) == ZZ_OK);
+        zz_status st = ZZ_OK;
+        stages.clear();
+        std::thread t([&]() { st = zz_stream_finish(s, on_stage, &stages, &r); });
+        std::this_thread::sleep_for(80ms);
+        zz_cancel(rig.e);
+        t.join();
+        ZZ_CHECK(st == ZZ_ERR_CANCELLED);
+        ZZ_CHECK((stages == std::vector<int>{ZZ_STAGE_TRANSCRIBING, ZZ_STAGE_CORRECTING}));
+        rig.llm->respond = nullptr;
+
+        // Errore di un pezzo nel thread del flusso: lo restituiscono feed e finish.
+        rig.stt->fail_status = ZZ_ERR_INTERNAL;
+        rig.stt->calls.store(0);
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        feed_in_thread(s, sp.pcm, false);
+        ZZ_CHECK(wait_calls(rig.stt, 1));
+        std::this_thread::sleep_for(20ms);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), 320) == ZZ_ERR_INTERNAL);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_INTERNAL);
+        // Errore sull'ultimo pezzo (in finish).
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(zz_stream_feed(s, pcm.data(), pcm.size()) == ZZ_OK);
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_ERR_INTERNAL);
+        rig.stt->fail_status = ZZ_OK;
+        // Whisper non caricabile: begin fallisce e il motore resta libero.
+        rig.stt->unload();
+        rig.stt->load_status = ZZ_ERR_OUT_OF_MEMORY;
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_ERR_OUT_OF_MEMORY && !s);
+        rig.stt->load_status = ZZ_OK;
+        ZZ_CHECK(zz_process_text(rig.e, "ciao", &opt, &r) == ZZ_OK);
+        zz_result_free(&r);
+    }
+
+    // ---- Flusso molto lungo senza pause: taglio forzato a ~20 s (Spec §11) ------------------------
+    {
+        Rig rig(0);
+        ZZ_CHECK(zz_engine_load(rig.e) == ZZ_OK);
+        rig.stt->text = "parola";
+        const std::vector<float> longp = speech(65.0);
+        zz_stream *s = nullptr;
+        ZZ_CHECK(zz_stream_begin(rig.e, &opt, &s) == ZZ_OK);
+        ZZ_CHECK(feed_in_thread(s, longp, true) == ZZ_OK);
+        ZZ_CHECK(wait_calls(rig.stt, 3));
+        ZZ_CHECK(zz_stream_finish(s, nullptr, nullptr, &r) == ZZ_OK);
+        ZZ_CHECK_EQ_STR(r.raw_text, "parola parola parola parola");
+        zz_result_free(&r);
+        ZZ_CHECK(rig.stt->sizes.size() == 4);
+        for (size_t i = 0; i + 1 < rig.stt->sizes.size(); ++i)
+            ZZ_CHECK(rig.stt->sizes[i] >= zz::kStreamForcedSearchFrom && rig.stt->sizes[i] <= zz::kStreamMaxPiece);
     }
 
     // ---- Lettura WAV per zz_bench (Spec §11) ---------------------------------------------

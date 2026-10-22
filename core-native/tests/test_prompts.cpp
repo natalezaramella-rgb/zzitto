@@ -82,6 +82,24 @@ int main() {
         std::vector<std::string> many(300, "Parolalunga");
         ZZ_CHECK(whisper_initial_prompt(many).size() <= 601);
     }
+    // Flusso (Spec §5.5, §11; aggiunto il 22/10/2026 alle 16:12): dizionario + coda del testo già trascritto.
+    ZZ_CHECK_EQ_STR(whisper_continuation_prompt(dict, ""), "Zzitto, Zaramella.");
+    ZZ_CHECK_EQ_STR(whisper_continuation_prompt({}, "  "), "");
+    ZZ_CHECK_EQ_STR(whisper_continuation_prompt({}, " ciao a tutti "), "ciao a tutti");
+    ZZ_CHECK_EQ_STR(whisper_continuation_prompt(dict, "ciao a tutti"), "Zzitto, Zaramella. ciao a tutti");
+    {
+        std::string prev;
+        for (int i = 0; i < 80; ++i) prev += "perché è così ";
+        const std::string p = whisper_continuation_prompt({}, prev, 200);
+        ZZ_CHECK(p.size() <= 200 && p.size() > 150);
+        ZZ_CHECK(p.rfind("perché", 0) == 0 || p.rfind("è", 0) == 0 || p.rfind("così", 0) == 0);  // da inizio parola
+        ZZ_CHECK(p.size() >= 5 && p.compare(p.size() - 5, 5, "così") == 0);
+        // Una sola parola lunghissima: niente spazi, ma mai a metà di un carattere UTF-8.
+        std::string word;
+        for (int i = 0; i < 150; ++i) word += "è";
+        const std::string q = whisper_continuation_prompt({}, word, 201);
+        ZZ_CHECK(q.size() == 200 && (static_cast<unsigned char>(q[0]) & 0xC0) != 0x80);
+    }
 
     // Pulizia dell'uscita del modello
     ZZ_CHECK_EQ_STR(clean_model_output("  Ciao, come stai?<|end|>", "ciao come stai"), "Ciao, come stai?");
