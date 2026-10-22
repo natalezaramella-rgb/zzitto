@@ -147,3 +147,31 @@ Da verificare alla prima build:
 - avvisi trasformati in errori da `TreatWarningsAsErrors` (analizzatori xUnit o CA): sono stati controllati a mano;
 - i test girano a ogni build in Visual Studio: un test fallito (tempi, permessi DPAPI) fa fallire la build;
 - prima build Release ARM64: compilazione lunga di whisper.cpp/llama.cpp con clang-cl.
+
+## Dettatura in streaming (API 2 del motore)
+
+*Aggiunto il 22/10/2026 alle 16:15. Spec §4.2, §5.2, §5.10, §10, §11. Scritto contro il contratto
+`core-native/include/zz_engine.h` (API 2) mentre il motore e il mock lo implementano in parallelo; non compilato qui.*
+
+- `ZzNativeMethods`/`IZzNative`/`ZzNativeLibrary`: P/Invoke di `zz_stream_begin`, `zz_stream_feed`, `zz_stream_finish`,
+  `zz_stream_abort` (handle `IntPtr`; feed con `ReadOnlySpan<float>` e puntatore fisso, nessuna copia gestita).
+  `ExpectedApiVersion` passa a 2: una `zz_engine.dll` v1 viene rifiutata alla creazione del motore.
+- `ZzEngine.BeginStreamAsync(options)` → `IDictationStream` (`Feed`, `FinishAsync`, `Abort`, `IsFaulted`). Apertura e
+  chiusura su thread dedicato, mai sul thread UI; `Feed` dal thread di cattura, non lancia mai e restituisce false se il
+  flusso è chiuso o in errore. Errori come `DictateAsync` (`ZzEngineException`, `OperationCanceledException`; token →
+  `zz_cancel`). Il flusso aperto tiene la coda del motore fino a `FinishAsync`/`Abort` (altrimenti `ZZ_ERR_BUSY`);
+  `Abort` chiama prima `zz_cancel` per liberare il motore in fretta; `Dispose` del motore annulla un flusso rimasto aperto.
+- `WasapiMicrophone`: ogni pacchetto (~10 ms) è consegnato subito a 16 kHz mono; i buffer di lavoro si azzerano anche
+  quando la cattura termina per errore (Spec §10).
+- `DictationController` (macchina a stati invariata): all'avvio dell'ascolto precarica i modelli e, se non c'è una
+  selezione, apre il flusso; ogni blocco va nel buffer in memoria e al flusso (solo la parte accettata entro la durata
+  massima); l'audio catturato prima dell'apertura è inoltrato all'aggancio. Allo stop: `FinishAsync`; all'annullamento:
+  `Abort`. Ripiego su `DictateAsync` con il buffer se l'apertura fallisce o un feed fallisce. Riscrittura (Spec §5.10)
+  sempre su `zz_rewrite`, senza aprire il flusso. Un errore del motore in `FinishAsync` non provoca ripiego.
+- Test: `ZzEngineTests` (flusso con API finta: risultato, coda occupata, errori, annullamento, abort, dispose),
+  `DictationControllerTests` (feed durante l'ascolto, apertura tardiva, stop prima dell'apertura, abort all'annullamento,
+  ripieghi, durata massima), `NativeInteropTests` (API 2 e flusso attraverso il P/Invoke reale con il mock).
+- Da registrare nel registro decisioni (Spec §14, a cura dell'orchestratore): ripiego automatico su `zz_dictate`;
+  riscrittura senza streaming; `zz_cancel` prima di `zz_stream_abort`.
+- Da verificare alla prima build sul Surface: compilazione (TreatWarningsAsErrors) e `NativeInteropTests` contro il mock
+  con le funzioni `zz_stream_*` (falliscono con `EntryPointNotFoundException` finché il mock non le esporta).

@@ -1,4 +1,5 @@
 // Oggetti finti per i test (Spec §12). Aggiunto il 22/10/2026 alle 11:32.
+// Streaming (API 2, Spec §11) aggiunto il 22/10/2026 alle 16:15.
 using Zzitto.Core.Licensing;
 using Zzitto.Platform.Audio;
 using Zzitto.Platform.Dictation;
@@ -12,8 +13,9 @@ namespace Zzitto.Tests;
 internal sealed class FakeNative : IZzNative
 {
     private int _inside;
+    private int _streamOpen;
 
-    public uint Api { get; set; } = 1;
+    public uint Api { get; set; } = 2;
 
     public ZzStatus CreateStatus { get; set; } = ZzStatus.Ok;
 
@@ -42,6 +44,20 @@ internal sealed class FakeNative : IZzNative
     public IReadOnlyList<KeyValuePair<string, string>>? LastShortcuts { get; private set; }
 
     public EngineConfig? LastConfig { get; private set; }
+
+    public ZzStatus StreamBeginStatus { get; set; } = ZzStatus.Ok;
+
+    public ZzStatus FeedStatus { get; set; } = ZzStatus.Ok;
+
+    public int StreamBeginCalls;
+
+    public int StreamFinishCalls;
+
+    public int StreamAbortCalls;
+
+    public int StreamFedSamples;
+
+    public bool StreamOpen => Volatile.Read(ref _streamOpen) != 0;
 
     private readonly ManualResetEventSlim _cancelled = new(false);
 
@@ -109,6 +125,53 @@ internal sealed class FakeNative : IZzNative
         return Run(null, out result);
     }
 
+    public ZzStatus StreamBegin(IntPtr engine, DictationOptions options, out IntPtr stream)
+    {
+        Interlocked.Increment(ref StreamBeginCalls);
+        LastOptions = options;
+        ZzStatus status = Enter(() => StreamBeginStatus);
+        if (status != ZzStatus.Ok)
+        {
+            stream = IntPtr.Zero;
+            return status;
+        }
+
+        Interlocked.Exchange(ref StreamFedSamples, 0);
+        Volatile.Write(ref _streamOpen, 1);
+        stream = new IntPtr(99);
+        return ZzStatus.Ok;
+    }
+
+    public ZzStatus StreamFeed(IntPtr stream, ReadOnlySpan<float> pcm16kMono)
+    {
+        if (!StreamOpen)
+        {
+            return ZzStatus.InvalidArgument; // uso dopo finish/abort: nel motore reale sarebbe memoria liberata
+        }
+
+        if (FeedStatus == ZzStatus.Ok)
+        {
+            Interlocked.Add(ref StreamFedSamples, pcm16kMono.Length);
+        }
+
+        return FeedStatus;
+    }
+
+    public ZzStatus StreamFinish(IntPtr stream, Action<EngineStage>? onStage, out EngineResult? result)
+    {
+        Interlocked.Increment(ref StreamFinishCalls);
+        LastSampleCount = Volatile.Read(ref StreamFedSamples);
+        Volatile.Write(ref _streamOpen, 0); // il flusso diventa un'operazione normale fino alla fine
+        ZzStatus status = Run(onStage, out result);
+        return status;
+    }
+
+    public void StreamAbort(IntPtr stream)
+    {
+        Interlocked.Increment(ref StreamAbortCalls);
+        Volatile.Write(ref _streamOpen, 0);
+    }
+
     public void Cancel(IntPtr engine)
     {
         Interlocked.Increment(ref CancelCalls);
@@ -163,7 +226,8 @@ internal sealed class FakeNative : IZzNative
 
     private ZzStatus Enter(Func<ZzStatus> body)
     {
-        if (Interlocked.Increment(ref _inside) > 1)
+        // Contratto: un flusso aperto occupa il motore (ZZ_ERR_BUSY alle altre operazioni).
+        if (Interlocked.Increment(ref _inside) > 1 || StreamOpen)
         {
             ConcurrentCallDetected = true;
         }
@@ -202,6 +266,25 @@ internal sealed class FakeEngine : IDictationEngine
 
     public DictationOptions? LastOptions { get; private set; }
 
+    /// <summary>Errore di zz_stream_begin (null = flusso aperto).</summary>
+    public Exception? BeginStreamError { get; set; }
+
+    /// <summary>Se impostato, l'apertura del flusso attende (es. caricamento dei modelli lento).</summary>
+    public TaskCompletionSource? BeginGate { get; set; }
+
+    /// <summary>Esito di ogni feed del flusso (false simula un errore di zz_stream_feed).</summary>
+    public bool FeedSucceeds { get; set; } = true;
+
+    public int BeginStreamCalls { get; private set; }
+
+    public List<FakeStream> Streams { get; } = new();
+
+    public FakeStream? LastStream => Streams.Count == 0 ? null : Streams[^1];
+
+    public int StreamFinishCalls => Streams.Sum(s => s.FinishCalls);
+
+    public int StreamAbortCalls => Streams.Sum(s => s.AbortCalls);
+
     public Task LoadAsync(CancellationToken cancellationToken = default)
     {
         IsLoaded = true;
@@ -236,9 +319,35 @@ internal sealed class FakeEngine : IDictationEngine
     public Task<EngineResult> ProcessTextAsync(string rawText, DictationOptions options, CancellationToken cancellationToken = default) =>
         Task.FromResult(Result);
 
+    public async Task<IDictationStream> BeginStreamAsync(DictationOptions options, CancellationToken cancellationToken = default)
+    {
+        BeginStreamCalls++;
+        if (BeginGate is not null)
+        {
+            await BeginGate.Task.WaitAsync(cancellationToken);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (BeginStreamError is not null)
+        {
+            throw BeginStreamError;
+        }
+
+        var stream = new FakeStream(this, options);
+        lock (Streams)
+        {
+            Streams.Add(stream);
+        }
+
+        return stream;
+    }
+
     public void Dispose()
     {
     }
+
+    internal Task<EngineResult> FinishStream(int sampleCount, DictationOptions options, Action<EngineStage>? onStage,
+        CancellationToken cancellationToken) => Produce(sampleCount, options, onStage, cancellationToken);
 
     private async Task<EngineResult> Produce(int sampleCount, DictationOptions options, Action<EngineStage>? onStage,
         CancellationToken cancellationToken)
@@ -265,6 +374,73 @@ internal sealed class FakeEngine : IDictationEngine
         onStage?.Invoke(EngineStage.Done);
         return Result;
     }
+}
+
+/// <summary>Flusso finto: conta i campioni inoltrati e verifica che finish/abort avvengano una sola volta.</summary>
+internal sealed class FakeStream : IDictationStream
+{
+    private readonly FakeEngine _engine;
+    private readonly DictationOptions _options;
+    private int _fed;
+    private int _closed;
+    private int _feedCalls;
+
+    public FakeStream(FakeEngine engine, DictationOptions options)
+    {
+        _engine = engine;
+        _options = options;
+    }
+
+    public int FedSamples => Volatile.Read(ref _fed);
+
+    public int FeedCalls => Volatile.Read(ref _feedCalls);
+
+    public int FinishCalls { get; private set; }
+
+    public int AbortCalls { get; private set; }
+
+    public bool IsClosed => Volatile.Read(ref _closed) != 0;
+
+    public bool IsFaulted { get; private set; }
+
+    public bool Feed(ReadOnlySpan<float> pcm16kMono)
+    {
+        if (IsClosed || IsFaulted)
+        {
+            return false;
+        }
+
+        Interlocked.Increment(ref _feedCalls);
+        if (!_engine.FeedSucceeds)
+        {
+            IsFaulted = true;
+            return false;
+        }
+
+        Interlocked.Add(ref _fed, pcm16kMono.Length);
+        return true;
+    }
+
+    public Task<EngineResult> FinishAsync(Action<EngineStage>? onStage, CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _closed, 1) != 0)
+        {
+            throw new InvalidOperationException("Flusso già chiuso.");
+        }
+
+        FinishCalls++;
+        return _engine.FinishStream(FedSamples, _options, onStage, cancellationToken);
+    }
+
+    public void Abort()
+    {
+        if (Interlocked.Exchange(ref _closed, 1) == 0)
+        {
+            AbortCalls++;
+        }
+    }
+
+    public void Dispose() => Abort();
 }
 
 internal sealed class FakeAudio : IAudioSource

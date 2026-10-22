@@ -1,5 +1,5 @@
-// P/Invoke verso zz_engine.dll: tutte le funzioni del contratto (core-native/include/zz_engine.h, API v1).
-// Spec §4.3. Aggiunto il 22/10/2026 alle 11:32.
+// P/Invoke verso zz_engine.dll: tutte le funzioni del contratto (core-native/include/zz_engine.h, API v2).
+// Spec §4.3. Aggiunto il 22/10/2026 alle 11:32; API 2 (dettatura in streaming, Spec §11) aggiunta il 22/10/2026 alle 16:15.
 //
 // Regole di marshalling:
 //  - solo tipi blittabili; le stringhe UTF-8 si convertono a mano (Marshal.StringToCoTaskMemUTF8 /
@@ -51,7 +51,7 @@ internal static unsafe class ZzNativeMethods
 {
     public const string LibraryName = "zz_engine";
 
-    public const uint ExpectedApiVersion = 1; // ZZ_ENGINE_API_VERSION
+    public const uint ExpectedApiVersion = 2; // ZZ_ENGINE_API_VERSION (2: streaming, 22/10/2026 16:15)
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern uint zz_api_version();
@@ -101,6 +101,23 @@ internal static unsafe class ZzNativeMethods
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern int zz_process_text(IntPtr engine, IntPtr rawText, ZzDictationOptionsNative* options,
         ZzResultNative* outResult);
+
+    // ---- Dettatura in streaming (API 2, Spec §11) ----
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern int zz_stream_begin(IntPtr engine, ZzDictationOptionsNative* options, IntPtr* outStream);
+
+    // Non bloccante: copia i campioni e ritorna; chiamata dal thread di cattura WASAPI.
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern int zz_stream_feed(IntPtr stream, float* pcm, nuint nSamples);
+
+    // Bloccante; libera sempre il flusso.
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern int zz_stream_finish(IntPtr stream, delegate* unmanaged[Cdecl]<int, IntPtr, void> onStage,
+        IntPtr userData, ZzResultNative* outResult);
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern void zz_stream_abort(IntPtr stream);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void zz_cancel(IntPtr engine);

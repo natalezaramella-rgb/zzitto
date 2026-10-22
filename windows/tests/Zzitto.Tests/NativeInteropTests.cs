@@ -22,9 +22,10 @@ public class NativeInteropTests
     }
 
     [Fact]
-    public void ApiVersion_IsOne()
+    public void ApiVersion_IsTwo()
     {
-        Assert.Equal(1u, Native.ApiVersion());
+        // API 2 (streaming, Spec §11) dal 22/10/2026 alle 16:05.
+        Assert.Equal(2u, Native.ApiVersion());
         Assert.False(string.IsNullOrEmpty(Native.VersionString()));
         Assert.Equal("nessun parlato rilevato", Native.StatusString(ZzStatus.NoSpeech));
     }
@@ -80,6 +81,49 @@ public class NativeInteropTests
         await engine.LoadAsync();
         var ex = await Assert.ThrowsAsync<ZzEngineException>(() => engine.DictateAsync(new float[100], 100, new DictationOptions(), null));
         Assert.Equal(ZzStatus.NoSpeech, ex.Status);
+    }
+
+    [Fact]
+    public async Task Stream_FeedInBlocksThenFinish_GivesDictationResult()
+    {
+        // Spec §11 (aggiunto il 22/10/2026 alle 16:15): zz_stream_* attraverso il P/Invoke reale, a blocchi da 10 ms
+        // come la cattura WASAPI; il risultato è equivalente a zz_dictate sullo stesso audio.
+        using ZzEngine engine = ZzEngine.Create(Native, new EngineConfig("w.bin", "l.gguf", null, null));
+        await engine.LoadAsync();
+        var stages = new List<EngineStage>();
+        float[] pcm = new float[16000];
+
+        IDictationStream stream = await engine.BeginStreamAsync(new DictationOptions());
+        for (int offset = 0; offset < pcm.Length; offset += 160)
+        {
+            Assert.True(stream.Feed(new ReadOnlySpan<float>(pcm, offset, 160)));
+        }
+
+        EngineResult result = await stream.FinishAsync(s =>
+        {
+            lock (stages)
+            {
+                stages.Add(s);
+            }
+        });
+
+        Assert.False(string.IsNullOrEmpty(result.FinalText));
+        Assert.Equal(EngineStage.Done, stages[^1]);
+        Assert.False(stream.Feed(pcm)); // flusso liberato
+    }
+
+    [Fact]
+    public async Task Stream_Abort_LeavesEngineUsable()
+    {
+        using ZzEngine engine = ZzEngine.Create(Native, new EngineConfig("w.bin", "l.gguf", null, null));
+        await engine.LoadAsync();
+        IDictationStream stream = await engine.BeginStreamAsync(new DictationOptions());
+        Assert.True(stream.Feed(new float[8000]));
+
+        stream.Abort();
+
+        EngineResult result = await engine.DictateAsync(new float[16000], 16000, new DictationOptions(), null);
+        Assert.False(string.IsNullOrEmpty(result.FinalText));
     }
 
     [Fact]

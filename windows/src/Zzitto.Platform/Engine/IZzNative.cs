@@ -33,6 +33,20 @@ public interface IZzNative
 
     ZzStatus ProcessText(IntPtr engine, string rawText, DictationOptions options, out EngineResult? result);
 
+    // ---- Dettatura in streaming (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:15. ----
+
+    /// <summary>zz_stream_begin: apre un flusso (bloccante, carica i modelli se serve). Le opzioni vengono copiate.</summary>
+    ZzStatus StreamBegin(IntPtr engine, DictationOptions options, out IntPtr stream);
+
+    /// <summary>zz_stream_feed: non bloccante, chiamabile dal thread di cattura. Nessuna copia lato gestito.</summary>
+    ZzStatus StreamFeed(IntPtr stream, ReadOnlySpan<float> pcm16kMono);
+
+    /// <summary>zz_stream_finish: bloccante; libera sempre il flusso, anche in caso di errore.</summary>
+    ZzStatus StreamFinish(IntPtr stream, Action<EngineStage>? onStage, out EngineResult? result);
+
+    /// <summary>zz_stream_abort: annulla e libera il flusso senza risultato.</summary>
+    void StreamAbort(IntPtr stream);
+
     void Cancel(IntPtr engine);
 
     IntPtr CreateVad(int silenceMs);
