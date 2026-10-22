@@ -58,6 +58,10 @@ androidx-test-ext = { module = "androidx.test.ext:junit", version.ref = "android
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 
 # --- Sezione agente B (Android) ---
+# Aggiunto il 22/10/2026 alle 11:20. Versioni inline perché la sezione [versions] è dell'orchestratore.
+junit5-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
 # --- Sezione agente D (Acquisti) ---
 # Aggiunto il 22/10/2026 alle 11:28. BOM di JUnit 5: fornisce la versione a junit-platform-launcher
 # (voce senza versione nel catalogo comune), Spec §12.

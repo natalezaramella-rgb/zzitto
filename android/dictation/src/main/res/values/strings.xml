@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stringhe del modulo :dictation, italiano predefinito (Spec §2.1). Aggiunto il 22/10/2026 alle 11:59. -->
+<resources>
+    <string name="zz_accessibility_service_label">Zzitto – dettatura</string>
+    <string name="zz_accessibility_service_description">Zzitto usa questo servizio solo per riconoscere il campo di testo attivo e inserire il testo che detti. Non legge altri contenuti dello schermo e non invia dati fuori dal telefono.</string>
+
+    <string name="zz_icon_idle">Zzitto: tocca per dettare, tieni premuto per il menu</string>
+    <string name="zz_icon_listening">Zzitto: in ascolto, tocca per fermare</string>
+    <string name="zz_icon_transcribing">Zzitto: trascrizione in corso</string>
+    <string name="zz_icon_correcting">Zzitto: correzione in corso</string>
+    <string name="zz_icon_inserting">Zzitto: inserimento del testo</string>
+    <string name="zz_icon_error">Zzitto: errore</string>
+    <string name="zz_icon_locked">Zzitto: prova scaduta, tocca per sbloccare</string>
+
+    <string name="zz_menu_cancel">Annulla dettatura</string>
+    <string name="zz_menu_undo">Annulla ultimo inserimento</string>
+    <string name="zz_menu_language">Lingua: %1$s</string>
+    <string name="zz_menu_translate">Traduzione: %1$s</string>
+    <string name="zz_menu_mode">Modalità: %1$s</string>
+    <string name="zz_menu_settings">Impostazioni</string>
+
+    <string name="zz_translate_none">nessuna</string>
+    <string name="zz_translate_en">inglese</string>
+    <string name="zz_translate_es">spagnolo</string>
+    <string name="zz_mode_faithful">Fedele</string>
+    <string name="zz_mode_clean">Pulito</string>
+    <string name="zz_mode_formal">Formale</string>
+
+    <string name="zz_notice_raw_text">Testo inserito senza correzione</string>
+    <string name="zz_notice_copied">Non riesco a scrivere in questo campo: il testo è negli appunti, incollalo tu</string>
+    <string name="zz_notice_mic_permission">Concedi il permesso del microfono dall\'app Zzitto</string>
+    <string name="zz_notice_mic_unavailable">Il microfono è occupato da un\'altra app</string>
+    <string name="zz_notice_models">I modelli AI non sono pronti: apri Zzitto per prepararli</string>
+    <string name="zz_notice_engine">Dettatura non riuscita, riprova</string>
+    <string name="zz_notice_undo_unavailable">Niente da annullare in questo campo</string>
+    <string name="zz_notice_send_unavailable">Questo campo non permette l\'invio</string>
+    <string name="zz_notice_nothing_to_delete">Nessuna frase da cancellare</string>
+    <string name="zz_notice_trial_expired">La prova gratuita è terminata</string>
+</resources>

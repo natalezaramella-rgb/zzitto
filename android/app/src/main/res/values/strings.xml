@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stringhe dell'app, italiano predefinito (Spec §2.1). Aggiunto il 22/10/2026 alle 11:59. -->
+<resources>
+    <string name="app_name" translatable="false">Zzitto</string>
+    <!-- Spec §10: indirizzo dell'informativa privacy pubblicata da docs/privacy (agente E); da confermare prima del rilascio. -->
+    <string name="privacy_policy_url" translatable="false">https://zzitto.it/privacy</string>
+
+    <!-- Azioni -->
+    <string name="action_back">Indietro</string>
+    <string name="action_help">Guida</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="action_delete">Elimina</string>
+    <string name="action_add">Aggiungi</string>
+    <string name="action_save">Salva</string>
+    <string name="action_enable">Attiva</string>
+    <string name="action_grant">Concedi</string>
+    <string name="action_open_settings">Apri le impostazioni</string>
+    <string name="action_prepare">Prepara</string>
+    <string name="action_unlock">Sblocca</string>
+    <string name="action_next">Avanti</string>
+    <string name="action_previous">Indietro</string>
+    <string name="action_skip">Salta</string>
+    <string name="action_finish">Fine</string>
+
+    <!-- Schermate -->
+    <string name="screen_settings">Impostazioni</string>
+    <string name="screen_dictionary">Dizionario personale</string>
+    <string name="screen_shortcuts">Scorciatoie vocali</string>
+    <string name="screen_history">Cronologia</string>
+    <string name="screen_licenses">Licenze open source</string>
+    <string name="screen_purchase">Prova e acquisto</string>
+    <string name="screen_tour">Tour guidato</string>
+
+    <!-- Guida contestuale (Spec §5.8) -->
+    <string name="help_title">Guida: %1$s</string>
+    <string name="help_home">Zzitto ti fa dettare in qualsiasi app. Tocca un campo di testo: compare l\'icona del microfono. Tocca l\'icona per parlare e di nuovo per fermarti (si ferma anche da sola dopo una pausa). Il testo viene corretto e inserito nel campo. Tieni premuta l\'icona per annullare, cambiare lingua, traduzione o modalità. Le schede in alto mostrano cosa manca per usare Zzitto. Tutto avviene sul telefono: nessun audio e nessun testo esce dal dispositivo.</string>
+    <string name="help_tour">Il tour ti guida nei passaggi necessari: servizio di accessibilità, microfono, batteria, preparazione dei modelli e prima dettatura. Puoi ripeterlo quando vuoi dalle impostazioni.</string>
+    <string name="help_settings">Qui scegli lingua, modalità di correzione (Fedele, Pulito, Formale), traduzione in inglese o spagnolo, quanto silenzio ferma l\'ascolto, la durata massima, i comandi vocali e la conferma con vibrazione o suono. \"Libera la memoria dopo\" indica dopo quanti minuti senza dettature i modelli escono dalla RAM: la dettatura successiva impiega qualche secondo in più.</string>
+    <string name="help_dictionary">Aggiungi nomi propri, aziende e termini tecnici che vuoi siano scritti correttamente. Le parole aiutano sia la trascrizione sia la correzione. L\'elenco è salvato cifrato sul telefono.</string>
+    <string name="help_shortcuts">Una scorciatoia associa una parola chiave a un testo. Se detti solo la parola chiave (per esempio \"firma\"), Zzitto inserisce il testo associato così com\'è, senza correzione. Le scorciatoie sono salvate cifrate.</string>
+    <string name="help_history">La cronologia conserva le ultime dettature (testo originale e corretto), cifrate sul telefono. Puoi disattivarla, scegliere per quanti giorni conservarla e cancellare tutto con un tocco. Tocca una voce per vedere il testo originale.</string>
+    <string name="help_licenses">Zzitto usa solo componenti open source con licenze permissive (MIT, Apache 2.0, BSD). Qui trovi l\'elenco completo con i testi delle licenze.</string>
+    <string name="help_purchase">Zzitto è gratuito per 30 giorni. Poi la dettatura si blocca finché non sblocchi l\'app con un acquisto unico, senza abbonamento. Durante la prova l\'app si collega a Google Play solo per verificare l\'acquisto; dopo l\'acquisto non serve più la rete. Se reinstalli l\'app usa \"Ripristina acquisto\".</string>
+
+    <!-- Home -->
+    <string name="home_intro">Tocca un campo di testo in qualsiasi app: comparirà l\'icona del microfono. Tocca l\'icona e parla.</string>
+    <string name="home_try_title">Prova qui</string>
+    <string name="home_try_hint">Tocca qui, poi tocca l\'icona del microfono</string>
+    <string name="home_more">Altro</string>
+
+    <!-- Stato -->
+    <string name="status_ok">Fatto</string>
+    <string name="status_accessibility">Servizio di accessibilità</string>
+    <string name="status_accessibility_todo">Non attivo: senza il servizio Zzitto non può scrivere nelle altre app.</string>
+    <string name="status_microphone">Microfono</string>
+    <string name="status_microphone_todo">Permesso non concesso.</string>
+    <string name="status_battery">Batteria</string>
+    <string name="status_battery_todo">Android potrebbe chiudere Zzitto per risparmiare batteria. Nelle informazioni dell\'app scegli Batteria → Senza restrizioni.</string>
+    <string name="status_models">Modelli AI</string>
+    <string name="status_license">Licenza</string>
+
+    <string name="license_unknown">Verifica della licenza in corso</string>
+    <string name="license_trial">Prova gratuita: %1$d giorni rimasti</string>
+    <string name="license_expired">La prova gratuita è terminata</string>
+    <string name="license_purchased">Zzitto è sbloccato</string>
+
+    <string name="models_ready">Pronti</string>
+    <string name="models_todo">Da preparare: la prima volta Zzitto copia i modelli (circa 3 GB). Serve qualche minuto.</string>
+    <string name="models_installing">Preparazione in corso: %1$d%%</string>
+    <string name="models_error_space">Spazio insufficiente: libera almeno 3,5 GB e riprova.</string>
+    <string name="models_error_integrity">I file dei modelli non hanno superato il controllo di integrità. Reinstalla Zzitto da Google Play.</string>
+    <string name="models_error_missing">I file dei modelli mancano. Reinstalla Zzitto da Google Play.</string>
+    <string name="models_error_io">Copia dei modelli non riuscita. Riprova.</string>
+
+    <!-- Tour (Spec §5.8, §5.1-bis) -->
+    <string name="tour_title">Tour %1$d di %2$d</string>
+    <string name="tour_welcome_title">Benvenuto in Zzitto</string>
+    <string name="tour_welcome_body">Zzitto trascrive quello che dici, toglie esitazioni e ripetizioni, sistema la punteggiatura e scrive il testo nel campo che stai usando, in qualsiasi app. La tastiera resta la tua. Tutta l\'intelligenza artificiale lavora sul telefono: nessun audio e nessun testo esce dal dispositivo. In pochi passaggi prepariamo tutto.</string>
+    <string name="tour_accessibility_title">Servizio di accessibilità</string>
+    <string name="tour_microphone_title">Microfono</string>
+    <string name="tour_microphone_body">Zzitto usa il microfono solo mentre detti, dopo il tuo tocco sull\'icona. L\'audio resta in memoria e viene cancellato subito dopo la trascrizione: non viene mai salvato.</string>
+    <string name="tour_battery_title">Batteria (Samsung)</string>
+    <string name="tour_battery_body">Sui telefoni Samsung il risparmio energetico può chiudere il servizio di Zzitto. Apri le informazioni dell\'app, tocca Batteria e scegli \"Senza restrizioni\". In alternativa: Impostazioni → Assistenza dispositivo e batteria → Batteria → Limiti di utilizzo in background → App mai in sospensione → aggiungi Zzitto.</string>
+    <string name="tour_models_title">Modelli AI</string>
+    <string name="tour_models_body">I modelli di trascrizione e correzione sono già scaricati con l\'app. Al primo avvio Zzitto li prepara nella memoria interna e ne verifica l\'integrità. Tieni l\'app aperta finché la barra non arriva in fondo.</string>
+    <string name="tour_first_title">La prima dettatura</string>
+    <string name="tour_first_body">Tocca il campo qui sotto: compare l\'icona del microfono. Toccala, di\' per esempio \"ehm, domani alle dieci ho una riunione, anzi alle undici\" e fai una pausa. Il colore dell\'icona indica lo stato: rosso ascolto, arancione trascrizione, viola correzione, verde inserimento.</string>
+
+    <!-- Informativa di accessibilità: testi di docs/store/google-play-accessibilita.md (agente E) -->
+    <string name="disclosure_title">Zzitto usa il servizio di accessibilità</string>
+    <string name="disclosure_intro">Per mostrare l\'icona del microfono quando tocchi un campo di testo e per scriverci dentro il testo che detti, Zzitto ha bisogno del servizio di accessibilità di Android.</string>
+    <string name="disclosure_list_title">Con questo servizio Zzitto:</string>
+    <string name="disclosure_item_1">riconosce quale campo di testo è attivo e dove si trova sullo schermo;</string>
+    <string name="disclosure_item_2">inserisce il testo dettato in quel campo;</string>
+    <string name="disclosure_item_3">legge il testo che selezioni, solo quando chiedi di riscriverlo a voce.</string>
+    <string name="disclosure_not">Zzitto non legge il resto dello schermo, non registra quello che scrivi con la tastiera, non salva e non invia a nessuno i contenuti delle altre app. Tutto resta sul tuo telefono.</string>
+    <string name="disclosure_revoke">Puoi disattivare il servizio quando vuoi dalle impostazioni di Android. Senza il servizio non puoi dettare nelle altre app.</string>
+    <string name="disclosure_decline">Non ora</string>
+    <string name="disclosure_accept">Accetto e attivo</string>
+    <string name="disclosure_declined">La dettatura nelle altre app non è attiva. Puoi riaprire l\'informativa quando vuoi, da qui o dalle impostazioni.</string>
+    <string name="disclosure_reopen">Riapri l\'informativa</string>
+
+    <!-- Impostazioni (Spec §5.7) -->
+    <string name="settings_language">Lingua di dettatura</string>
+    <string name="settings_mode">Modalità di correzione</string>
+    <string name="settings_translate">Traduzione</string>
+    <string name="settings_listening">Ascolto</string>
+    <string name="settings_auto_stop">Stop automatico dopo il silenzio</string>
+    <string name="settings_silence">Silenzio prima dello stop</string>
+    <string name="settings_max_duration">Durata massima di una dettatura</string>
+    <string name="settings_voice_commands">Comandi vocali</string>
+    <string name="settings_voice_commands_desc">\"a capo\", \"nuovo paragrafo\", \"punto\", \"virgola\", \"cancella l\'ultima frase\", \"annulla\", \"invia\"</string>
+    <string name="settings_vibrate">Vibrazione all\'avvio dell\'ascolto</string>
+    <string name="settings_sound">Suono all\'avvio dell\'ascolto</string>
+    <string name="settings_memory">Memoria</string>
+    <string name="settings_unload">Libera la memoria dopo</string>
+    <string name="settings_data">Dati personali</string>
+    <string name="settings_info">Informazioni</string>
+    <string name="settings_accessibility_disclosure">Informativa sul servizio di accessibilità</string>
+    <string name="settings_privacy_policy">Informativa privacy</string>
+
+    <string name="mode_faithful">Fedele (pulizia minima)</string>
+    <string name="mode_clean">Pulito (consigliato)</string>
+    <string name="mode_formal">Formale</string>
+    <string name="translate_none">Nessuna</string>
+    <string name="translate_en">In inglese</string>
+    <string name="translate_es">In spagnolo</string>
+
+    <!-- Dizionario e scorciatoie -->
+    <string name="dictionary_hint">Parola o nome</string>
+    <string name="dictionary_empty">Nessuna parola. Aggiungi nomi, aziende e termini tecnici.</string>
+    <string name="shortcuts_keyword">Parola chiave (es. firma)</string>
+    <string name="shortcuts_expansion">Testo da inserire</string>
+    <string name="shortcuts_empty">Nessuna scorciatoia.</string>
+    <string name="save_ok">Salvato</string>
+    <string name="save_empty">Il campo è vuoto</string>
+    <string name="save_too_long">Testo troppo lungo</string>
+    <string name="save_duplicate">È già presente</string>
+
+    <!-- Cronologia (Spec §5.6) -->
+    <string name="history_enabled">Salva la cronologia</string>
+    <string name="history_enabled_desc">Testi cifrati sul telefono, mai inviati altrove</string>
+    <string name="history_retention">Conserva per</string>
+    <string name="history_delete_all">Cancella tutto</string>
+    <string name="history_delete_all_confirm">Vuoi cancellare tutta la cronologia? L\'operazione non si può annullare.</string>
+    <string name="history_empty">La cronologia è vuota.</string>
+    <string name="history_raw">Testo originale: %1$s</string>
+    <plurals name="days">
+        <item quantity="one">%1$d giorno</item>
+        <item quantity="other">%1$d giorni</item>
+    </plurals>
+
+    <!-- Licenze -->
+    <string name="licenses_missing">L\'elenco delle licenze non è incluso in questa build.</string>
+
+    <!-- Acquisto (Spec §8.1) -->
+    <string name="purchase_body">Dopo 30 giorni di prova gratuita puoi sbloccare Zzitto per sempre con un acquisto unico. Nessun abbonamento.</string>
+    <string name="purchase_buy">Sblocca Zzitto</string>
+    <string name="purchase_restore">Ripristina acquisto</string>
+    <string name="purchase_outcome_ok">Grazie! Zzitto è sbloccato.</string>
+    <string name="purchase_outcome_owned">Acquisto ripristinato: Zzitto è sbloccato.</string>
+    <string name="purchase_outcome_pending">Pagamento in attesa di conferma da Google Play.</string>
+    <string name="purchase_outcome_cancelled">Acquisto annullato.</string>
+    <string name="purchase_outcome_error">Acquisto non riuscito. Controlla la connessione e riprova.</string>
+    <string name="purchase_privacy">La verifica dell\'acquisto passa da Google Play. Zzitto non invia mai audio o testo dettato.</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configurazione del servizio di accessibilità (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 11:59.
+  - Eventi minimi per sapere quale campo ha il focus e dove sono cursore e selezione, come in
+    docs/store/google-play-accessibilita.md (agente E): niente typeViewTextChanged, niente gesti né tasti.
+  - canRetrieveWindowContent: necessario per leggere il campo con focus e inserire il testo.
+  - isAccessibilityTool="false": Zzitto non è uno strumento di accessibilità in senso stretto;
+    per Google Play serve la dichiarazione sull'uso dell'API (Spec §5.1-bis).
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeViewFocused|typeViewTextSelectionChanged|typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/zz_accessibility_service_description"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.zaramella.zzitto.MainActivity" />
