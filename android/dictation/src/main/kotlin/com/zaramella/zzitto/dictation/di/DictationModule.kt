@@ -19,7 +19,7 @@ private val Context.zzSettingsStore: DataStore<Preferences> by preferencesDataSt
  * Collegamenti Hilt del modulo :dictation. Le implementazioni di [com.zaramella.zzitto.dictation.PersonalizationSource]
  * e [com.zaramella.zzitto.dictation.DictationHistorySink] arrivano dal modulo :app; [com.zaramella.zzitto.core.licensing.LicenseGate]
  * dal modulo :licensing (agente D).
- * Aggiunto il 22/10/2026 alle 12:35.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 @Module
 @InstallIn(SingletonComponent::class)

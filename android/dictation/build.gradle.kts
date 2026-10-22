@@ -1,5 +1,5 @@
 // Modulo :dictation — icona flottante, servizio di accessibilità, ciclo di dettatura e inserimento.
-// Spec §5.1-bis, §5.2, §5.4, §5.9–§5.12. Agente B. Aggiunto il 22/10/2026 alle 12:00.
+// Spec §5.1-bis, §5.2, §5.4, §5.9–§5.12. Agente B. Aggiunto il 22/10/2026 alle 11:59.
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)

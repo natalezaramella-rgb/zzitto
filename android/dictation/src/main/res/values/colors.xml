@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Colori dell'icona: lo stato si comunica solo con colore e animazione (Spec §2.5). Aggiunto il 22/10/2026 alle 12:35. -->
+<!-- Colori dell'icona: lo stato si comunica solo con colore e animazione (Spec §2.5). Aggiunto il 22/10/2026 alle 11:59. -->
 <resources>
     <color name="zz_icon_idle">#E61E3A5F</color>
     <color name="zz_icon_listening">#FFD93636</color>

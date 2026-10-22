@@ -28,7 +28,7 @@ sealed interface IconAppearance {
 
 /**
  * Icona del microfono disegnata su Canvas. Lo stato si comunica solo con colore e
- * animazione (Spec §2.5). Aggiunto il 22/10/2026 alle 12:20.
+ * animazione (Spec §2.5). Aggiunto il 22/10/2026 alle 11:59.
  *
  * Gesti: tap (avvia/ferma), pressione lunga (menu), trascinamento (sposta e ricorda, Spec §5.1-bis).
  */

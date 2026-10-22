@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- English strings for :dictation (Spec §2.1). Added 22/10/2026 12:35. -->
+<!-- English strings for :dictation (Spec §2.1). Added 22/10/2026 11:59. -->
 <resources>
     <string name="zz_accessibility_service_label">Zzitto – dictation</string>
-    <string name="zz_accessibility_service_description">Zzitto uses the accessibility service only to know which text field you are using, show the microphone icon and insert the text you dictate. All processing happens on your phone: no audio and no text ever leaves the device. Password fields are excluded.</string>
+    <string name="zz_accessibility_service_description">Zzitto uses this service only to detect the active text field and insert the text you dictate. It does not read other screen content and sends no data off your phone.</string>
 
     <string name="zz_icon_idle">Zzitto: tap to dictate, long press for the menu</string>
     <string name="zz_icon_listening">Zzitto: listening, tap to stop</string>

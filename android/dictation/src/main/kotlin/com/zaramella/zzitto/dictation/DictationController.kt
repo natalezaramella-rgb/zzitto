@@ -60,7 +60,7 @@ fun interface ListeningFeedback {
 /**
  * Ciclo di dettatura (Spec §5.2): possiede l'unica macchina a stati del progetto e coordina
  * microfono, motore, inserimento, azioni vocali, cronologia e scaricamento per inattività.
- * Aggiunto il 22/10/2026 alle 12:10.
+ * Aggiunto il 22/10/2026 alle 11:59.
  *
  * I metodi pubblici vanno chiamati dal thread principale del servizio; le transizioni sono
  * comunque sincronizzate perché le fasi del motore arrivano dal suo thread.

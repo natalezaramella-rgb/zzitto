@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Interfacce tra il modulo :dictation e il modulo :app, che le implementa con il database
  * cifrato (Spec §5.5, §5.6, §5.11, §10) e le collega con Hilt.
- * Aggiunto il 22/10/2026 alle 12:00.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 
 /** Dizionario personale e scorciatoie vocali, letti dal database cifrato. */

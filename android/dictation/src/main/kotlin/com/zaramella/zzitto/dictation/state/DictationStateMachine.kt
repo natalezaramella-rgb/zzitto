@@ -2,7 +2,7 @@ package com.zaramella.zzitto.dictation.state
 
 /**
  * Macchina a stati del ciclo di dettatura: l'unica del progetto (Spec §0, §5.2).
- * Aggiunto il 22/10/2026 alle 12:05.
+ * Aggiunto il 22/10/2026 alle 11:59.
  *
  * Inattivo → Ascolto → Trascrizione → Correzione → Inserimento → Inattivo;
  * Errore raggiungibile da ogni stato; l'utente può annullare in qualsiasi stato.

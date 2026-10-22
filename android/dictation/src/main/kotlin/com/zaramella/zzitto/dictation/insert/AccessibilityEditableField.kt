@@ -10,7 +10,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 /**
  * Campo di testo di un'altra app, raggiunto tramite il servizio di accessibilità (Spec §5.1-bis).
- * Aggiunto il 22/10/2026 alle 12:15.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 class AccessibilityEditableField(private val node: AccessibilityNodeInfo) : EditableField {
 

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Logica di inserimento e cancellazione (Spec §5.4, §5.9, §5.10). Aggiunto il 22/10/2026 alle 12:40. */
+/** Logica di inserimento e cancellazione (Spec §5.4, §5.9, §5.10). Aggiunto il 22/10/2026 alle 11:59. */
 class TextEditingTest {
 
     @Test

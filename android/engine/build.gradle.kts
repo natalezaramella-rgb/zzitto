@@ -18,14 +18,29 @@ android {
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {
             cmake {
-                // Spec §16.1: per ora il motore finto; l'orchestratore lo cambia in integrazione.
                 arguments += listOf(
-                    "-DZZ_ENGINE_MOCK=ON",
                     "-DZZ_BUILD_TESTS=OFF",
                     "-DANDROID_STL=c++_shared",
                 )
-                cppFlags += "-std=c++17"
             }
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    buildTypes {
+        // Spec §16.1: motore finto solo in debug finché l'orchestratore non integra il motore reale.
+        getByName("debug") {
+            externalNativeBuild { cmake { arguments += "-DZZ_ENGINE_MOCK=ON" } }
+            buildConfigField("boolean", "ENGINE_MOCK", "true")
+        }
+        // docs/release-guide.md (agente E): la release non usa mai il motore finto. Finché l'agente A
+        // non fornisce core-native/cmake/real_engine.cmake, la build release si ferma in CMake.
+        getByName("release") {
+            externalNativeBuild { cmake { arguments += "-DZZ_ENGINE_MOCK=OFF" } }
+            buildConfigField("boolean", "ENGINE_MOCK", "false")
         }
     }
 

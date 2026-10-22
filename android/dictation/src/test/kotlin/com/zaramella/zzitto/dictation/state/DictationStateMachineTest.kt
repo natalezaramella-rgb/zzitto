@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Macchina a stati del ciclo di dettatura (Spec §5.2). Aggiunto il 22/10/2026 alle 12:40. */
+/** Macchina a stati del ciclo di dettatura (Spec §5.2). Aggiunto il 22/10/2026 alle 11:59. */
 class DictationStateMachineTest {
 
     private val all: List<DictationState> = listOf(

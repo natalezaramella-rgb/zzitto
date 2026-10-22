@@ -16,7 +16,7 @@ import com.zaramella.zzitto.dictation.UserNotifier
 import com.zaramella.zzitto.dictation.settings.DictationSettings
 
 /**
- * Vibrazione e suono all'avvio dell'ascolto (Spec §5.7). Aggiunto il 22/10/2026 alle 12:15.
+ * Vibrazione e suono all'avvio dell'ascolto (Spec §5.7). Aggiunto il 22/10/2026 alle 11:59.
  */
 class AndroidListeningFeedback(private val context: Context) : ListeningFeedback {
 

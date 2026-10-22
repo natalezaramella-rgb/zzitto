@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * Ciclo di dettatura con motore, microfono, campo e licenza finti (Spec §5.2–§5.12, §8.1, §12).
- * Aggiunto il 22/10/2026 alle 12:45.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 class DictationControllerTest {
 

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-/** Impostazioni (Spec §5.7) e posizione dell'icona (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 12:50. */
+/** Impostazioni (Spec §5.7) e posizione dell'icona (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 11:59. */
 class SettingsTest {
 
     @TempDir

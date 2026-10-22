@@ -2,7 +2,7 @@ package com.zaramella.zzitto.dictation.insert
 
 /**
  * Logica pura di modifica del testo di un campo (Spec §5.4, §5.9, §5.10).
- * Aggiunto il 22/10/2026 alle 12:05.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 
 /** Contenuto e selezione di un campo. Contiene testo dell'utente: mai nei log (Spec §10). */

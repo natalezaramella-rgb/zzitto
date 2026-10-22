@@ -16,7 +16,7 @@ import androidx.core.content.ContextCompat
 import com.zaramella.zzitto.dictation.R
 import kotlin.math.roundToInt
 
-/** Calcoli di posizione dell'icona, separati per i test (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 12:25. */
+/** Calcoli di posizione dell'icona, separati per i test (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 11:59. */
 object IconPlacement {
     /** Posizione predefinita: bordo destro, a circa il 60% dell'altezza. */
     fun default(screenWidth: Int, screenHeight: Int, iconSize: Int, margin: Int): Pair<Int, Int> =
@@ -34,7 +34,7 @@ data class OverlayMenuItem(val label: String, val action: () -> Unit)
  * Finestre overlay dell'icona e del menu, di tipo TYPE_ACCESSIBILITY_OVERLAY (Spec §5.1-bis):
  * disponibili al servizio di accessibilità senza il permesso SYSTEM_ALERT_WINDOW.
  * Le finestre non prendono il focus, così la tastiera dell'utente resta attiva.
- * Aggiunto il 22/10/2026 alle 12:25.
+ * Aggiunto il 22/10/2026 alle 11:59.
  *
  * [context] deve essere il servizio di accessibilità.
  */

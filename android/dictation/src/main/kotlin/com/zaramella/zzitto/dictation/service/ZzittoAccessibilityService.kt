@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 /**
  * Servizio di accessibilità di Zzitto (Spec §5.1-bis): rileva il campo di testo con focus,
  * mostra l'icona flottante e vi inserisce il testo dettato.
- * Aggiunto il 22/10/2026 alle 12:30.
+ * Aggiunto il 22/10/2026 alle 11:59.
  *
  * Privacy (Spec §10): il servizio legge solo il campo con focus, non registra eventi, non
  * scrive testo nei log. Le password sono escluse.
@@ -163,7 +163,6 @@ class ZzittoAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
-            AccessibilityEvent.TYPE_WINDOWS_CHANGED,
             -> updateFocus()
             else -> Unit
         }

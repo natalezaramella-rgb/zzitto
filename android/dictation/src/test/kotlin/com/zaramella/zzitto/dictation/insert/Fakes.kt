@@ -1,6 +1,6 @@
 package com.zaramella.zzitto.dictation.insert
 
-/** Campo e appunti finti per i test di inserimento (Spec §12). Aggiunto il 22/10/2026 alle 12:40. */
+/** Campo e appunti finti per i test di inserimento (Spec §12). Aggiunto il 22/10/2026 alle 11:59. */
 class FakeField(
     var text: String = "",
     var selStart: Int = 0,

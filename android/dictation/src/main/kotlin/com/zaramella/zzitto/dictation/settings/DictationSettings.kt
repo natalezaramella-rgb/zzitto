@@ -7,7 +7,7 @@ import com.zaramella.zzitto.engine.TranslateTarget
 /**
  * Impostazioni dell'app (Spec §5.7), salvate con DataStore. Nessun testo dettato qui (Spec §10):
  * dizionario e scorciatoie stanno nel database cifrato del modulo :app.
- * Aggiunto il 22/10/2026 alle 12:00.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 data class DictationSettings(
     /** Lingua di dettatura (codice ISO per Whisper). */

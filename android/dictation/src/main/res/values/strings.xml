@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Stringhe del modulo :dictation, italiano predefinito (Spec §2.1). Aggiunto il 22/10/2026 alle 12:35. -->
+<!-- Stringhe del modulo :dictation, italiano predefinito (Spec §2.1). Aggiunto il 22/10/2026 alle 11:59. -->
 <resources>
     <string name="zz_accessibility_service_label">Zzitto – dettatura</string>
-    <string name="zz_accessibility_service_description">Zzitto usa il servizio di accessibilità solo per sapere quale campo di testo stai usando, mostrare l\'icona del microfono e inserire il testo che detti. Tutta l\'elaborazione avviene sul telefono: nessun audio e nessun testo lascia il dispositivo. I campi password sono esclusi.</string>
+    <string name="zz_accessibility_service_description">Zzitto usa questo servizio solo per riconoscere il campo di testo attivo e inserire il testo che detti. Non legge altri contenuti dello schermo e non invia dati fuori dal telefono.</string>
 
     <string name="zz_icon_idle">Zzitto: tocca per dettare, tieni premuto per il menu</string>
     <string name="zz_icon_listening">Zzitto: in ascolto, tocca per fermare</string>

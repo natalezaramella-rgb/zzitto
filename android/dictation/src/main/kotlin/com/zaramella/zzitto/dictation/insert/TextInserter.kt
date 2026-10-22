@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 /**
  * Campo di testo di destinazione. In produzione è un nodo di accessibilità
  * ([AccessibilityEditableField]); nei test è finto (Spec §12).
- * Aggiunto il 22/10/2026 alle 12:10.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 interface EditableField {
     /** Identifica il campo, per non annullare un inserimento in un campo diverso. */

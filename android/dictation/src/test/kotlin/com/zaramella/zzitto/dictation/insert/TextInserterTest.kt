@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Strategia di inserimento con fallback (Spec §5.1-bis, §2.6). Aggiunto il 22/10/2026 alle 12:40. */
+/** Strategia di inserimento con fallback (Spec §5.1-bis, §2.6). Aggiunto il 22/10/2026 alle 11:59. */
 class TextInserterTest {
 
     private val clipboard = FakeClipboard(current = "appunti utente")

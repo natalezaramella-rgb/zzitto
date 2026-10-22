@@ -50,20 +50,27 @@ class ModelInstallException(val error: ModelInstallError, message: String, cause
     Exception(message, cause)
 
 /**
- * Copia i modelli dall'asset pack install-time nella memoria interna dell'app e ne verifica
- * l'integrità con SHA-256 (Spec §7). Aggiunto il 22/10/2026 alle 11:30.
+ * Ricompone e copia i modelli dagli asset pack install-time nella memoria interna dell'app e ne
+ * verifica l'integrità con SHA-256 (Spec §7). Aggiunto il 22/10/2026 alle 11:30, aggiornato alle
+ * 14:05 con le istruzioni di `docs/release-guide.md` (agente E).
  *
- * - La copia avviene una sola volta per versione dell'app: la versione dei modelli è legata
- *   a quella dell'app (Spec §7). Un file marcatore registra versione e dimensioni.
- * - La destinazione è `noBackupFilesDir/models`, esclusa dal backup automatico.
- * - Ogni file viene scritto come `.tmp` e rinominato solo dopo la verifica dell'hash.
- * - Il motore riverifica gli hash a ogni `zz_engine_load` (contratto, Spec §7).
+ * - Whisper è un file unico nel pack `models`; Phi-4-mini è diviso in `<nome>.1.part`, `<nome>.2.part`
+ *   (pack `models_phi_1` e `models_phi_2`), concatenate in ordine numerico. L'elenco delle parti si
+ *   legge da `models/models-index.json`; se l'indice manca si cercano le parti in sequenza.
+ * - Prima di copiare si verifica lo spazio libero (dimensioni attese più un margine).
+ * - Lo SHA-256 si calcola durante la copia su un file `.tmp`, rinominato solo se coincide con
+ *   [ModelManifest]. Con [requireHashes] un hash non impostato blocca l'installazione.
+ * - La copia avviene una sola volta per versione dei modelli ([installKey]): a un aggiornamento con
+ *   modelli diversi si rifà e i vecchi file vengono cancellati.
+ * - Destinazione `noBackupFilesDir/models`, esclusa dal backup automatico (Spec §10).
  */
 class ModelInstaller(
     private val source: ModelAssetSource,
     private val targetDir: File,
-    private val appVersionCode: Long,
+    private val installKey: String,
     private val models: List<ModelFile> = ModelManifest.all,
+    private val requireHashes: Boolean = true,
+    private val freeSpace: (File) -> Long = { it.usableSpace },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : EngineConfigProvider {
 
@@ -88,12 +95,14 @@ class ModelInstaller(
     suspend fun ensureInstalled() {
         mutex.withLock {
             withContext(ioDispatcher) {
-                if (isInstalledCurrent()) {
-                    _state.value = ModelInstallState.Ready
-                    return@withContext
-                }
                 try {
-                    install()
+                    // Contratto e docs/release-guide.md: senza hash nel codice il modello non si carica.
+                    if (requireHashes) {
+                        models.firstOrNull { !it.hasExpectedHash }?.let {
+                            throw ModelInstallException(ModelInstallError.INTEGRITY, "hash non impostato: ${it.fileName}")
+                        }
+                    }
+                    if (!isInstalledCurrent()) install()
                     _state.value = ModelInstallState.Ready
                 } catch (e: ModelInstallException) {
                     _state.value = ModelInstallState.Failed(e.error)
@@ -114,7 +123,7 @@ class ModelInstaller(
             val idx = line.indexOf('=')
             if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 1)
         }.toMap()
-        if (entries[KEY_VERSION] != appVersionCode.toString()) return false
+        if (entries[KEY_VERSION] != installKey) return false
         return models.all { model ->
             val file = fileFor(model.fileName)
             val expected = entries[model.fileName]?.toLongOrNull()
@@ -129,13 +138,19 @@ class ModelInstaller(
         markerFile().delete()
         removeStaleFiles()
 
-        val total = models.sumOf { it.approxBytes }
+        val total = models.sumOf { it.expectedBytes }
+        // docs/release-guide.md: spazio libero = dimensioni attese più un margine.
+        if (freeSpace(targetDir) < total + SPACE_MARGIN_BYTES) {
+            throw ModelInstallException(ModelInstallError.NO_SPACE, "spazio insufficiente")
+        }
+
+        val index = readIndex()
         var copied = 0L
         _state.value = ModelInstallState.Installing(0, total)
 
         val sizes = LinkedHashMap<String, Long>()
         for (model in models) {
-            val parts = resolveParts(model)
+            val parts = resolveParts(model, index)
                 ?: throw ModelInstallException(ModelInstallError.MISSING_ASSET, "asset mancante: ${model.fileName}")
             val tmp = File(targetDir, model.fileName + TMP_SUFFIX)
             val digest = MessageDigest.getInstance("SHA-256")
@@ -166,7 +181,7 @@ class ModelInstaller(
                 }
             } catch (e: IOException) {
                 tmp.delete()
-                val error = if (targetDir.usableSpace < LOW_SPACE_BYTES) ModelInstallError.NO_SPACE else ModelInstallError.IO
+                val error = if (freeSpace(targetDir) < LOW_SPACE_BYTES) ModelInstallError.NO_SPACE else ModelInstallError.IO
                 throw ModelInstallException(error, "copia non riuscita: ${model.fileName}", e)
             } catch (e: Throwable) {
                 tmp.delete()
@@ -174,9 +189,10 @@ class ModelInstaller(
             }
 
             val actual = digest.digest().toHex()
-            if (model.hasExpectedHash && !actual.equals(model.sha256, ignoreCase = true)) {
+            val sizeMismatch = model.sizeBytes > 0 && written != model.sizeBytes
+            if (sizeMismatch || (model.hasExpectedHash && !actual.equals(model.sha256, ignoreCase = true))) {
                 tmp.delete()
-                throw ModelInstallException(ModelInstallError.INTEGRITY, "hash non corrispondente: ${model.fileName}")
+                throw ModelInstallException(ModelInstallError.INTEGRITY, "verifica non superata: ${model.fileName}")
             }
             val dest = fileFor(model.fileName)
             dest.delete()
@@ -190,18 +206,35 @@ class ModelInstaller(
         }
 
         val marker = buildString {
-            append(KEY_VERSION).append('=').append(appVersionCode).append('\n')
+            append(KEY_VERSION).append('=').append(installKey).append('\n')
             sizes.forEach { (name, size) -> append(name).append('=').append(size).append('\n') }
         }
-        markerFile().writeText(marker)
+        val markerTmp = File(targetDir, MARKER_NAME + TMP_SUFFIX)
+        markerTmp.writeText(marker)
+        if (!markerTmp.renameTo(markerFile())) {
+            markerTmp.delete()
+            throw ModelInstallException(ModelInstallError.IO, "marcatore non scritto")
+        }
     }
 
-    /** Asset unico `models/<nome>` oppure parti `models/<nome>.partNN` consecutive. */
-    private fun resolveParts(model: ModelFile): List<String>? {
+    private fun readIndex(): String? =
+        source.openOrNull("${ModelManifest.ASSET_DIR}/${ModelManifest.INDEX_FILE}")?.use {
+            it.readBytes().toString(Charsets.UTF_8)
+        }
+
+    /**
+     * Elenco ordinato degli asset da concatenare: le parti `<nome>.N.part` elencate nell'indice,
+     * oppure il file unico, oppure le parti trovate in sequenza da 1.
+     */
+    private fun resolveParts(model: ModelFile, index: String?): List<String>? {
+        if (index != null) {
+            val fromIndex = ModelIndex.partNumbers(index, model.fileName)
+            if (fromIndex.isNotEmpty()) return fromIndex.map(model::partAssetPath)
+        }
         source.openOrNull(model.assetPath)?.use { return listOf(model.assetPath) }
         val parts = mutableListOf<String>()
-        for (i in 0 until MAX_PARTS) {
-            val path = "${model.assetPath}.part${i.toString().padStart(2, '0')}"
+        for (n in 1..MAX_PARTS) {
+            val path = model.partAssetPath(n)
             val stream = source.openOrNull(path) ?: break
             stream.close()
             parts += path
@@ -229,12 +262,22 @@ class ModelInstaller(
 
     companion object {
         const val MARKER_NAME = ".installed"
+        const val SPACE_MARGIN_BYTES = 300L shl 20
         private const val KEY_VERSION = "version"
         private const val TMP_SUFFIX = ".tmp"
         private const val BUFFER_BYTES = 1 shl 20
         private const val PROGRESS_STEP_BYTES = 8L shl 20
         private const val LOW_SPACE_BYTES = 64L shl 20
-        private const val MAX_PARTS = 100
+        private const val MAX_PARTS = 99
         private val HEX = "0123456789abcdef".toCharArray()
+    }
+}
+
+/** Lettura minima di `models-index.json` (schema 1 dell'agente E): solo i numeri delle parti. */
+object ModelIndex {
+    /** Numeri delle parti `<fileName>.N.part` citate nell'indice, in ordine numerico. */
+    fun partNumbers(json: String, fileName: String): List<Int> {
+        val regex = Regex("\"name\"\\s*:\\s*\"" + Regex.escape(fileName) + "\\.(\\d+)\\.part\"")
+        return regex.findAll(json).map { it.groupValues[1].toInt() }.distinct().sorted().toList()
     }
 }

@@ -5,7 +5,7 @@ import com.zaramella.zzitto.engine.ZzVad
 
 /**
  * Stop automatico dopo il silenzio con il VAD del motore (Spec §5.2, contratto `zz_vad_*`).
- * Aggiunto il 22/10/2026 alle 12:30.
+ * Aggiunto il 22/10/2026 alle 11:59.
  */
 class EngineVadDetector(silenceMs: Int) : EndOfSpeechDetector {
 

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English strings (Spec §2.1). Added 22/10/2026 11:59. -->
+<resources>
+    <!-- Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_help">Help</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_add">Add</string>
+    <string name="action_save">Save</string>
+    <string name="action_enable">Turn on</string>
+    <string name="action_grant">Allow</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_prepare">Prepare</string>
+    <string name="action_unlock">Unlock</string>
+    <string name="action_next">Next</string>
+    <string name="action_previous">Back</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_finish">Done</string>
+
+    <!-- Screens -->
+    <string name="screen_settings">Settings</string>
+    <string name="screen_dictionary">Personal dictionary</string>
+    <string name="screen_shortcuts">Voice shortcuts</string>
+    <string name="screen_history">History</string>
+    <string name="screen_licenses">Open source licenses</string>
+    <string name="screen_purchase">Trial and purchase</string>
+    <string name="screen_tour">Guided tour</string>
+
+    <!-- Contextual help (Spec §5.8) -->
+    <string name="help_title">Help: %1$s</string>
+    <string name="help_home">Zzitto lets you dictate in any app. Tap a text field: the microphone icon appears. Tap the icon to speak and again to stop (it also stops by itself after a pause). The text is corrected and inserted into the field. Long press the icon to cancel or change language, translation or mode. The cards at the top show what is still needed. Everything happens on the phone: no audio and no text leaves the device.</string>
+    <string name="help_tour">The tour walks you through the required steps: accessibility service, microphone, battery, model preparation and your first dictation. You can repeat it at any time from Settings.</string>
+    <string name="help_settings">Choose the language, correction mode (Faithful, Clean, Formal), translation into English or Spanish, how much silence stops listening, the maximum length, voice commands and the vibration or sound cue. \"Free memory after\" sets how many idle minutes before the models leave RAM: the next dictation then takes a few seconds longer.</string>
+    <string name="help_dictionary">Add names, companies and technical terms you want spelled correctly. The words help both transcription and correction. The list is stored encrypted on the phone.</string>
+    <string name="help_shortcuts">A shortcut links a keyword to a text. If you dictate only the keyword (for example \"signature\"), Zzitto inserts the linked text as is, without correction. Shortcuts are stored encrypted.</string>
+    <string name="help_history">History keeps your latest dictations (original and corrected text), encrypted on the phone. You can turn it off, choose how many days to keep it and delete everything with one tap. Tap an entry to see the original text.</string>
+    <string name="help_licenses">Zzitto only uses open source components with permissive licenses (MIT, Apache 2.0, BSD). Here is the full list with the license texts.</string>
+    <string name="help_purchase">Zzitto is free for 30 days. After that, dictation stops until you unlock the app with a one-time purchase, no subscription. During the trial the app contacts Google Play only to check the purchase; after purchasing it no longer needs the network. If you reinstall the app, use \"Restore purchase\".</string>
+
+    <!-- Home -->
+    <string name="home_intro">Tap a text field in any app: the microphone icon will appear. Tap the icon and speak.</string>
+    <string name="home_try_title">Try it here</string>
+    <string name="home_try_hint">Tap here, then tap the microphone icon</string>
+    <string name="home_more">More</string>
+
+    <!-- Status -->
+    <string name="status_ok">Done</string>
+    <string name="status_accessibility">Accessibility service</string>
+    <string name="status_accessibility_todo">Off: without the service Zzitto cannot type into other apps.</string>
+    <string name="status_microphone">Microphone</string>
+    <string name="status_microphone_todo">Permission not granted.</string>
+    <string name="status_battery">Battery</string>
+    <string name="status_battery_todo">Android may close Zzitto to save battery. In the app info choose Battery → Unrestricted.</string>
+    <string name="status_models">AI models</string>
+    <string name="status_license">License</string>
+
+    <string name="license_unknown">Checking the license</string>
+    <string name="license_trial">Free trial: %1$d days left</string>
+    <string name="license_expired">The free trial has ended</string>
+    <string name="license_purchased">Zzitto is unlocked</string>
+
+    <string name="models_ready">Ready</string>
+    <string name="models_todo">To prepare: the first time, Zzitto copies the models (about 3 GB). It takes a few minutes.</string>
+    <string name="models_installing">Preparing: %1$d%%</string>
+    <string name="models_error_space">Not enough space: free at least 3.5 GB and try again.</string>
+    <string name="models_error_integrity">The model files failed the integrity check. Reinstall Zzitto from Google Play.</string>
+    <string name="models_error_missing">The model files are missing. Reinstall Zzitto from Google Play.</string>
+    <string name="models_error_io">Copying the models failed. Try again.</string>
+
+    <!-- Tour (Spec §5.8, §5.1-bis) -->
+    <string name="tour_title">Tour %1$d of %2$d</string>
+    <string name="tour_welcome_title">Welcome to Zzitto</string>
+    <string name="tour_welcome_body">Zzitto transcribes what you say, removes hesitations and repetitions, fixes punctuation and types the text into the field you are using, in any app. Your keyboard stays the same. All the artificial intelligence runs on the phone: no audio and no text leaves the device. Let\'s set everything up in a few steps.</string>
+    <string name="tour_accessibility_title">Accessibility service</string>
+    <string name="tour_microphone_title">Microphone</string>
+    <string name="tour_microphone_body">Zzitto uses the microphone only while you dictate, after you tap the icon. The audio stays in memory and is deleted right after transcription: it is never saved.</string>
+    <string name="tour_battery_title">Battery (Samsung)</string>
+    <string name="tour_battery_body">On Samsung phones power saving can close the Zzitto service. Open the app info, tap Battery and choose \"Unrestricted\". Alternatively: Settings → Device care and battery → Battery → Background usage limits → Never sleeping apps → add Zzitto.</string>
+    <string name="tour_models_title">AI models</string>
+    <string name="tour_models_body">The transcription and correction models are downloaded with the app. On first launch Zzitto prepares them in internal storage and checks their integrity. Keep the app open until the bar is full.</string>
+    <string name="tour_first_title">Your first dictation</string>
+    <string name="tour_first_body">Tap the field below: the microphone icon appears. Tap it, say for example \"uhm, tomorrow at ten I have a meeting, no, at eleven\" and pause. The icon color shows the state: red listening, orange transcribing, purple correcting, green inserting.</string>
+
+    <!-- Accessibility disclosure: texts from docs/store/google-play-accessibilita.md (agent E) -->
+    <string name="disclosure_title">Zzitto uses the accessibility service</string>
+    <string name="disclosure_intro">To show the microphone icon when you tap a text field and to type the text you dictate into it, Zzitto needs Android\'s accessibility service.</string>
+    <string name="disclosure_list_title">With this service Zzitto:</string>
+    <string name="disclosure_item_1">detects which text field is active and where it is on the screen;</string>
+    <string name="disclosure_item_2">inserts the dictated text into that field;</string>
+    <string name="disclosure_item_3">reads the text you select, only when you ask to rewrite it by voice.</string>
+    <string name="disclosure_not">Zzitto does not read the rest of the screen, does not log what you type on your keyboard, and does not store or send anyone other apps\' content. Everything stays on your phone.</string>
+    <string name="disclosure_revoke">You can turn the service off at any time in Android settings. Without it you cannot dictate in other apps.</string>
+    <string name="disclosure_decline">Not now</string>
+    <string name="disclosure_accept">Accept and turn on</string>
+    <string name="disclosure_declined">Dictation in other apps is not active. You can reopen the disclosure at any time, here or from Settings.</string>
+    <string name="disclosure_reopen">Reopen the disclosure</string>
+
+    <!-- Settings (Spec §5.7) -->
+    <string name="settings_language">Dictation language</string>
+    <string name="settings_mode">Correction mode</string>
+    <string name="settings_translate">Translation</string>
+    <string name="settings_listening">Listening</string>
+    <string name="settings_auto_stop">Stop automatically after silence</string>
+    <string name="settings_silence">Silence before stopping</string>
+    <string name="settings_max_duration">Maximum dictation length</string>
+    <string name="settings_voice_commands">Voice commands</string>
+    <string name="settings_voice_commands_desc">Italian commands: \"a capo\", \"nuovo paragrafo\", \"punto\", \"virgola\", \"cancella l\'ultima frase\", \"annulla\", \"invia\"</string>
+    <string name="settings_vibrate">Vibrate when listening starts</string>
+    <string name="settings_sound">Sound when listening starts</string>
+    <string name="settings_memory">Memory</string>
+    <string name="settings_unload">Free memory after</string>
+    <string name="settings_data">Personal data</string>
+    <string name="settings_info">About</string>
+    <string name="settings_accessibility_disclosure">Accessibility service disclosure</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+
+    <string name="mode_faithful">Faithful (minimal cleanup)</string>
+    <string name="mode_clean">Clean (recommended)</string>
+    <string name="mode_formal">Formal</string>
+    <string name="translate_none">None</string>
+    <string name="translate_en">Into English</string>
+    <string name="translate_es">Into Spanish</string>
+
+    <!-- Dictionary and shortcuts -->
+    <string name="dictionary_hint">Word or name</string>
+    <string name="dictionary_empty">No words yet. Add names, companies and technical terms.</string>
+    <string name="shortcuts_keyword">Keyword (e.g. signature)</string>
+    <string name="shortcuts_expansion">Text to insert</string>
+    <string name="shortcuts_empty">No shortcuts yet.</string>
+    <string name="save_ok">Saved</string>
+    <string name="save_empty">The field is empty</string>
+    <string name="save_too_long">Text too long</string>
+    <string name="save_duplicate">Already present</string>
+
+    <!-- History (Spec §5.6) -->
+    <string name="history_enabled">Keep history</string>
+    <string name="history_enabled_desc">Texts encrypted on the phone, never sent anywhere</string>
+    <string name="history_retention">Keep for</string>
+    <string name="history_delete_all">Delete all</string>
+    <string name="history_delete_all_confirm">Delete the whole history? This cannot be undone.</string>
+    <string name="history_empty">History is empty.</string>
+    <string name="history_raw">Original text: %1$s</string>
+    <plurals name="days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+
+    <!-- Licenses -->
+    <string name="licenses_missing">The license list is not included in this build.</string>
+
+    <!-- Purchase (Spec §8.1) -->
+    <string name="purchase_body">After the 30-day free trial you can unlock Zzitto forever with a one-time purchase. No subscription.</string>
+    <string name="purchase_buy">Unlock Zzitto</string>
+    <string name="purchase_restore">Restore purchase</string>
+    <string name="purchase_outcome_ok">Thank you! Zzitto is unlocked.</string>
+    <string name="purchase_outcome_owned">Purchase restored: Zzitto is unlocked.</string>
+    <string name="purchase_outcome_pending">Payment waiting for confirmation from Google Play.</string>
+    <string name="purchase_outcome_cancelled">Purchase cancelled.</string>
+    <string name="purchase_outcome_error">Purchase failed. Check your connection and try again.</string>
+    <string name="purchase_privacy">The purchase check goes through Google Play. Zzitto never sends audio or dictated text.</string>
+</resources>
