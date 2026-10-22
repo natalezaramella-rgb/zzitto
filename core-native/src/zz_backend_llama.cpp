@@ -223,6 +223,11 @@ public:
         return ZZ_OK;
     }
 
+    void warmup(const ChatPrompt &prompt, const AbortCheck &abort) override {
+        std::string ignored;
+        (void)generate(prompt, 0, abort, &ignored);  // 0 token: solo valutazione del prompt
+    }
+
 private:
     // Tokenizzazione a pezzi: solo i marcatori del template sono token speciali (Spec §10:
     // il testo dettato non può iniettare marcatori di controllo nel prompt).

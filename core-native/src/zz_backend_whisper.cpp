@@ -1,6 +1,8 @@
 // Trascrizione con whisper.cpp (Spec §3, §5.2, §5.5, §7, §10).
 // Aggiunto il 22/10/2026 alle 11:31.
 
+#include <cstdlib>
+#include <algorithm>
 #include <cstring>
 #include <new>
 #include <string>
@@ -56,6 +58,18 @@ public:
         out_text->clear();
         whisper_full_params p = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
         p.n_threads = settings_.n_threads;
+        // Spec §11 (ottimizzazione del 22/10/2026 15:20): una sola ipotesi greedy e nessun ritentativo a temperatura
+        // più alta; i valori predefiniti (best_of=5, temperature_inc=0.2) moltiplicano la decodifica.
+        p.greedy.best_of = 1;
+        p.temperature_inc = 0.0f;
+        // Contesto dell'encoder proporzionale alla durata dell'audio invece della finestra fissa di 30 s:
+        // per un messaggio di 10 s l'encoder lavora su circa un terzo dei frame. Disattivabile per i
+        // confronti di qualità con ZZ_WHISPER_FULL_CONTEXT=1 (solo sviluppo).
+        const char *full_ctx = std::getenv("ZZ_WHISPER_FULL_CONTEXT");
+        const double seconds = static_cast<double>(n_samples) / 16000.0;
+        if (!(full_ctx && full_ctx[0] == '1') && seconds < 29.0) {
+            p.audio_ctx = std::min(1500, static_cast<int>(seconds * 50.0) + 128);
+        }
         // Spec §10: nessuna stampa del testo da parte di whisper.cpp.
         p.print_special = false;
         p.print_progress = false;

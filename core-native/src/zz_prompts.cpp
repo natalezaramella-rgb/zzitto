@@ -155,8 +155,9 @@ std::string correction_system_prompt(zz_correction_mode mode, zz_translate_targe
          "- Keep line breaks where they are.\n";
     const char *target = translate == ZZ_TRANSLATE_EN ? "English" : translate == ZZ_TRANSLATE_ES ? "Spanish" : nullptr;
     if (target) {
-        s += std::string("- After correcting, translate the text into ") + target +
-             ". Reply with the translation only.\n";
+        s += std::string("- First resolve the speaker's self-corrections in the original language (drop what "
+                         "they retracted, keep the final version), then translate ONLY that final text into ") +
+             target + ". Reply with the translation only.\n";
     } else {
         s += "- Keep the language of the text. Do not translate.\n";
     }

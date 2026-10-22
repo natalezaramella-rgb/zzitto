@@ -97,7 +97,7 @@ typedef struct zz_engine_config {
     const char *llm_sha256;          /* hex minuscolo, NULL = nessuna verifica (solo test) */
     int32_t n_threads;               /* 0 = automatico */
     int32_t use_gpu;                 /* 1 = usa GPU/NPU se disponibile */
-    int32_t sequential_loading;      /* 1 = un solo modello in RAM alla volta (Spec §7, predefinito) */
+    int32_t sequential_loading;      /* 1 = un solo modello in RAM alla volta; predefinito 0 dal 22/10/2026 (Spec §7, §11) */
 } zz_engine_config;
 
 typedef struct zz_dictation_options {

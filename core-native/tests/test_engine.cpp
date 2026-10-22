@@ -389,7 +389,7 @@ int main() {
         ZZ_CHECK(r.used_fallback == 0);
         zz_result_free(&r);
         const std::string &p = rig.llm->prompts.back();
-        ZZ_CHECK(p.find("translate the text into Spanish") != std::string::npos);
+        ZZ_CHECK(p.find("translate ONLY that final text into Spanish") != std::string::npos);
         ZZ_CHECK(p.find("formal, professional") != std::string::npos);
         ZZ_CHECK(p.rfind("<|system|>", 0) == 0);
         ZZ_CHECK(p.size() > 13 && p.compare(p.size() - 13, 13, "<|assistant|>") == 0);

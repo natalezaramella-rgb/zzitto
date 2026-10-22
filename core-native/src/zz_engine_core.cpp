@@ -183,7 +183,18 @@ zz_status zz_engine::ensure_llm() {
     if (st != ZZ_OK) return st;
     if (config_.sequential_loading) stt_->unload();  // Spec §7
     st = llm_->load(llm_path_, settings_, cancel_check());
-    if (st == ZZ_OK) ++llm_loads_;
+    if (st == ZZ_OK) {
+        ++llm_loads_;
+        // Spec §11 (ottimizzazione del 22/10/2026 15:20): il prompt di sistema della modalità predefinita viene
+        // valutato subito (di solito mentre l'utente parla), così alla prima correzione resta da
+        // elaborare solo il testo dettato. Errori qui non bloccano: la correzione rifà il prefisso.
+        std::vector<std::string> dict;
+        {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            dict = dictionary_;
+        }
+        llm_->warmup(zz::correction_prompt(ZZ_MODE_CLEAN, ZZ_TRANSLATE_NONE, dict, "."), cancel_check());
+    }
     return st;
 }
 

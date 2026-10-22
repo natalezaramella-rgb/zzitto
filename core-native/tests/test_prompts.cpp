@@ -52,8 +52,8 @@ int main() {
     {
         std::string en = correction_system_prompt(ZZ_MODE_CLEAN, ZZ_TRANSLATE_EN, {});
         std::string es = correction_system_prompt(ZZ_MODE_CLEAN, ZZ_TRANSLATE_ES, {});
-        ZZ_CHECK(contains(en, "translate the text into English") && !contains(en, "Do not translate"));
-        ZZ_CHECK(contains(es, "translate the text into Spanish") && contains(es, "Nos vemos"));
+        ZZ_CHECK(contains(en, "translate ONLY that final text into English") && !contains(en, "Do not translate"));
+        ZZ_CHECK(contains(es, "translate ONLY that final text into Spanish") && contains(es, "Nos vemos"));
     }
     // Riscrittura (Spec §5.10)
     {

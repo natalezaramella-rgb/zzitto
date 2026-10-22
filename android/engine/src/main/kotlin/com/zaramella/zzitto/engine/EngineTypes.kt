@@ -122,8 +122,8 @@ data class EngineConfig(
     val llmSha256: String?,
     val threads: Int = 0,
     val useGpu: Boolean = true,
-    /** Spec §7: un solo modello in RAM alla volta. */
-    val sequentialLoading: Boolean = true,
+    /** Spec §7, §11: dal 22/10/2026 entrambi i modelli restano in RAM (reattività); true solo con poca memoria. */
+    val sequentialLoading: Boolean = false,
 )
 
 /** Scorciatoia vocale parola chiave → testo (Spec §5.11). */

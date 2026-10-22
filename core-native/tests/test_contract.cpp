@@ -45,7 +45,7 @@ int main() {
     zz_engine_config cfg;
     zz_engine_config_init(&cfg);
     ZZ_CHECK(cfg.struct_size == sizeof(cfg));
-    ZZ_CHECK(cfg.sequential_loading == 1);
+    ZZ_CHECK(cfg.sequential_loading == 0);  // predefinito dal 22/10/2026 (Spec §11)
 
     // Motore reale: modelli dalle variabili d'ambiente (Spec §12), se presenti.
     bool have_models = true;  // il mock non ha bisogno di modelli

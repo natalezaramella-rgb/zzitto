@@ -54,6 +54,8 @@ public:
     // Genera la risposta dell'assistente. ZZ_OK, ZZ_ERR_CANCELLED, ZZ_ERR_TIMEOUT, ZZ_ERR_INTERNAL.
     virtual zz_status generate(const ChatPrompt &prompt, int max_new_tokens, const AbortCheck &abort,
                                std::string *out_text) = 0;
+    // Valuta in anticipo il prompt (prefisso in cache) senza generare. Spec §11, 22/10/2026 15:20.
+    virtual void warmup(const ChatPrompt &prompt, const AbortCheck &abort) { (void)prompt; (void)abort; }
 };
 
 std::unique_ptr<SttBackend> make_whisper_backend();

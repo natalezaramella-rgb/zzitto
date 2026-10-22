@@ -268,7 +268,10 @@ ZZ_API void zz_engine_config_init(zz_engine_config *config) {
     if (!config) return;
     std::memset(config, 0, sizeof(*config));
     config->struct_size = sizeof(*config);
-    config->sequential_loading = 1;
+    // Spec §7, §11 (decisione del 22/10/2026 15:20): entrambi i modelli restano in RAM, così il prompt di sistema
+    // resta in cache e ogni dettatura non ricarica i modelli. Il caricamento sequenziale resta
+    // disponibile per dispositivi con poca memoria.
+    config->sequential_loading = 0;
     config->use_gpu = 1;
 }
 

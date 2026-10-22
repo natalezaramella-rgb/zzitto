@@ -59,7 +59,7 @@ public static class ModelManifest
             NormalizeHash(LlmSha256),
             Threads: 0,
             UseGpu: useGpu,
-            SequentialLoading: true); // Spec §7: un modello in RAM alla volta
+            SequentialLoading: false); // Spec §7, §11: dal 22/10/2026 entrambi i modelli in RAM (reattività)
     }
 
     public static string? NormalizeHash(string value) =>
