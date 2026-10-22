@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -63,7 +64,7 @@ class DictationControllerTest {
             prepared++
         }
 
-        override suspend fun dictate(
+        fun dictateImpl(
             pcm: FloatArray,
             sampleCount: Int,
             options: DictationOptions,
@@ -87,11 +88,82 @@ class DictationControllerTest {
             onStage: (EngineStage) -> Unit,
         ): EngineResult {
             lastSelected = selectedText
-            return dictate(pcm, sampleCount, options, onStage)
+            return dictateImpl(pcm, sampleCount, options, onStage)
         }
 
         override suspend fun unload() {
             unloaded++
+        }
+
+        // ---- Streaming (Spec §11). Aggiunto il 22/10/2026 alle 16:20. ----
+        var beginError: Exception? = null
+        var beginCount = 0
+        var dictateCount = 0
+        /** Se impostato, beginStream attende questo via (per provare l'arretrato). */
+        var beginGate: CountDownLatch? = null
+        var streamFeedResult = true
+        var finishError: EngineException? = null
+        var finishGate: CountDownLatch? = null
+        val finishStarted = CountDownLatch(1)
+        val streams: MutableList<FakeStream> = Collections.synchronizedList(mutableListOf())
+        val lastStream: FakeStream? get() = synchronized(streams) { streams.lastOrNull() }
+
+        override suspend fun beginStream(options: DictationOptions): DictationStream {
+            beginGate?.let { gate -> withContext(Dispatchers.IO) { gate.await(5, TimeUnit.SECONDS) } }
+            beginCount++
+            beginError?.let { throw it }
+            lastOptions = options
+            return FakeStream(this).also { streams += it }
+        }
+
+        override suspend fun dictate(
+            pcm: FloatArray,
+            sampleCount: Int,
+            options: DictationOptions,
+            onStage: (EngineStage) -> Unit,
+        ): EngineResult {
+            dictateCount++
+            return dictateImpl(pcm, sampleCount, options, onStage)
+        }
+    }
+
+    /** Flusso finto: conta i campioni ricevuti e il thread che li consegna (Spec §11). */
+    private class FakeStream(val engine: FakeEngine) : DictationStream {
+        @Volatile
+        var fedSamples = 0
+        @Volatile
+        var fedChunks = 0
+        val feedThreads: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
+        @Volatile
+        var finished = 0
+        @Volatile
+        var aborted = 0
+        var lastBlock: FloatArray? = null
+
+        override fun feed(pcm: FloatArray, offset: Int, length: Int): Boolean {
+            check(finished == 0 && aborted == 0) { "feed dopo la chiusura" }
+            feedThreads += Thread.currentThread().name
+            lastBlock = pcm
+            if (!engine.streamFeedResult) return false
+            fedSamples += length
+            fedChunks++
+            return true
+        }
+
+        override suspend fun finish(onStage: (EngineStage) -> Unit): EngineResult {
+            check(aborted == 0) { "finish dopo abort" }
+            finished++
+            onStage(EngineStage.TRANSCRIBING)
+            engine.finishStarted.countDown()
+            engine.finishGate?.let { gate -> withContext(Dispatchers.IO) { gate.await(5, TimeUnit.SECONDS) } }
+            engine.finishError?.let { throw it }
+            if (!engine.result.fromShortcut) onStage(EngineStage.CORRECTING)
+            onStage(EngineStage.DONE)
+            return engine.result
+        }
+
+        override fun abort() {
+            if (finished == 0) aborted++
         }
     }
 
@@ -114,6 +186,7 @@ class DictationControllerTest {
         val sleepMs: Long = 0,
     ) : PcmSource {
         val reading = CountDownLatch(1)
+        val readThreads: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
         @Volatile
         var reads = 0
         override fun start() {
@@ -122,6 +195,7 @@ class DictationControllerTest {
         }
         override fun read(buffer: FloatArray, offset: Int, length: Int): Int {
             reading.countDown()
+            readThreads += Thread.currentThread().name
             gate?.await(5, TimeUnit.SECONDS)
             if (sleepMs > 0) Thread.sleep(sleepMs)
             if (reads >= chunks) return 0
@@ -195,8 +269,12 @@ class DictationControllerTest {
         assertEquals("Ciao Ciao.", field.text)
         assertEquals(1, feedbackCount)
         assertEquals(1, engine.prepared)
-        assertEquals(10 * AudioFormatSpec.CHUNK_SAMPLES, engine.lastSamples)
-        assertTrue(engine.receivedAudio!!.all { it == 0f }, "audio azzerato dopo la trascrizione (Spec §10)")
+        // Spec §11: tutto l'audio arriva al flusso, finish allo stop, nessuna dettatura classica.
+        assertEquals(10 * AudioFormatSpec.CHUNK_SAMPLES, engine.lastStream!!.fedSamples)
+        assertEquals(1, engine.lastStream!!.finished)
+        assertEquals(0, engine.lastStream!!.aborted)
+        assertEquals(0, engine.dictateCount)
+        assertTrue(engine.lastStream!!.lastBlock!!.all { it == 0f }, "blocco audio azzerato (Spec §10)")
         assertEquals(1, history.size)
         assertEquals("ehm ciao", history[0].rawText)
         assertEquals(1234L, history[0].timestampMillis)
@@ -271,6 +349,7 @@ class DictationControllerTest {
         assertEquals(DictationState.Listening(rewrite = true), c.state.value)
         c.runToIdle()
         assertEquals("vecchio", engine.lastSelected)
+        assertEquals(0, engine.beginCount, "Spec §5.10: la riscrittura resta su zz_rewrite")
         assertEquals("Testo nuovo qui", field.text)
         assertTrue(history.single().rewrite)
         c.close()
@@ -431,6 +510,156 @@ class DictationControllerTest {
         c.runToIdle()
         withTimeout(5_000) { while (engine.unloaded == 0) delay(5) }
         assertEquals(1, engine.unloaded)
+        c.close()
+    }
+
+    // ---- Dettatura in streaming (Spec §5.2, §11). Aggiunto il 22/10/2026 alle 16:20. ----
+
+    @Test
+    fun `durante l'ascolto i blocchi vanno al flusso dal thread di registrazione`() = runBlocking {
+        val gate = CountDownLatch(1)
+        source = FakeSource(chunks = Int.MAX_VALUE, gate = gate, sleepMs = 2)
+        val c = controller(this)
+        c.onIconTap()
+        c.awaitState { it is DictationState.Listening }
+        withTimeout(5_000) { while (engine.lastStream == null) delay(5) }
+        delay(50) // il flusso è collegato al ricevitore
+        gate.countDown()
+        val stream = engine.lastStream!!
+        withTimeout(5_000) { while (stream.fedChunks < 5) delay(5) }
+        assertTrue(c.state.value is DictationState.Listening, "i blocchi arrivano mentre si ascolta")
+        assertEquals(0, stream.finished)
+        assertTrue(stream.feedThreads.isNotEmpty() && source.readThreads.containsAll(stream.feedThreads))
+        c.onIconTap() // stop → finish
+        c.awaitState { it == DictationState.Idle }
+        assertEquals(1, stream.finished)
+        assertEquals(source.reads * AudioFormatSpec.CHUNK_SAMPLES, stream.fedSamples)
+        assertEquals(0, engine.dictateCount)
+        assertEquals("Ciao Ciao.", field.text)
+        c.close()
+    }
+
+    @Test
+    fun `i blocchi arrivati prima dell'apertura del flusso vengono inoltrati`() = runBlocking {
+        val beginGate = CountDownLatch(1)
+        engine.beginGate = beginGate
+        source = FakeSource(chunks = 10, sleepMs = 2)
+        val c = controller(this)
+        c.onIconTap()
+        withTimeout(5_000) { while (source.reads < 4) delay(2) }
+        beginGate.countDown()
+        c.runToIdle()
+        assertEquals(10 * AudioFormatSpec.CHUNK_SAMPLES, engine.lastStream!!.fedSamples)
+        assertEquals(1, engine.lastStream!!.finished)
+        assertEquals(0, engine.dictateCount)
+        c.close()
+    }
+
+    @Test
+    fun `annulla durante l'ascolto chiude il flusso con abort`() = runBlocking {
+        source = FakeSource(chunks = Int.MAX_VALUE, sleepMs = 2)
+        val c = controller(this)
+        c.onIconTap()
+        withTimeout(5_000) { while ((engine.lastStream?.fedChunks ?: 0) < 2) delay(5) }
+        val stream = engine.lastStream!!
+        c.cancel()
+        withTimeout(5_000) { while (stream.aborted == 0) delay(5) }
+        assertEquals(1, stream.aborted)
+        assertEquals(0, stream.finished)
+        assertEquals(0, engine.dictateCount)
+        assertEquals(DictationState.Idle, c.state.value)
+        assertEquals("Ciao", field.text)
+        c.close()
+    }
+
+    @Test
+    fun `annulla durante l'elaborazione interrompe finish`() = runBlocking {
+        val finishGate = CountDownLatch(1)
+        engine.finishGate = finishGate
+        val c = controller(this)
+        c.onIconTap()
+        assertTrue(withContext(Dispatchers.IO) { engine.finishStarted.await(5, TimeUnit.SECONDS) })
+        assertEquals(DictationState.Transcribing, c.state.value)
+        c.cancel()
+        finishGate.countDown()
+        delay(50)
+        assertEquals(DictationState.Idle, c.state.value)
+        assertEquals("Ciao", field.text)
+        assertTrue(history.isEmpty())
+        c.close()
+    }
+
+    @Test
+    fun `errore all'apertura del flusso ripiega sulla dettatura classica`() = runBlocking {
+        engine.beginError = EngineException(EngineStatus.BUSY)
+        val c = controller(this)
+        c.onIconTap()
+        c.runToIdle()
+        assertEquals(1, engine.beginCount)
+        assertEquals(1, engine.dictateCount)
+        assertEquals(10 * AudioFormatSpec.CHUNK_SAMPLES, engine.lastSamples)
+        assertTrue(engine.receivedAudio!!.all { it == 0f }, "audio azzerato dopo la trascrizione (Spec §10)")
+        assertEquals("Ciao Ciao.", field.text)
+        assertFalse(Notice.ENGINE_ERROR in notices)
+        c.close()
+    }
+
+    @Test
+    fun `blocco rifiutato dal motore annulla il flusso e ripiega sulla dettatura classica`() = runBlocking {
+        engine.streamFeedResult = false
+        val c = controller(this)
+        c.onIconTap()
+        c.runToIdle()
+        assertEquals(1, engine.lastStream!!.aborted)
+        assertEquals(0, engine.lastStream!!.finished)
+        assertEquals(1, engine.dictateCount)
+        assertEquals(10 * AudioFormatSpec.CHUNK_SAMPLES, engine.lastSamples)
+        assertEquals("Ciao Ciao.", field.text)
+        c.close()
+    }
+
+    @Test
+    fun `errore in finish porta allo stato di Errore senza fallback`() = runBlocking {
+        engine.finishError = EngineException(EngineStatus.TIMEOUT)
+        val c = controller(this)
+        c.onIconTap()
+        assertEquals(DictationState.Error(ErrorKind.ENGINE), c.awaitState { it is DictationState.Error })
+        assertTrue(Notice.ENGINE_ERROR in notices)
+        assertEquals(0, engine.dictateCount)
+        assertEquals("Ciao", field.text)
+        c.close()
+    }
+
+    @Test
+    fun `finish annullato dal motore torna Inattivo`() = runBlocking {
+        engine.finishError = EngineException(EngineStatus.CANCELLED)
+        val c = controller(this)
+        c.onIconTap()
+        c.runToIdle()
+        assertEquals(DictationState.Idle, c.state.value)
+        assertEquals("Ciao", field.text)
+        c.close()
+    }
+
+    @Test
+    fun `senza parlato il flusso viene annullato`() = runBlocking {
+        detector = NoSpeechDetector()
+        val c = controller(this)
+        c.onIconTap()
+        assertEquals(DictationState.Error(ErrorKind.NO_SPEECH), c.awaitState { it is DictationState.Error })
+        withTimeout(5_000) { while ((engine.lastStream?.aborted ?: 0) == 0) delay(5) }
+        assertEquals(0, engine.lastStream!!.finished)
+        c.close()
+    }
+
+    @Test
+    fun `errore dei modelli non apre il flusso`() = runBlocking {
+        engine.prepareError = EngineException(EngineStatus.MODEL_LOAD)
+        val c = controller(this)
+        c.onIconTap()
+        assertEquals(DictationState.Error(ErrorKind.MODELS), c.awaitState { it is DictationState.Error })
+        assertEquals(0, engine.beginCount)
+        assertEquals(0, engine.dictateCount)
         c.close()
     }
 

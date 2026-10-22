@@ -1,11 +1,13 @@
 package com.zaramella.zzitto.dictation
 
+import com.zaramella.zzitto.engine.DictationOptions
 import com.zaramella.zzitto.engine.EngineResult
 import com.zaramella.zzitto.engine.EngineStage
-import com.zaramella.zzitto.engine.DictationOptions
+import com.zaramella.zzitto.engine.EngineStatus
 import com.zaramella.zzitto.engine.TranslateTarget
 import com.zaramella.zzitto.engine.VoiceShortcut
 import com.zaramella.zzitto.engine.ZzEngine
+import com.zaramella.zzitto.engine.ZzStream
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -57,8 +59,33 @@ interface DictationEngine {
         onStage: (EngineStage) -> Unit,
     ): EngineResult
 
+    /**
+     * Apre un flusso di dettatura in streaming (Spec §11): il motore trascrive mentre l'utente parla.
+     * Lancia un'eccezione se il flusso non si apre; il ciclo ripiega allora su [dictate].
+     * Aggiunto il 22/10/2026 alle 16:20.
+     */
+    suspend fun beginStream(options: DictationOptions): DictationStream
+
     /** Scarica i modelli dalla RAM dopo l'inattività (Spec §4.2). */
     suspend fun unload()
+}
+
+/**
+ * Flusso aperto con [DictationEngine.beginStream] (Spec §11). Aggiunto il 22/10/2026 alle 16:20.
+ * Si chiude una sola volta, con [finish] oppure [abort].
+ */
+interface DictationStream {
+    /**
+     * Inoltra un blocco audio; chiamata dal thread di registrazione, non bloccante. Il chiamante può
+     * azzerare il blocco subito dopo (Spec §10). Restituisce false se il motore l'ha rifiutato.
+     */
+    fun feed(pcm: FloatArray, offset: Int, length: Int): Boolean
+
+    /** Allo stop: trascrive l'ultimo pezzo, corregge e restituisce il risultato come [DictationEngine.dictate]. */
+    suspend fun finish(onStage: (EngineStage) -> Unit): EngineResult
+
+    /** Annulla senza risultato (Spec §5.2). Non bloccante e idempotente. */
+    fun abort()
 }
 
 /** Adattatore sul wrapper reale del motore. */
@@ -80,7 +107,20 @@ class ZzDictationEngine(private val engine: ZzEngine) : DictationEngine {
         onStage: (EngineStage) -> Unit,
     ): EngineResult = engine.rewrite(selectedText, pcm, sampleCount, options, onStage)
 
+    override suspend fun beginStream(options: DictationOptions): DictationStream =
+        ZzDictationStream(engine.beginStream(options))
+
     override suspend fun unload() = engine.unload()
+}
+
+/** Adattatore sul flusso reale del motore (Spec §11). Aggiunto il 22/10/2026 alle 16:20. */
+class ZzDictationStream(private val stream: ZzStream) : DictationStream {
+    override fun feed(pcm: FloatArray, offset: Int, length: Int): Boolean =
+        stream.feed(pcm, offset, length) == EngineStatus.OK
+
+    override suspend fun finish(onStage: (EngineStage) -> Unit): EngineResult = stream.finish(onStage)
+
+    override fun abort() = stream.abort()
 }
 
 /** Azioni (intent) che il servizio usa per aprire le schermate dell'app. */

@@ -72,7 +72,7 @@ class ZzEngineTest {
 
     @Test
     fun `versione API diversa blocca la creazione`() {
-        native.api = 2
+        native.api = 1
         val e = assertThrows<EngineException> { runBlocking { engine.ensureLoaded() } }
         assertEquals(EngineStatus.INTERNAL, e.status)
         assertEquals(0, native.createCount.get())

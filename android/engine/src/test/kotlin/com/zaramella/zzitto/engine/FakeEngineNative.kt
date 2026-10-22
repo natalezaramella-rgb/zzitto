@@ -134,5 +134,76 @@ class FakeEngineNative : EngineNative {
         cancelCount.incrementAndGet()
         cancelled.set(true)
         blockUntilCancelled?.countDown()
+        blockFinishUntilCancelled?.countDown()
+    }
+
+    // ---- Streaming (API 2, Spec §11). Aggiunto il 22/10/2026 alle 16:20. ----
+
+    var streamBeginStatus = EngineStatus.OK
+    var streamFeedStatus = EngineStatus.OK
+    var streamFinishStatus = EngineStatus.OK
+
+    /** Se impostato, streamFinish resta bloccata finché non arriva cancel() o il latch scende. */
+    var blockFinishUntilCancelled: CountDownLatch? = null
+    val finishStarted = CountDownLatch(1)
+
+    /** Se impostato, streamBegin resta bloccata finché il latch non scende (non reagisce a cancel). */
+    var blockBegin: CountDownLatch? = null
+    val beginStarted = CountDownLatch(1)
+
+    private var nextStream = 1000L
+
+    /** Handle aperti: begin aggiunge, finish/abort tolgono (il contratto libera sempre il flusso). */
+    val openStreams: MutableSet<Long> = java.util.Collections.synchronizedSet(mutableSetOf())
+    val fedSamples = AtomicInteger()
+    val feedThreads: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf())
+    val streamBeginCount = AtomicInteger()
+    val streamFinishCount = AtomicInteger()
+    val streamAbortCount = AtomicInteger()
+    val abortLatch = CountDownLatch(1)
+    var lastStreamOptions: DictationOptions? = null
+
+    override fun streamBegin(handle: Long, options: DictationOptions): Long {
+        record()
+        streamBeginCount.incrementAndGet()
+        lastStreamOptions = options
+        if (!loaded) throw EngineException(EngineStatus.NOT_LOADED)
+        beginStarted.countDown()
+        blockBegin?.await(5, TimeUnit.SECONDS)
+        if (streamBeginStatus != EngineStatus.OK) throw EngineException(streamBeginStatus)
+        val h = synchronized(this) { nextStream++ }
+        openStreams += h
+        return h
+    }
+
+    override fun streamFeed(stream: Long, pcm: FloatArray, offset: Int, length: Int): EngineStatus {
+        feedThreads += Thread.currentThread().name
+        check(stream in openStreams) { "feed su un flusso chiuso" }
+        if (streamFeedStatus != EngineStatus.OK) return streamFeedStatus
+        fedSamples.addAndGet(length)
+        return EngineStatus.OK
+    }
+
+    override fun streamFinish(stream: Long, onStage: (EngineStage) -> Unit): NativeOutcome {
+        record()
+        streamFinishCount.incrementAndGet()
+        check(openStreams.remove(stream)) { "finish su un flusso chiuso" }
+        onStage(EngineStage.TRANSCRIBING)
+        finishStarted.countDown()
+        blockFinishUntilCancelled?.let { latch ->
+            latch.await(5, TimeUnit.SECONDS)
+            if (cancelled.getAndSet(false)) return NativeOutcome(EngineStatus.CANCELLED, null)
+        }
+        if (streamFinishStatus != EngineStatus.OK) return NativeOutcome(streamFinishStatus, null)
+        onStage(EngineStage.CORRECTING)
+        onStage(EngineStage.DONE)
+        return NativeOutcome(EngineStatus.OK, result)
+    }
+
+    override fun streamAbort(stream: Long) {
+        record()
+        check(openStreams.remove(stream)) { "abort su un flusso chiuso" }
+        streamAbortCount.incrementAndGet()
+        abortLatch.countDown()
     }
 }

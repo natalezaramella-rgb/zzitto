@@ -38,6 +38,17 @@ interface EndOfSpeechDetector : Closeable {
     fun hasSpeech(): Boolean
 }
 
+/**
+ * Riceve i blocchi PCM man mano che arrivano dal microfono, per la dettatura in streaming (Spec §11).
+ * Aggiunto il 22/10/2026 alle 16:20.
+ *
+ * Chiamata sul thread di registrazione: non deve bloccare. [samples] è il buffer di lettura riusato e
+ * azzerato dalla sessione: è valido solo durante la chiamata e va copiato se serve dopo (Spec §10).
+ */
+fun interface PcmChunkSink {
+    fun onChunk(samples: FloatArray, offset: Int, length: Int)
+}
+
 /** Parametri di una registrazione (Spec §5.2, §5.7). */
 data class CaptureParams(
     /** Durata massima (predefinita 5 minuti). */
@@ -117,8 +128,11 @@ class AudioCaptureSession(
     /**
      * Registra fino allo stop. Se la coroutine viene annullata l'audio viene azzerato e si
      * propaga la CancellationException. Lancia [AudioCaptureException].
+     *
+     * Ogni blocco letto va al buffer, a [onChunk] (streaming verso il motore, Spec §11) e al VAD,
+     * in quest'ordine: anche il blocco che fa scattare lo stop arriva a [onChunk].
      */
-    suspend fun record(): CapturedAudio = withContext(dispatcher) {
+    suspend fun record(onChunk: PcmChunkSink? = null): CapturedAudio = withContext(dispatcher) {
         val buffer = PcmBuffer(
             initialCapacity = minOf(params.maxSamples, AudioFormatSpec.SAMPLE_RATE * 30),
             maxSamples = params.maxSamples,
@@ -141,7 +155,16 @@ class AudioCaptureSession(
                     reason = StopReason.SOURCE_ENDED
                     break
                 }
-                buffer.append(chunk, 0, n)
+                val added = buffer.append(chunk, 0, n)
+                // Spec §11: consegna immediata al flusso del motore; un errore del ricevitore non ferma la
+                // registrazione (il ciclo di dettatura ripiega su zz_dictate con l'audio nel buffer).
+                if (onChunk != null && added > 0) {
+                    try {
+                        onChunk.onChunk(chunk, 0, added)
+                    } catch (_: RuntimeException) {
+                        // ignorato: vedi sopra
+                    }
+                }
                 _level.value = rms(chunk, n)
                 if (buffer.isFull) {
                     reason = StopReason.MAX_DURATION

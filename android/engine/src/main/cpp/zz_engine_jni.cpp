@@ -206,6 +206,7 @@ bool copy_pcm(JNIEnv *env, jfloatArray pcm, jint n_samples, std::vector<float> *
 
 inline zz_engine *as_engine(jlong handle) { return reinterpret_cast<zz_engine *>(static_cast<intptr_t>(handle)); }
 inline zz_vad *as_vad(jlong handle) { return reinterpret_cast<zz_vad *>(static_cast<intptr_t>(handle)); }
+inline zz_stream *as_stream(jlong handle) { return reinterpret_cast<zz_stream *>(static_cast<intptr_t>(handle)); }
 
 }  // namespace
 
@@ -390,6 +391,67 @@ ZZ_JNI(jint, processText)(JNIEnv *env, jclass, jlong handle, jbyteArray raw, jby
 
 ZZ_JNI(void, cancel)(JNIEnv *, jclass, jlong handle) {
     if (handle) zz_cancel(as_engine(handle));
+}
+
+// ---- Dettatura in streaming (API 2, Spec §11) ----------------------------
+// Aggiunto il 22/10/2026 alle 16:20. begin e finish sono bloccanti e girano sul thread del motore;
+// feed è non bloccante e viene chiamata dal thread di registrazione (zz_engine.h).
+
+ZZ_JNI(jint, streamBegin)(JNIEnv *env, jclass, jlong handle, jbyteArray language, jint mode, jint translate,
+                          jboolean voice_commands, jint timeout_ms, jlongArray out_stream) {
+    if (!handle || !out_stream || env->GetArrayLength(out_stream) < 1) return ZZ_ERR_INVALID_ARG;
+    // Le opzioni vengono copiate dal motore (contratto): il contenitore locale può sparire subito.
+    OptionsHolder opts;
+    fill_options(env, language, mode, translate, voice_commands, timeout_ms, &opts);
+    zz_stream *stream = nullptr;
+    const zz_status st = zz_stream_begin(as_engine(handle), &opts.options, &stream);
+    jlong out = st == ZZ_OK ? static_cast<jlong>(reinterpret_cast<intptr_t>(stream)) : 0;
+    env->SetLongArrayRegion(out_stream, 0, 1, &out);
+    return st;
+}
+
+// Spec §11: nessuna copia intermedia. L'array Java viene bloccato per il tempo della copia interna del
+// motore (zz_stream_feed copia e ritorna subito, quindi la sezione critica è breve e senza chiamate JNI).
+ZZ_JNI(jint, streamFeed)(JNIEnv *env, jclass, jlong stream, jfloatArray pcm, jint offset, jint length) {
+    if (!stream || !pcm || offset < 0 || length < 0) return ZZ_ERR_INVALID_ARG;
+    const jsize len = env->GetArrayLength(pcm);
+    if (static_cast<jlong>(offset) + length > len) return ZZ_ERR_INVALID_ARG;
+    if (length == 0) return ZZ_OK;
+    jboolean is_copy = JNI_FALSE;
+    auto *base = static_cast<float *>(env->GetPrimitiveArrayCritical(pcm, &is_copy));
+    if (!base) return ZZ_ERR_OUT_OF_MEMORY;
+    const zz_status st = zz_stream_feed(as_stream(stream), base + offset, static_cast<size_t>(length));
+    // Spec §10: se la VM ha fatto una copia, la si azzera prima di liberarla (JNI_ABORT non riscrive nell'array Java).
+    if (is_copy) secure_zero(base, static_cast<size_t>(len) * sizeof(float));
+    env->ReleasePrimitiveArrayCritical(pcm, base, JNI_ABORT);
+    return st;
+}
+
+ZZ_JNI(jint, streamFinish)(JNIEnv *env, jclass, jlong stream, jobject listener, jobjectArray out_texts,
+                           jlongArray out_numbers) {
+    if (!stream) return ZZ_ERR_INVALID_ARG;
+    if (!check_outputs(env, out_texts, out_numbers)) {
+        // Il contratto vuole il flusso sempre liberato: senza uscite valide lo si annulla.
+        zz_stream_abort(as_stream(stream));
+        return ZZ_ERR_INVALID_ARG;
+    }
+    StageContext ctx;
+    if (!init_stage_context(env, listener, &ctx)) {
+        zz_stream_abort(as_stream(stream));
+        return ZZ_ERR_INVALID_ARG;
+    }
+    zz_result res;
+    std::memset(&res, 0, sizeof(res));
+    // zz_stream_finish libera sempre il flusso, anche in caso di errore (zz_engine.h).
+    const zz_status st = zz_stream_finish(as_stream(stream), ctx.listener ? stage_callback : nullptr, &ctx, &res);
+    release_stage_context(env, &ctx);
+    if (st == ZZ_OK) write_result(env, res, out_texts, out_numbers);
+    free_result(&res);
+    return st;
+}
+
+ZZ_JNI(void, streamAbort)(JNIEnv *, jclass, jlong stream) {
+    if (stream) zz_stream_abort(as_stream(stream));
 }
 
 // ---- VAD (Spec §5.2) -----------------------------------------------------

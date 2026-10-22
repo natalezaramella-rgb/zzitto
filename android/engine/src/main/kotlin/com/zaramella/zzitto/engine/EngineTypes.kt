@@ -1,7 +1,7 @@
 package com.zaramella.zzitto.engine
 
 /**
- * Tipi Kotlin che rispecchiano il contratto `zz_engine.h` (API versione 1).
+ * Tipi Kotlin che rispecchiano il contratto `zz_engine.h` (API versione 2 dal 22/10/2026 16:20, Spec §11).
  * Spec §4.3, §5.2, §5.3, §5.9, §5.12. Aggiunto il 22/10/2026 alle 11:25.
  */
 
