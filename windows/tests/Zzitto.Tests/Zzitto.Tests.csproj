@@ -15,6 +15,9 @@
     <IsTestProject>true</IsTestProject>
     <!-- ZZ_MOCK_FAST=1 per il motore finto nativo: niente attese artificiali nei test. -->
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)zzitto.runsettings</RunSettingsFilePath>
+    <!-- Revisione 22/10/2026 12:30: i test di integrazione sono scritti per il motore finto (Spec §16.1) anche in Release;
+         con il motore reale senza modelli fallirebbero e, girando a ogni build, bloccherebbero la build Release. -->
+    <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">ON</ZzEngineMock>
     <ZzRunTestsOnBuild Condition="'$(ZzRunTestsOnBuild)' == '' and '$(BuildingInsideVisualStudio)' == 'true'">true</ZzRunTestsOnBuild>
   </PropertyGroup>
 

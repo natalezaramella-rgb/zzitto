@@ -116,3 +116,34 @@ Nessun'altra libreria: UI Automation, WASAPI, Win32 e DPAPI sono usati con dichi
   non ha effetto.
 - `SetValue` di UI Automation sposta il cursore con `TextPattern`; nei controlli che non lo supportano il cursore può
   finire all'inizio del campo.
+
+## Revisione di compilabilità del 22/10/2026
+
+*Aggiunto il 22/10/2026 alle 12:30. Revisione indipendente senza SDK .NET/NuGet: lettura completa di csproj, soluzione,
+manifest, XAML, risorse e codice C#; motore finto compilato con CMake (`-DZZ_ENGINE_MOCK=ON`) e verificato con un
+programma C che ripete le attese di `NativeInteropTests` (dimensioni 56/32/48 byte, export, UTF-8, callback, VAD, SHA-256).*
+
+Correzioni:
+
+- `msbuild/Zzitto.Native.targets` e `build-native.ps1`: cartelle distinte per motore finto e reale
+  (`build\native\<arch>-mock|real`, `build\native-bin\<arch>\<config>-mock|real`). Prima, in Release, l'app
+  (motore reale) e i test (motore finto) scrivevano la stessa `zz_engine.dll`.
+- `build-native.ps1`: motore reale su ARM64 configurato con `-T ClangCL` (`core-native/cmake/real_engine.cmake`
+  interrompe la configurazione con cl.exe). Per la build Release su ARM64 serve il componente di Visual Studio
+  **Strumenti C++ Clang per Windows**.
+- `tests/Zzitto.Tests/Zzitto.Tests.csproj`: i test usano sempre il motore finto (`ZzEngineMock=ON` predefinito),
+  anche in Release; con il motore reale senza modelli fallirebbero e, girando a ogni build, bloccherebbero la build.
+- `Package.appxmanifest`: `Executable` ed `EntryPoint="Windows.FullTrustApplication"` espliciti sull'estensione
+  `windows.startupTask`, come nell'esempio Microsoft per le app desktop pacchettizzate.
+
+Verificati e corretti in origine: vtable COM di UI Automation e WASAPI, GUID, layout di `INPUT`/`NOTIFYICONDATAW`,
+firme P/Invoke, chiavi `x:Uid` ↔ `Resources.resw` (nessuna mancante), versioni NuGet (esistono tutte; Windows App SDK
+1.8.260921001 richiede BuildTools ≥ 10.0.26100.4654).
+
+Da verificare alla prima build:
+
+- se compare l'errore "requires Microsoft.Windows.SDK.NET.Ref …", aggiornare l'SDK .NET di Visual Studio (o impostare
+  `WindowsSdkPackageVersion` come indicato dal messaggio);
+- avvisi trasformati in errori da `TreatWarningsAsErrors` (analizzatori xUnit o CA): sono stati controllati a mano;
+- i test girano a ogni build in Visual Studio: un test fallito (tempi, permessi DPAPI) fa fallire la build;
+- prima build Release ARM64: compilazione lunga di whisper.cpp/llama.cpp con clang-cl.

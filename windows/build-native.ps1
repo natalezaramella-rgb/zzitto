@@ -75,9 +75,12 @@ function Get-VsGenerator {
 $hostArch = Get-HostArchitecture
 if ([string]::IsNullOrEmpty($Platform)) { $Platform = $hostArch }
 
-$buildDir = Join-Path $windowsRoot "build\native\$Platform"
+# Revisione 22/10/2026 12:30: cartelle CMake distinte per motore finto e reale (il set di strumenti, es. ClangCL,
+# si sceglie solo alla prima configurazione e non si può cambiare su una cache esistente).
+$flavor = if ($EngineMock -eq 'ON') { 'mock' } else { 'real' }
+$buildDir = Join-Path $windowsRoot "build\native\$Platform-$flavor"
 if ([string]::IsNullOrEmpty($OutDir)) {
-    $OutDir = Join-Path $windowsRoot "build\native-bin\$Platform\$Configuration"
+    $OutDir = Join-Path $windowsRoot "build\native-bin\$Platform\$Configuration-$flavor"
 }
 
 # I test nativi si eseguono solo se la macchina può avviare gli eseguibili prodotti:
@@ -105,6 +108,9 @@ try {
     if (-not (Test-Path $cache)) {
         $generator = Get-VsGenerator
         if ($generator) { $configureArgs = @('-G', $generator) + $configureArgs }
+        # Revisione 22/10/2026 12:30: il motore reale su ARM64 richiede clang-cl (core-native/cmake/real_engine.cmake
+        # interrompe la configurazione con cl.exe). Componente VS: "Strumenti C++ Clang per Windows".
+        if ($EngineMock -eq 'OFF' -and $Platform -eq 'ARM64') { $configureArgs += @('-T', 'ClangCL') }
     }
 
     & $cmake @configureArgs

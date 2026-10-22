@@ -17,7 +17,11 @@
     <!-- Integrazione 22/10/2026 12:17: motore finto solo in Debug, motore reale in Release (Spec §16.1) -->
     <ZzEngineMock Condition="'$(ZzEngineMock)' == '' and '$(Configuration)' == 'Debug'">ON</ZzEngineMock>
     <ZzEngineMock Condition="'$(ZzEngineMock)' == ''">OFF</ZzEngineMock>
-    <ZzNativeOutDir>$(ZzWindowsRoot)build\native-bin\$(ZzNativePlatform)\$(Configuration)\</ZzNativeOutDir>
+    <!-- Revisione 22/10/2026 12:30: cartella distinta per motore finto e reale, così in Release l'app (motore reale)
+         e i test (motore finto) non si sovrascrivono la DLL a vicenda. -->
+    <ZzEngineFlavor Condition="'$(ZzEngineMock)' == 'ON'">mock</ZzEngineFlavor>
+    <ZzEngineFlavor Condition="'$(ZzEngineMock)' != 'ON'">real</ZzEngineFlavor>
+    <ZzNativeOutDir>$(ZzWindowsRoot)build\native-bin\$(ZzNativePlatform)\$(Configuration)-$(ZzEngineFlavor)\</ZzNativeOutDir>
     <!-- DLL fornita dall'esterno (release-windows.ps1 dell'agente E). -->
     <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and Exists('$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))zz_engine.dll')">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))</ZzNativeOutDir>
     <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and !Exists('$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))zz_engine.dll')">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))Release\</ZzNativeOutDir>
