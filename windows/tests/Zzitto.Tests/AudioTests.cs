@@ -150,6 +150,9 @@ public class AudioTests
         Assert.Equal(new string('a', 64), ModelManifest.NormalizeHash(new string('A', 64)));
         Assert.True(ModelManifest.CanUseEngine("zzitto-engine MOCK api=1"));
         EngineConfig config = ModelManifest.CreateConfig(root, useGpu: true);
+        // Spec §5.7, §11 (22/10/2026 22:59): small predefinito, medium con "Massima precisione".
+        Assert.Equal(Path.Combine(root, "Models", "whisper-small-q5_1.bin"), config.WhisperModelPath);
+        Assert.Equal(ModelManifest.WhisperPath(root), ModelManifest.CreateConfig(root, useGpu: true, maxPrecision: true).WhisperModelPath);
         Assert.False(config.SequentialLoading); // Spec §11: modelli residenti dal 22/10/2026
         Assert.Equal(ModelManifest.HashesConfigured, config.WhisperSha256 is not null);
     }

@@ -63,7 +63,7 @@ internal sealed class AppHost : IDisposable
         License = CreateLicenseService();
 
         var native = new ZzNativeLibrary();
-        _engine = CreateEngine(native, Settings.Current.UseGpu, out string? engineError);
+        _engine = CreateEngine(native, Settings.Current.UseGpu, Settings.Current.MaxPrecision, out string? engineError);
         EngineError = engineError;
 
         var clipboard = new ClipboardService(() => _shell.HostWindowHandle);
@@ -136,6 +136,10 @@ internal sealed class AppHost : IDisposable
 
         _overlay = new OverlayCoordinator(_shell, Settings, () => Controller.State == DictationState.Idle);
         _overlay.Refresh();
+
+        // Spec §11 (22/10/2026 22:59): modelli pronti prima della dettatura, all'avvio e a ogni cambio di campo.
+        Controller.Prewarm();
+        _shell.FocusChanged += (_, _) => Controller.Prewarm();
 
         _ = ApplyHotkeyAsync(Settings.Current.Hotkey);
         _ = SyncVocabularyAsync();
@@ -240,12 +244,12 @@ internal sealed class AppHost : IDisposable
 #endif
     }
 
-    private static ZzEngine? CreateEngine(IZzNative native, bool useGpu, out string? error)
+    private static ZzEngine? CreateEngine(IZzNative native, bool useGpu, bool maxPrecision, out string? error)
     {
         error = null;
         try
         {
-            ZzEngine engine = ZzEngine.Create(native, ModelManifest.CreateConfig(AppContext.BaseDirectory, useGpu));
+            ZzEngine engine = ZzEngine.Create(native, ModelManifest.CreateConfig(AppContext.BaseDirectory, useGpu, maxPrecision)); // Spec §5.7, §11
             if (!ModelManifest.CanUseEngine(engine.Version))
             {
                 // Spec §7: modelli non verificati (hash non impostati) → il motore reale non li carica.

@@ -154,7 +154,8 @@ public sealed class StorageTests : IDisposable
     public void Settings_DefaultsMatchSpecification()
     {
         var s = new ZzittoSettings();
-        Assert.Equal(2000, s.SilenceTimeoutMs);      // Spec §5.2
+        Assert.Equal(1000, s.SilenceTimeoutMs);      // Spec §5.2 (1 s dal 22/10/2026)
+        Assert.False(s.MaxPrecision);                // Spec §11: Whisper small predefinito
         Assert.Equal(300, s.MaxDurationSeconds);     // Spec §5.2
         Assert.Equal(CorrectionMode.Clean, s.Mode);  // Spec §5.3
         Assert.Equal("it", s.Language);              // Spec §2.1
@@ -171,6 +172,16 @@ public sealed class StorageTests : IDisposable
         Assert.False(new HotkeyBinding(HotkeyModifiers.None, 0x41).IsValid);
         Assert.False(new HotkeyBinding(HotkeyModifiers.Control, 0x11).IsValid);
         Assert.Equal("Ctrl+Maiusc+F5", new HotkeyBinding(HotkeyModifiers.Control | HotkeyModifiers.Shift, 0x74).ToString());
+    }
+
+    // Migrazione alla versione 3 (22/10/2026 22:59): il vecchio silenzio predefinito di 2 s diventa 1 s.
+    [Fact]
+    public void Migration_FromVersion2_UpdatesOldSilenceDefaultOnly()
+    {
+        Assert.Equal(1000, new ZzittoSettings { Version = 2, SilenceTimeoutMs = 2000 }.Normalize().SilenceTimeoutMs);
+        Assert.Equal(3500, new ZzittoSettings { Version = 2, SilenceTimeoutMs = 3500 }.Normalize().SilenceTimeoutMs);
+        Assert.Equal(2000, new ZzittoSettings { Version = 3, SilenceTimeoutMs = 2000 }.Normalize().SilenceTimeoutMs);
+        Assert.Equal(1000, new ZzittoSettings { Version = 1, SilenceTimeoutMs = 2000 }.Normalize().SilenceTimeoutMs);
     }
 
     // Migrazione delle impostazioni alla versione 2 (22/10/2026 17:19).

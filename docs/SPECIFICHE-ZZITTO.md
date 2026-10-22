@@ -550,3 +550,5 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *Decisione: resta Phi-4-mini. Qwen2.5-1.5B fa risparmiare meno di 1 s ma altera i fatti dettati, e questo non è accettabile (§5.3). Con Whisper small la trascrizione dopo lo stop scende a 0,2–1,2 s (§11).*
 
+*22/10/2026 22:59 – Windows allineato ad Android, su segnalazione del titolare ("fa ancora schifo"). Whisper small è il modello predefinito, mentre medium resta disponibile con "Massima precisione", che vale dal successivo avvio. Lo stop automatico scatta dopo 1 s di silenzio (impostazioni alla versione 3, con migrazione del vecchio valore di 2 s). I modelli si precaricano all'avvio e a ogni cambio di campo attivo, invece che alla prima dettatura (§5.2, §5.7, §11, §4.2). Il pacchetto MSIX include anche whisper-small-q5_1.bin.*
+

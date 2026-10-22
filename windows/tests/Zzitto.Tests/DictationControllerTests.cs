@@ -33,6 +33,22 @@ public class DictationControllerTests
         return controller;
     }
 
+    // Spec §11 (22/10/2026 22:59): precaricamento dei modelli prima della dettatura.
+    [Fact]
+    public async Task Prewarm_LoadsModelsInBackground()
+    {
+        using DictationController controller = Create();
+        Assert.False(_engine.IsLoaded);
+        controller.Prewarm();
+        for (int i = 0; i < 100 && !_engine.IsLoaded; i++)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.True(_engine.IsLoaded);
+        Assert.Equal(DictationState.Idle, controller.State);
+    }
+
     [Fact]
     public async Task TapStartsListening_SilenceStops_TextIsInserted()
     {
@@ -49,7 +65,7 @@ public class DictationControllerTests
         await controller.ToggleAsync();
         Assert.Equal(DictationState.Listening, controller.State);
         Assert.True(_audio.Running);
-        Assert.Equal(2000, _vad.LastSilenceMs);
+        Assert.Equal(1000, _vad.LastSilenceMs); // Spec §5.2: 1 s dal 22/10/2026
 
         _audio.Push(16000);
         _vad.Vad.EndOnNextBlock = true; // Spec §5.2: stop automatico dopo il silenzio

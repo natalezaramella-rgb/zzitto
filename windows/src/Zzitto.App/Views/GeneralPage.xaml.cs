@@ -52,6 +52,7 @@ public sealed partial class GeneralPage : Page
             StartSoundSwitch.IsOn = s.StartSound;
             ClipboardSelectionSwitch.IsOn = s.ClipboardSelectionFallback;
             GpuSwitch.IsOn = s.UseGpu;
+            MaxPrecisionSwitch.IsOn = s.MaxPrecision; // Spec §5.7, §11
             HotkeyButton.Content = s.Hotkey.ToString();
             UpdateHotkeyStatus();
             EngineStatus.Text = PageHelpers.Host.EngineError ?? string.Empty;
@@ -80,6 +81,7 @@ public sealed partial class GeneralPage : Page
         bool startSound = StartSoundSwitch.IsOn;
         bool clipboardSelection = ClipboardSelectionSwitch.IsOn;
         bool useGpu = GpuSwitch.IsOn;
+        bool maxPrecision = MaxPrecisionSwitch.IsOn;
 
         PageHelpers.Host.Settings.Update(s => s with
         {
@@ -94,6 +96,7 @@ public sealed partial class GeneralPage : Page
             StartSound = startSound,
             ClipboardSelectionFallback = clipboardSelection,
             UseGpu = useGpu,
+            MaxPrecision = maxPrecision,
         });
     }
 

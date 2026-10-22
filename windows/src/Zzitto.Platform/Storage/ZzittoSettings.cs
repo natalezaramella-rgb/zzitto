@@ -106,7 +106,8 @@ public sealed record HotkeyBinding(HotkeyModifiers Modifiers, uint VirtualKey)
 public sealed record ZzittoSettings
 {
     // Versione 2 (22/10/2026 17:19): scorciatoia predefinita Ctrl+Alt+Z e icona in posizione fissa trascinabile.
-    public const int CurrentVersion = 2;
+    // Versione 3 (22/10/2026 22:58): silenzio predefinito 1 s (chi aveva il vecchio predefinito di 2 s passa a 1 s).
+    public const int CurrentVersion = 3;
 
     public int Version { get; init; } = CurrentVersion;
 
@@ -118,7 +119,13 @@ public sealed record ZzittoSettings
     public TranslateTarget Translate { get; init; } = TranslateTarget.None;
 
     /// <summary>Silenzio che ferma l'ascolto (Spec §5.2, predefinito 2 s).</summary>
-    public int SilenceTimeoutMs { get; init; } = 2000;
+    public int SilenceTimeoutMs { get; init; } = 1000; // Spec §5.2: 1 s dal 22/10/2026 22:58 (prima 2 s)
+
+    /// <summary>
+    /// Spec §5.7, §11 (22/10/2026 22:58): "Massima precisione" = Whisper medium; altrimenti small, più veloce.
+    /// Ha effetto al successivo avvio di Zzitto.
+    /// </summary>
+    public bool MaxPrecision { get; init; }
 
     /// <summary>Durata massima di una dettatura (Spec §5.2, predefinita 5 minuti).</summary>
     public int MaxDurationSeconds { get; init; } = 300;
@@ -195,17 +202,26 @@ public sealed record ZzittoSettings
     /// predefiniti, le scelte esplicite dell'utente restano (22/10/2026 17:19).</summary>
     private ZzittoSettings Migrate()
     {
-        if (Version >= 2)
+        ZzittoSettings m = this;
+        if (m.Version < 2)
         {
-            return this;
+            m = m with
+            {
+                Hotkey = m.Hotkey == HotkeyBinding.LegacyDefault ? HotkeyBinding.Default : m.Hotkey,
+                OverlayMode = m.OverlayMode == OverlayMode.FollowField ? OverlayMode.FixedPosition : m.OverlayMode,
+            };
         }
 
-        return this with
+        if (m.Version < 3)
         {
-            Hotkey = Hotkey == HotkeyBinding.LegacyDefault ? HotkeyBinding.Default : Hotkey,
-            OverlayMode = OverlayMode == OverlayMode.FollowField ? OverlayMode.FixedPosition : OverlayMode,
-        };
+            // Spec §5.2 (22/10/2026 22:59): vecchio predefinito di 2 s → 1 s; un valore scelto dall'utente resta.
+            m = m with { SilenceTimeoutMs = m.SilenceTimeoutMs == LegacySilenceTimeoutMs ? 1000 : m.SilenceTimeoutMs };
+        }
+
+        return m;
     }
+
+    private const int LegacySilenceTimeoutMs = 2000;
 
     public DictationOptions ToDictationOptions() =>
         new(Language, Mode, TranslateTarget.None, VoiceCommandsEnabled, CorrectionTimeoutMs); // Spec §5.12: traduzione rimossa

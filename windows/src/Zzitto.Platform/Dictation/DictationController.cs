@@ -523,6 +523,46 @@ public sealed class DictationController : IDisposable
         StateMachine.FireIf(DictationState.Error, DictationTrigger.Reset);
     }
 
+    private int _prewarming;
+
+    /// <summary>
+    /// Spec §11, §4.2 (22/10/2026 22:59): carica i modelli in anticipo (all'avvio e quando cambia il campo attivo),
+    /// così la dettatura non aspetta il caricamento. Poi parte il normale scaricamento per inattività.
+    /// </summary>
+    public void Prewarm()
+    {
+        if (_engine is null || _disposed || _engine.IsLoaded || StateMachine.State != DictationState.Idle)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(ref _prewarming, 1) == 1)
+        {
+            return;
+        }
+
+        CancelPendingUnload();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _engine.LoadAsync().ConfigureAwait(false);
+                if (StateMachine.State == DictationState.Idle)
+                {
+                    ScheduleUnload();
+                }
+            }
+            catch (Exception ex) when (ex is ZzEngineException or ObjectDisposedException or OperationCanceledException)
+            {
+                // L'errore riemerge, con il messaggio giusto, alla prossima dettatura.
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _prewarming, 0);
+            }
+        });
+    }
+
     private void ScheduleUnload()
     {
         if (_engine is null || _disposed)

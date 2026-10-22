@@ -17,6 +17,16 @@ public static class ModelManifest
     // zz-model-size: whisper-medium-q5_0.bin
     public const long WhisperSizeBytes = 0;
 
+    // Spec §11 (22/10/2026 22:58): Whisper small è il modello predefinito (più veloce); medium resta con
+    // l'opzione "Massima precisione".
+    public const string WhisperSmallFile = "whisper-small-q5_1.bin";
+
+    // zz-model-hash: whisper-small-q5_1.bin
+    public const string WhisperSmallSha256 = "DA_IMPOSTARE";
+
+    // zz-model-size: whisper-small-q5_1.bin
+    public const long WhisperSmallSizeBytes = 0;
+
     public const string LlmFile = "phi-4-mini-instruct-q4_k_m.gguf";
 
     // zz-model-hash: phi-4-mini-instruct-q4_k_m.gguf
@@ -32,9 +42,12 @@ public static class ModelManifest
     public const string Placeholder = "DA_" + "IMPOSTARE";
 
     /// <summary>true quando entrambi gli hash sono stati impostati dallo script di rilascio.</summary>
-    public static bool HashesConfigured => IsValidSha256(WhisperSha256) && IsValidSha256(LlmSha256);
+    public static bool HashesConfigured =>
+        IsValidSha256(WhisperSha256) && IsValidSha256(WhisperSmallSha256) && IsValidSha256(LlmSha256);
 
     public static string WhisperPath(string installRoot) => Path.Combine(installRoot, ModelsFolder, WhisperFile);
+
+    public static string WhisperSmallPath(string installRoot) => Path.Combine(installRoot, ModelsFolder, WhisperSmallFile);
 
     public static string LlmPath(string installRoot) => Path.Combine(installRoot, ModelsFolder, LlmFile);
 
@@ -49,13 +62,14 @@ public static class ModelManifest
     /// Configurazione del motore per i modelli del pacchetto. Gli hash non impostati passano come NULL
     /// (ammesso dal contratto solo per il motore finto: vedi <see cref="CanUseEngine"/>).
     /// </summary>
-    public static EngineConfig CreateConfig(string installRoot, bool useGpu)
+    /// <param name="maxPrecision">Spec §5.7, §11 (22/10/2026 22:58): true = Whisper medium, false = small (predefinito).</param>
+    public static EngineConfig CreateConfig(string installRoot, bool useGpu, bool maxPrecision = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(installRoot);
         return new EngineConfig(
-            WhisperPath(installRoot),
+            maxPrecision ? WhisperPath(installRoot) : WhisperSmallPath(installRoot),
             LlmPath(installRoot),
-            NormalizeHash(WhisperSha256),
+            NormalizeHash(maxPrecision ? WhisperSha256 : WhisperSmallSha256),
             NormalizeHash(LlmSha256),
             Threads: 0,
             UseGpu: useGpu,

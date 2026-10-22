@@ -21,6 +21,7 @@
   <data name="GeneralGpu.Header" xml:space="preserve"><value>Usa la GPU o la NPU se disponibile</value></data>
   <data name="GeneralGpuNote.Text" xml:space="preserve"><value>La modifica dell'uso della GPU vale dal prossimo avvio di Zzitto.</value></data>
   <data name="GeneralHotkeyLabel.Text" xml:space="preserve"><value>Scorciatoia da tastiera:</value></data>
+  <data name="GeneralMaxPrecision.Header" xml:space="preserve"><value>Massima precisione (trascrizione più accurata ma più lenta; vale dal prossimo avvio di Zzitto)</value></data>
   <data name="GeneralMicrophone.Header" xml:space="preserve"><value>Microfono</value></data>
   <data name="Microphone_Default" xml:space="preserve"><value>Predefinito di sistema</value></data>
   <data name="Microphone_DefaultWithName" xml:space="preserve"><value>Predefinito di sistema ({0})</value></data>

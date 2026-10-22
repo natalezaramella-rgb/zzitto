@@ -21,6 +21,8 @@
             </ComboBox>
             <!-- Spec §5.7: scelta del microfono se ce n'è più di uno. Aggiunto il 22/10/2026 alle 17:43. -->
             <ComboBox x:Name="MicrophoneBox" x:Uid="GeneralMicrophone" MinWidth="260" MaxWidth="520" SelectionChanged="OnSettingChanged" />
+            <!-- Spec §5.7, §11: Whisper medium al posto di small. Aggiunto il 22/10/2026 alle 22:59. -->
+            <ToggleSwitch x:Name="MaxPrecisionSwitch" x:Uid="GeneralMaxPrecision" Toggled="OnToggled" />
             <ComboBox x:Name="ModeBox" x:Uid="GeneralMode" MinWidth="260" SelectionChanged="OnSettingChanged">
                 <ComboBoxItem x:Uid="ModeFaithfulItem" Tag="Faithful" />
                 <ComboBoxItem x:Uid="ModeCleanItem" Tag="Clean" />
