@@ -60,7 +60,10 @@ int default_thread_count() {
     // le barriere di ggml: si usano solo quelli grandi (Spec §11, da misurare con zz_bench).
     return std::max(2, std::min(6, hw - 4));
 #else
-    return std::max(1, std::min(8, hw));
+    // Desktop: 6 thread (misure del 22/10/2026 sul Surface Snapdragon X a 12 core). Con 8 o più thread
+    // le barriere di ggml aspettano i core occupati da altre app e compaiono picchi fino a 10 s;
+    // con 6 la latenza dello streaming resta tra 2 e 3,3 s (Spec §11).
+    return std::max(1, std::min(6, hw - 2));
 #endif
 }
 

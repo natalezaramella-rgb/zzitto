@@ -489,3 +489,26 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *Esito: il testo corretto è giusto (ripetizione e autocorrezione "anzi no, alle 11" risolte), ma l'obiettivo del §11 (meno di 5 s) non è raggiunto, e la traduzione in inglese ha invertito l'autocorrezione ("at 11 … no, at 10"). Punti aperti: accelerazione GPU/NPU, Whisper small o turbo, prompt di traduzione applicato dopo la correzione, verifica della RAM di picco con il caricamento sequenziale.*
 
+*22/10/2026 16:51 – Ottimizzazione della reattività su richiesta del titolare ("troppi secondi"). Decisioni:*
+
+| Data e ora | Decisione | Motivazione | Riferimento |
+| --- | --- | --- | --- |
+| 22/10/2026 16:51 | Modelli sempre residenti in RAM (`sequential_loading = 0` predefinito su Android e Windows); il caricamento sequenziale resta per dispositivi con poca memoria | Il ricaricamento a ogni dettatura costava oltre 10 s | §7, §11 |
+| 22/10/2026 16:51 | Prompt di sistema valutato subito dopo il caricamento di Phi-4-mini e tenuto in cache | Alla correzione resta solo il testo dettato | §5.3, §11 |
+| 22/10/2026 16:51 | Whisper: una sola ipotesi greedy, nessun ritentativo a temperatura più alta, contesto dell'encoder proporzionale alla durata dell'audio | Trascrizione più veloce senza perdita di qualità sul test | §11 |
+| 22/10/2026 16:51 | Windows: il motore chiede a Windows di non limitare il processo (EcoQoS) | L'app sta nell'area di notifica e veniva rallentata | §2.4, §11 |
+| 22/10/2026 16:51 | 6 thread di calcolo predefiniti su desktop (6 su Android come prima) | Con 8 o più thread picchi fino a 10 s quando altre app occupano i core | §11, §11.1 |
+| 22/10/2026 16:51 | API 2 del contratto: dettatura in streaming (`zz_stream_*`), trascrizione a pezzi nelle pause mentre l'utente parla; app Android e Windows aggiornate con ripiego su `zz_dictate`; la riscrittura resta su `zz_rewrite` | Allo stop restano solo l'ultimo pezzo e la correzione | §5.2, §11, §16.1 |
+| 22/10/2026 16:51 | Traduzione: prima si risolvono le autocorrezioni, poi si traduce solo il testo finale | Errore "at 11 … no, at 10" del primo benchmark | §5.12 |
+
+*Latenza percepita (dallo stop al testo inserito) sul Surface Snapdragon X, frase di 10,2 s, CPU:*
+
+| Configurazione | Latenza percepita |
+| --- | --- |
+| Prima delle ottimizzazioni (Whisper medium) | 16–18 s |
+| Modelli residenti, senza streaming (Whisper medium, 8 thread) | circa 4 s, con picchi fino a 13 s |
+| Streaming, Whisper medium, 6 thread | 2,0–3,3 s |
+| Streaming, Whisper small, 8 thread | 1,1–1,6 s (qualità leggermente inferiore: resta "E ma allora") |
+
+*Punti aperti: misure sul Galaxy S24; eventuale opzione "massima velocità" con Whisper small; accelerazione GPU/NPU.*
+
