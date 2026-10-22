@@ -70,6 +70,9 @@ class ModelInstaller(
     private val installKey: String,
     private val models: List<ModelFile> = ModelManifest.all,
     private val requireHashes: Boolean = true,
+    // Solo con il motore finto (debug): se i modelli non sono negli asset si prosegue senza copiarli,
+    // perché il mock non li legge. Integrazione 22/10/2026 12:37, Spec §16.1.
+    private val allowMissingModels: Boolean = false,
     private val freeSpace: (File) -> Long = { it.usableSpace },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : EngineConfigProvider {
@@ -102,7 +105,13 @@ class ModelInstaller(
                             throw ModelInstallException(ModelInstallError.INTEGRITY, "hash non impostato: ${it.fileName}")
                         }
                     }
-                    if (!isInstalledCurrent()) install()
+                    if (!isInstalledCurrent()) {
+                        try {
+                            install()
+                        } catch (e: ModelInstallException) {
+                            if (!(allowMissingModels && e.error == ModelInstallError.MISSING_ASSET)) throw e
+                        }
+                    }
                     _state.value = ModelInstallState.Ready
                 } catch (e: ModelInstallException) {
                     _state.value = ModelInstallState.Failed(e.error)

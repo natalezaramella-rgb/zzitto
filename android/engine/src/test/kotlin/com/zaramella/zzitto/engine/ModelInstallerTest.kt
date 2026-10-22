@@ -83,7 +83,17 @@ class ModelInstallerTest {
         models: List<ModelFile> = models(),
         requireHashes: Boolean = true,
         free: Long = Long.MAX_VALUE,
-    ) = ModelInstaller(src, dir, key, models, requireHashes, { free }, Dispatchers.Unconfined)
+        allowMissing: Boolean = false,
+    ) = ModelInstaller(
+        source = src,
+        targetDir = dir,
+        installKey = key,
+        models = models,
+        requireHashes = requireHashes,
+        allowMissingModels = allowMissing,
+        freeSpace = { free },
+        ioDispatcher = Dispatchers.Unconfined,
+    )
 
     @Test
     fun `ricompone le parti in ordine e passa gli hash al motore`() = runBlocking {
@@ -161,6 +171,14 @@ class ModelInstallerTest {
         val inst = installer(src = MapSource(emptyMap()))
         val e = assertThrows<ModelInstallException> { runBlocking { inst.ensureInstalled() } }
         assertEquals(ModelInstallError.MISSING_ASSET, e.error)
+    }
+
+    // Integrazione 22/10/2026 12:37 (Spec §16.1): con il motore finto l'app parte senza modelli.
+    @Test
+    fun `asset mancante tollerato con il motore finto`() = runBlocking {
+        val inst = installer(src = MapSource(emptyMap()), requireHashes = false, allowMissing = true)
+        inst.ensureInstalled()
+        assertEquals(ModelInstallState.Ready, inst.state.value)
     }
 
     @Test

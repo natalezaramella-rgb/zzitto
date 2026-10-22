@@ -44,6 +44,8 @@ object EngineModule {
             installKey = installKey,
             // Con il motore finto (debug) gli hash possono mancare; in release sono obbligatori.
             requireHashes = !BuildConfig.ENGINE_MOCK,
+            // Debug con mock: si avvia anche senza i modelli negli asset (integrazione 22/10/2026 12:37).
+            allowMissingModels = BuildConfig.ENGINE_MOCK,
         )
     }
 

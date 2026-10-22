@@ -87,3 +87,39 @@ due parti (`.1.part`, `.2.part`) elencate in `models/models-index.json`. Gli has
 
 Il build copia `THIRD_PARTY_LICENSES.md` (radice del repository, agente E) negli asset generati
 (task `copyThirdPartyLicenses`); se manca, la schermata lo segnala.
+
+## Revisione di compilabilità del 22/10/2026
+
+*Aggiunto il 22/10/2026 alle 12:36 (revisione indipendente, prima build in Android Studio).*
+
+### Correzioni
+
+1. **Toolchain JDK 17** (`settings.gradle.kts`). Tutti i moduli dichiarano `kotlin { jvmToolchain(17) }`, ma Android Studio
+   include solo il JBR 21 e nessun resolver di toolchain era configurato: senza un JDK 17 installato la prima build si
+   sarebbe fermata con "No matching toolchains found". Aggiunto il plugin `org.gradle.toolchains.foojay-resolver-convention`
+   1.0.0, che scarica il JDK 17 quando manca. Nessun cambiamento funzionale.
+
+### Verifiche fatte senza Android SDK
+
+- Ponte JNI (`engine/src/main/cpp`) compilato contro `core-native` con `-DZZ_ENGINE_MOCK=ON` con gcc e clang, anche con
+  `-Wl,--no-undefined` (come fa l'NDK): nessun errore né avviso. I 20 simboli `Java_..._ZzNative_*` corrispondono alle
+  dichiarazioni `external` di `ZzNative.kt`.
+- Kotlin 2.2.0 (kotlinc) su tutti i sorgenti non Compose dei moduli `:core`, `:engine`, `:audio`, `:dictation`, `:licensing`
+  e `:app` (servizio di accessibilità, overlay, inserimento, Billing 8, Block Store, Keystore, Room/SQLCipher, Hilt, DataStore),
+  compilati contro stub Java delle API Android e delle librerie: nessun errore. I 103 test della logica pura passano,
+  i test di `:licensing` compilano.
+- Risorse: ogni `R.string`/`R.plurals`/`R.color`/`R.drawable` usato esiste; traduzioni `values`/`values-en` allineate; XML validi.
+- Versioni del catalogo coerenti tra loro (AGP 8.11.1 + Gradle 8.14.3, Kotlin 2.2.0 + KSP 2.2.0-2.0.2, Hilt 2.56.2).
+
+### Da verificare alla prima build
+
+- **Schermate Compose** (`app/.../ui/*Screens.kt`, `HomeAndTour.kt`, `Components.kt`, `MainActivity.kt`) e test UI: controllate
+  solo a lettura (firme Material 3 della BOM 2025.06.01), non compilate.
+- **Billing 8**: `ProductDetails.oneTimePurchaseOfferDetailsList` e `OneTimePurchaseOfferDetails.offerToken` vanno confermati
+  sulla 8.0.0 (`PlayBillingPurchaseVerifier.kt`).
+- **Solo arm64**: su un emulatore x86_64 `libzz_engine_jni.so` e `libsqlcipher.so` non ci sono e il servizio/il database vanno
+  in crash. Usare un dispositivo arm64 (o un emulatore arm64).
+- **Modelli in debug**: gli asset pack install-time non entrano nell'APK "Default APK" di Android Studio e i modelli non sono in
+  git. Senza `tools/models/prepare-models.*` e la configurazione di esecuzione "APK from app bundle", `ModelInstaller` segnala
+  `MISSING_ASSET` anche con il motore finto.
+- **Lint** (`./gradlew check`): non eseguito; eventuali errori di lint non bloccano `assembleDebug`.
