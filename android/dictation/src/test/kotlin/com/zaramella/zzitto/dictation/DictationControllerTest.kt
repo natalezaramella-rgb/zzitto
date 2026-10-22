@@ -227,6 +227,8 @@ class DictationControllerTest {
     private var detector: EndOfSpeechDetector? = null
     private var currentField: FakeField? = field
 
+    private val perfLines = Collections.synchronizedList(mutableListOf<String>())
+
     private fun controller(scope: CoroutineScope, license: LicenseGate = FakeLicense(LicenseState.Trial(20))) =
         DictationController(
             scope = scope,
@@ -249,6 +251,7 @@ class DictationControllerTest {
             clock = { 1234L },
             errorDisplayMs = 50,
             unloadDelayMs = { 20 },
+            perfLog = { perfLines += it },
         )
 
     private suspend fun DictationController.awaitState(predicate: (DictationState) -> Boolean): DictationState =
@@ -500,6 +503,18 @@ class DictationControllerTest {
         c.onIconTap()
         c.runToIdle()
         assertEquals("Ciao Ciao.", field.text)
+        c.close()
+    }
+
+    // Spec §11, §10: tempi delle fasi registrati senza testo dettato (22/10/2026 21:59).
+    @Test
+    fun `il ciclo registra le durate delle fasi senza il testo`() = runBlocking {
+        val c = controller(this)
+        c.onIconTap()
+        c.runToIdle()
+        assertEquals(1, perfLines.size)
+        assertTrue(perfLines[0].contains("totaleDopoStop="))
+        assertFalse(perfLines[0].contains("Ciao"))
         c.close()
     }
 

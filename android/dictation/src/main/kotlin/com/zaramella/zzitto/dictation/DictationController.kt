@@ -82,6 +82,8 @@ class DictationController(
     private val clock: () -> Long = System::currentTimeMillis,
     private val errorDisplayMs: Long = ERROR_DISPLAY_MS,
     private val unloadDelayMs: (DictationSettings) -> Long = { it.unloadAfterMinutes * 60_000L },
+    /** Spec §11, §10 (aggiunto il 22/10/2026 alle 21:59): durate delle fasi per misurare la latenza; mai testo né audio. */
+    private val perfLog: (String) -> Unit = {},
 ) {
     private val lock = Any()
     private val _state = MutableStateFlow<DictationState>(DictationState.Idle)
@@ -202,6 +204,7 @@ class DictationController(
     ) {
         var audio: CapturedAudio? = null
         val options = cfg.toDictationOptions()
+        val tStart = clock()
         // Spec §11: la dettatura usa lo streaming (trascrizione durante l'ascolto); la riscrittura
         // (Spec §5.10) resta su zz_rewrite, che ha bisogno del testo selezionato.
         val feeder = if (rewrite) null else StreamFeeder()
@@ -212,12 +215,14 @@ class DictationController(
                 val prepared = async { runCatching { engine.prepare() } }
                 val opened = feeder?.let { f -> async { openStream(prepared, options, f) } }
                 val captured = s.record(feeder)
+                val tStop = clock()
                 audio = captured
                 levelJob.cancel()
                 _level.value = 0f
                 session = null
                 dispatch(DictationEvent.StopListening)
                 prepared.await().getOrThrow()
+                val tPrepared = clock()
 
                 if (!captured.hadSpeech || captured.sampleCount < MIN_SAMPLES) {
                     throw EngineException(EngineStatus.NO_SPEECH)
@@ -244,7 +249,16 @@ class DictationController(
                     }
                 }
                 dispatch(DictationEvent.ResultReady)
-                if (applyResult(field, startSnapshot, rewrite, result, cfg)) {
+                val tResult = clock()
+                val inserted = applyResult(field, startSnapshot, rewrite, result, cfg)
+                // Spec §11: misura della latenza percepita (dallo stop al testo inserito). Spec §10: solo durate.
+                perfLog(
+                    "ciclo: ascolto=${tStop - tStart}ms audio=${captured.sampleCount * 1000L / AudioFormatSpec.SAMPLE_RATE}ms " +
+                        "attesaModelli=${tPrepared - tStop}ms elaborazione=${tResult - tPrepared}ms " +
+                        "(trascrizione=${result.msTranscribe}ms correzione=${result.msCorrect}ms stream=${stream != null} " +
+                        "fallback=${result.usedFallback}) inserimento=${clock() - tResult}ms totaleDopoStop=${clock() - tStop}ms",
+                )
+                if (inserted) {
                     dispatch(DictationEvent.InsertionDone)
                 } else {
                     fail(ErrorKind.INSERT_FAILED)

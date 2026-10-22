@@ -115,6 +115,8 @@ class ZzittoAccessibilityService : AccessibilityService() {
             inserter = TextInserter(AndroidClipboardAccess(this)),
             licenseGate = licenseGate,
             settings = settingsState,
+            // Spec §11, §10: tempi delle fasi nel registro di sistema, senza testo (22/10/2026 21:59).
+            perfLog = { android.util.Log.i("ZzittoPerf", it) },
             history = historySink,
             notifier = ToastNotifier(this),
             feedback = AndroidListeningFeedback(this),
