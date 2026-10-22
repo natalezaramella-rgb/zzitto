@@ -15,10 +15,30 @@ option(ZZ_ENGINE_MOCK "Compila il motore finto" OFF)
 option(ZZ_BUILD_TESTS "Compila i test" ON)
 option(ZZ_RUN_TESTS_ON_BUILD "Esegue i test dopo ogni build" ON)
 
-set(ZZ_COMMON_SOURCES src/zz_common.cpp)
+# Windows: runtime C/C++ statico (/MT) per zz_engine.dll e per tutte le dipendenze, così la DLL
+# non dipende dal runtime Visual C++ (richiesta dell'agente E, Spec §7.1). CMP0091 NEW anche
+# nei sottoprogetti che dichiarano una versione minima di CMake più vecchia (whisper.cpp).
+# Aggiunto il 22/10/2026 alle 11:52 (agente A).
+set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# Logica condivisa tra mock e motore reale (comandi, scorciatoie, VAD, SHA-256).
+# Libreria OBJECT: i suoi oggetti entrano interi in zz_engine (le funzioni ZZ_API
+# restano esportate) e nei test. Aggiornato il 22/10/2026 alle 11:20 (agente A).
+add_library(zz_common_obj OBJECT src/zz_common.cpp src/zz_sha256.cpp)
+target_include_directories(zz_common_obj PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_definitions(zz_common_obj PRIVATE ZZ_ENGINE_BUILD)
+target_compile_options(zz_common_obj PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>)
+set_target_properties(zz_common_obj PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 
 if(ZZ_ENGINE_MOCK)
-  add_library(zz_engine SHARED ${ZZ_COMMON_SOURCES} mock/zz_engine_mock.cpp)
+  add_library(zz_engine SHARED mock/zz_engine_mock.cpp)
+  target_link_libraries(zz_engine PRIVATE zz_common_obj)
+  if(WIN32)
+    set_target_properties(zz_engine PROPERTIES PREFIX "" IMPORT_PREFIX "")
+  endif()
 else()
   # Motore reale: implementato dall'agente A (Spec §16.1) in src/ con whisper.cpp e llama.cpp.
   include(cmake/real_engine.cmake OPTIONAL RESULT_VARIABLE ZZ_REAL_ENGINE)
