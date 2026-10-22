@@ -58,6 +58,11 @@ androidx-test-ext = { module = "androidx.test.ext:junit", version.ref = "android
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 
 # --- Sezione agente B (Android) ---
+# Aggiunto il 22/10/2026 alle 11:20. Versioni inline perché la sezione [versions] è dell'orchestratore.
+junit5-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
+androidx-test-core = { module = "androidx.test:core", version = "1.6.1" }
 # --- Sezione agente D (Acquisti) ---
 # --- Sezione agente E (Conformità e rilascio) ---
 
