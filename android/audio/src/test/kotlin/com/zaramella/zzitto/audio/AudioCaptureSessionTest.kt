@@ -62,7 +62,10 @@ class AudioCaptureSessionTest {
         }
         override fun process(chunk: FloatArray, offset: Int, length: Int): Boolean = ++count >= endAt
         override fun hasSpeech(): Boolean = speech
-        override fun close() = Unit
+        var closed = false
+        override fun close() {
+            closed = true
+        }
     }
 
     private fun session(source: PcmSource, detector: EndOfSpeechDetector?, params: CaptureParams = CaptureParams()) =
@@ -79,6 +82,7 @@ class AudioCaptureSessionTest {
         assertTrue(audio.hadSpeech)
         assertEquals(1, detector.resets)
         assertTrue(source.stopped && source.closed)
+        assertTrue(detector.closed)
     }
 
     @Test

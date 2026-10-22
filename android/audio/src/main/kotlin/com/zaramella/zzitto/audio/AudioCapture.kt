@@ -93,7 +93,7 @@ class AudioCaptureException(val reason: Reason, message: String, cause: Throwabl
 }
 
 /**
- * Una sessione di registrazione: ciclo di lettura con stop manuale, stop automatico sul
+ * Una sessione di registrazione (monouso; chiude il rilevatore alla fine): ciclo di lettura con stop manuale, stop automatico sul
  * silenzio (VAD del motore), durata massima e annullamento (Spec §5.2).
  * Aggiunto il 22/10/2026 alle 11:45.
  */
@@ -125,7 +125,6 @@ class AudioCaptureSession(
         )
         val chunk = FloatArray(AudioFormatSpec.CHUNK_SAMPLES)
         var reason = StopReason.MANUAL
-        var success = false
         detector?.reset()
         val source = sourceFactory()
         try {
@@ -154,15 +153,14 @@ class AudioCaptureSession(
                 }
             }
             val hadSpeech = detector?.hasSpeech() ?: true
-            success = true
             CapturedAudio(buffer.toArray(), reason, hadSpeech)
         } finally {
             runCatching { source.stop() }
             runCatching { source.close() }
+            runCatching { detector?.close() } // il rilevatore appartiene alla sessione
             chunk.fill(0f)
             buffer.wipe() // Spec §10: la copia restituita è l'unica rimasta.
             _level.value = 0f
-            if (!success) stopRequested.set(false)
         }
     }
 

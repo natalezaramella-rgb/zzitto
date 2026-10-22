@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colori dell'icona: lo stato si comunica solo con colore e animazione (Spec §2.5). Aggiunto il 22/10/2026 alle 12:35. -->
+<resources>
+    <color name="zz_icon_idle">#E61E3A5F</color>
+    <color name="zz_icon_listening">#FFD93636</color>
+    <color name="zz_icon_transcribing">#FFE08A00</color>
+    <color name="zz_icon_correcting">#FF7A4FD1</color>
+    <color name="zz_icon_inserting">#FF2E9E5B</color>
+    <color name="zz_icon_error">#FF8B1A1A</color>
+    <color name="zz_icon_locked">#CC6B7280</color>
+    <color name="zz_menu_background">#F2FFFFFF</color>
+    <color name="zz_menu_text">#FF1C1B1F</color>
+</resources>

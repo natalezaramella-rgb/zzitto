@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English strings for :dictation (Spec §2.1). Added 22/10/2026 12:35. -->
+<resources>
+    <string name="zz_accessibility_service_label">Zzitto – dictation</string>
+    <string name="zz_accessibility_service_description">Zzitto uses the accessibility service only to know which text field you are using, show the microphone icon and insert the text you dictate. All processing happens on your phone: no audio and no text ever leaves the device. Password fields are excluded.</string>
+
+    <string name="zz_icon_idle">Zzitto: tap to dictate, long press for the menu</string>
+    <string name="zz_icon_listening">Zzitto: listening, tap to stop</string>
+    <string name="zz_icon_transcribing">Zzitto: transcribing</string>
+    <string name="zz_icon_correcting">Zzitto: correcting</string>
+    <string name="zz_icon_inserting">Zzitto: inserting text</string>
+    <string name="zz_icon_error">Zzitto: error</string>
+    <string name="zz_icon_locked">Zzitto: trial ended, tap to unlock</string>
+
+    <string name="zz_menu_cancel">Cancel dictation</string>
+    <string name="zz_menu_undo">Undo last insertion</string>
+    <string name="zz_menu_language">Language: %1$s</string>
+    <string name="zz_menu_translate">Translation: %1$s</string>
+    <string name="zz_menu_mode">Mode: %1$s</string>
+    <string name="zz_menu_settings">Settings</string>
+
+    <string name="zz_translate_none">none</string>
+    <string name="zz_translate_en">English</string>
+    <string name="zz_translate_es">Spanish</string>
+    <string name="zz_mode_faithful">Faithful</string>
+    <string name="zz_mode_clean">Clean</string>
+    <string name="zz_mode_formal">Formal</string>
+
+    <string name="zz_notice_raw_text">Text inserted without correction</string>
+    <string name="zz_notice_copied">Cannot write into this field: the text is on the clipboard, paste it yourself</string>
+    <string name="zz_notice_mic_permission">Grant the microphone permission from the Zzitto app</string>
+    <string name="zz_notice_mic_unavailable">The microphone is in use by another app</string>
+    <string name="zz_notice_models">The AI models are not ready: open Zzitto to prepare them</string>
+    <string name="zz_notice_engine">Dictation failed, please try again</string>
+    <string name="zz_notice_undo_unavailable">Nothing to undo in this field</string>
+    <string name="zz_notice_send_unavailable">This field does not support sending</string>
+    <string name="zz_notice_nothing_to_delete">No sentence to delete</string>
+    <string name="zz_notice_trial_expired">The free trial has ended</string>
+</resources>

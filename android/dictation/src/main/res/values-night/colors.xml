@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu in tema scuro. Aggiunto il 22/10/2026 alle 12:35. -->
+<resources>
+    <color name="zz_menu_background">#F22B2930</color>
+    <color name="zz_menu_text">#FFE6E1E5</color>
+</resources>

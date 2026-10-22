@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Servizio di accessibilità e icona flottante (Spec §5.1-bis). Aggiunto il 22/10/2026 alle 12:00.
+
+  Permessi:
+  - VIBRATE: conferma tattile all'avvio dell'ascolto (Spec §5.7). Permesso "normal", nessuna richiesta all'utente.
+  - Nessun SYSTEM_ALERT_WINDOW: l'icona usa TYPE_ACCESSIBILITY_OVERLAY, consentito al solo servizio di
+    accessibilità senza il permesso "mostra sopra altre app".
+  - Il microfono in background è consentito perché il sistema lega i servizi di accessibilità con
+    BIND_INCLUDE_CAPABILITIES: non serve un foreground service di tipo microphone.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application>
+        <service
+            android:name=".service.ZzittoAccessibilityService"
+            android:exported="true"
+            android:label="@string/zz_accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/zz_accessibility_service_config" />
+        </service>
+    </application>
+</manifest>
