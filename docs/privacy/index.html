@@ -1,0 +1,430 @@
+<!doctype html>
+<!-- Generato da tools/docs/build-privacy-html.py il 22/10/2026 11:51 (ora italiana). Spec §10. Non modificare a mano. -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zzitto – Privacy</title>
+<style>
+:root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#5b5a55; --line:#dedbd2; --accent:#2f5d50; --mark:#fff1a8; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161614; --fg:#ecebe6; --muted:#a9a79f; --line:#34332f; --accent:#8cc7b3; --mark:#5c5220; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
+nav { display:flex; gap:12px; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:8px; }
+nav a { color:var(--accent); font-weight:600; text-decoration:none; }
+h1 { font-size:1.7rem; line-height:1.25; }
+h2 { font-size:1.2rem; margin-top:2rem; border-top:1px solid var(--line); padding-top:1rem; }
+a { color:var(--accent); overflow-wrap:anywhere; }
+.table { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:.95rem; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { color:var(--muted); }
+mark { background:var(--mark); color:inherit; }
+section + section { margin-top:48px; border-top:3px double var(--line); }
+</style>
+</head>
+<body>
+<main>
+<nav><a href="#it" hreflang="it">Italiano</a><a href="#en" hreflang="en">English</a></nav>
+<section id="it" lang="it">
+<h1>Informativa sul trattamento dei dati personali – Zzitto</h1>
+<p><em>Testo destinato alla pubblicazione (pagina web linkata da app e schede degli store). Prima della pubblicazione: completare
+i campi <code><mark>[[DA COMPLETARE]]</mark></code> e farla rivedere da un consulente privacy.</em></p>
+<p><strong>Ultimo aggiornamento:</strong> <mark>[[DA COMPLETARE: data di pubblicazione]]</mark></p>
+<p>Questa informativa spiega come l'app <strong>Zzitto</strong> per Android e per Windows tratta i dati, ai sensi degli articoli 13 e 14
+del Regolamento (UE) 2016/679 (GDPR) e del D.Lgs. 196/2003 (Codice privacy).</p>
+<p><strong>In sintesi:</strong> Zzitto elabora la voce e il testo <strong>solo sul tuo dispositivo</strong>. Nessun audio e nessun testo dettato
+viene inviato a noi o a terzi. Non abbiamo server, non usiamo pubblicità, statistiche d'uso o profilazione.
+L'unico accesso a internet serve, durante la prova gratuita, a verificare tramite Google Play o Microsoft Store se hai
+acquistato l'app.</p>
+<h2>1. Titolare del trattamento</h2>
+<p>Zaramella Consulting Srl
+Sede legale: <mark>[[DA COMPLETARE: indirizzo completo]]</mark>
+Partita IVA: <mark>[[DA COMPLETARE: P.IVA]]</mark>
+Email per la privacy: <mark>[[DA COMPLETARE: indirizzo email di contatto]]</mark></p>
+<p>Il titolare non ha nominato un Responsabile della protezione dei dati (DPO), perché non ne ricorrono gli obblighi
+(art. 37 GDPR). <mark>[[DA COMPLETARE: confermare o indicare il DPO]]</mark></p>
+<h2>2. Come funziona Zzitto e quali dati tocca</h2>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>Cosa succede</th>
+<th>Dove resta</th>
+<th>Esce dal dispositivo?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Audio della voce</strong></td>
+<td>Registrato dal microfono solo mentre detti, trascritto dal modello Whisper sul dispositivo</td>
+<td>Solo nella memoria di lavoro (RAM); cancellato subito dopo la trascrizione, mai salvato su disco</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Testo dettato</strong></td>
+<td>Corretto, riscritto o tradotto dal modello Phi-4-mini sul dispositivo e inserito nel campo di testo che stai usando</td>
+<td>Nel campo di testo dell'app in cui scrivi; se attivi la cronologia, anche nell'archivio cifrato di Zzitto</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Testo selezionato per la riscrittura a voce</strong></td>
+<td>Letto solo quando selezioni un testo e chiedi a voce di riscriverlo; il risultato sostituisce la selezione</td>
+<td>Solo in memoria durante l'elaborazione</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Cronologia delle dettature</strong> (facoltativa)</td>
+<td>Ultime dettature (testo grezzo e corretto), per consultarle</td>
+<td>Archivio cifrato sul dispositivo; disattivabile, cancellabile con un tocco, conservazione configurabile</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Dizionario personale e scorciatoie vocali</strong></td>
+<td>Parole, nomi e testi che inserisci tu, usati per migliorare il riconoscimento</td>
+<td>Archivio cifrato sul dispositivo</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Impostazioni</strong></td>
+<td>Lingua, modalità di correzione, tempi</td>
+<td>Sul dispositivo</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Appunti (clipboard)</strong></td>
+<td>Solo se un'app non accetta l'inserimento diretto: il testo passa dagli appunti e il contenuto precedente viene ripristinato</td>
+<td>Appunti del sistema, per pochi istanti</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Stato della licenza</strong></td>
+<td>Esito della verifica di acquisto</td>
+<td>Sul dispositivo, cifrato</td>
+<td>Vedi §3</td>
+</tr>
+<tr>
+<td><strong>Data di inizio della prova</strong> (solo Android)</td>
+<td>Salvata con il servizio Block Store di Google</td>
+<td>Sul dispositivo e nel backup del tuo account Google</td>
+<td>Vedi §4</td>
+</tr>
+</tbody>
+</table></div>
+<p>Zzitto <strong>non</strong> raccoglie: nome, email, contatti, posizione, identificativi pubblicitari, dati di utilizzo, statistiche,
+rapporti sugli arresti anomali. Non ti chiede di creare un account.</p>
+<h2>3. Verifica della licenza durante la prova gratuita</h2>
+<ul>
+<li><strong>Android:</strong> l'app si scarica gratis e si sblocca per sempre con un acquisto in-app una tantum su Google Play
+  (prodotto "Sblocca Zzitto"). Durante i 30 giorni di prova, a ogni avvio Zzitto chiede alla libreria Google Play Billing
+  se l'acquisto è stato fatto.</li>
+<li><strong>Windows:</strong> l'app è venduta sul Microsoft Store con una prova gratuita di 30 giorni gestita dallo Store. Durante la
+  prova, a ogni avvio Zzitto legge lo stato della licenza tramite le API del Microsoft Store.</li>
+<li>In questa verifica non inviamo alcun dato nostro: la richiesta passa dall'app dello store installata sul dispositivo,
+  che usa il tuo account Google o Microsoft. Noi non riceviamo i tuoi dati di pagamento né il tuo account.</li>
+<li>Senza connessione la prova continua normalmente. Dopo l'acquisto confermato, lo sblocco viene salvato in modo cifrato
+  sul dispositivo e <strong>Zzitto non si collega più a internet</strong>.</li>
+</ul>
+<p>Google (Google Ireland Ltd) e Microsoft (Microsoft Ireland Operations Ltd) trattano i dati dell'acquisto come titolari
+autonomi, secondo le proprie informative:
+Google: <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a> — Microsoft: <a href="https://privacy.microsoft.com/privacystatement">https://privacy.microsoft.com/privacystatement</a></p>
+<h2>4. Data di inizio della prova su Android (Block Store)</h2>
+<p>Per evitare che la prova ricominci disinstallando e reinstallando l'app, Zzitto salva <strong>solo la data di inizio della
+prova</strong> con il servizio Block Store di Google Play services. Il dato resta sul dispositivo e, se hai attivo il backup di
+Google, viene salvato nel backup del tuo account Google con crittografia end-to-end quando il dispositivo lo consente
+(Android 9 o successivo con blocco schermo). Non contiene altro: né audio, né testo, né informazioni su come usi l'app.
+Puoi cancellarlo cancellando i dati del backup dell'app dal tuo account Google.</p>
+<h2>5. Permessi richiesti</h2>
+<p><strong>Android</strong></p>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Permesso</th>
+<th>Perché</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Microfono (<code>RECORD_AUDIO</code>)</td>
+<td>Ascoltare la voce mentre detti. Il microfono è attivo solo dopo il tuo tocco sull'icona.</td>
+</tr>
+<tr>
+<td>Servizio di accessibilità</td>
+<td><strong>Solo</strong> per capire quale campo di testo è attivo, mostrare l'icona del microfono vicino al campo, inserire il testo dettato e leggere il testo che selezioni per la riscrittura a voce. Zzitto non legge il resto dello schermo, non registra ciò che scrivi con la tastiera, non salva e non trasmette i contenuti delle altre app.</td>
+</tr>
+<tr>
+<td>Mostra sopra altre app</td>
+<td>Visualizzare l'icona flottante del microfono.</td>
+</tr>
+<tr>
+<td>Internet</td>
+<td>Solo per la verifica dell'acquisto durante la prova (§3).</td>
+</tr>
+<tr>
+<td>Esclusione dall'ottimizzazione della batteria (facoltativa)</td>
+<td>Evitare che il sistema chiuda il servizio di dettatura.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Prima di attivare il servizio di accessibilità, l'app mostra una schermata che spiega questi usi e chiede il tuo consenso.</p>
+<p><strong>Windows:</strong> microfono; accesso a internet solo per la licenza dello Store; UI Automation e simulazione della tastiera
+per inserire il testo nel campo attivo; appunti come ripiego.</p>
+<h2>6. Finalità e basi giuridiche</h2>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Finalità</th>
+<th>Dati</th>
+<th>Base giuridica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fornire la dettatura, la correzione, la riscrittura e la traduzione</td>
+<td>Audio e testo, elaborati solo sul dispositivo</td>
+<td>Esecuzione del contratto di licenza d'uso (art. 6.1.b GDPR)</td>
+</tr>
+<tr>
+<td>Cronologia, dizionario, scorciatoie</td>
+<td>Dati che decidi di salvare</td>
+<td>Esecuzione del contratto; funzioni facoltative attivate da te</td>
+</tr>
+<tr>
+<td>Verifica dell'acquisto e della prova</td>
+<td>Stato della licenza, data di inizio prova</td>
+<td>Esecuzione del contratto (art. 6.1.b) e legittimo interesse a impedire l'abuso della prova gratuita (art. 6.1.f)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Poiché audio e testo non lasciano il dispositivo, il titolare non ha accesso a questi dati e non li conserva.</p>
+<h2>7. Conservazione</h2>
+<ul>
+<li>Audio: nessuna conservazione (solo memoria di lavoro, cancellato dopo la trascrizione).</li>
+<li>Cronologia: per il periodo che scegli nelle impostazioni, finché non la cancelli o disinstalli l'app.</li>
+<li>Dizionario, scorciatoie, impostazioni, stato della licenza: sul dispositivo, finché non li cancelli o disinstalli l'app.</li>
+<li>Data di inizio prova (Android): nel Block Store finché resta il backup dell'app nel tuo account Google.</li>
+</ul>
+<h2>8. Destinatari e trasferimenti all'estero</h2>
+<p>Il titolare non comunica dati a terzi e non li trasferisce fuori dall'Unione europea. Google e Microsoft possono trattare
+i dati dell'acquisto e del backup anche fuori dall'UE, come titolari autonomi e con le garanzie descritte nelle loro informative.</p>
+<h2>9. Sicurezza</h2>
+<p>Archivi cifrati con chiave conservata nell'Android Keystore (Android) o nelle protezioni del sistema Windows; nessun audio
+o testo dettato nei registri di diagnostica; modelli AI verificati con impronta SHA-256; nessun segreto nel codice.
+I dettagli sono nell'allegato di conformità ISO/IEC 27001, 27017 e 27018 del progetto.</p>
+<h2>10. I tuoi diritti</h2>
+<p>Hai diritto di accesso, rettifica, cancellazione, limitazione, portabilità e opposizione (artt. 15–21 GDPR).
+Poiché i dati restano sul tuo dispositivo, puoi esercitarli direttamente dall'app: consultare e cancellare la cronologia,
+modificare dizionario e scorciatoie, disattivare la cronologia, disinstallare l'app. Per qualsiasi richiesta scrivi a
+<mark>[[DA COMPLETARE: indirizzo email di contatto]]</mark>.</p>
+<p>Puoi proporre reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it">https://www.garanteprivacy.it</a>) o all'autorità
+di controllo del tuo Paese.</p>
+<h2>11. Minori</h2>
+<p>Zzitto non è destinata a minori di 14 anni (art. 2-quinquies del Codice privacy).</p>
+<h2>12. Intelligenza artificiale</h2>
+<p>Zzitto usa modelli di intelligenza artificiale (Whisper per la trascrizione, Phi-4-mini per correzione, riscrittura
+e traduzione) che funzionano interamente sul dispositivo. Il testo prodotto può contenere errori: rileggilo prima di inviarlo.
+Nessun dato viene usato per addestrare modelli.</p>
+<h2>13. Modifiche</h2>
+<p>Eventuali modifiche a questa informativa saranno pubblicate su questa pagina con la data di aggiornamento e, se rilevanti,
+segnalate nell'app.</p>
+</section>
+<section id="en" lang="en">
+<h1>Privacy Policy – Zzitto</h1>
+<p><em>Text intended for publication (web page linked from the app and the store listings). Before publishing: fill in the
+<code><mark>[[TO BE COMPLETED]]</mark></code> fields and have it reviewed by a privacy advisor. The Italian version prevails in case of discrepancy.</em></p>
+<p><strong>Last updated:</strong> <mark>[[TO BE COMPLETED: publication date]]</mark></p>
+<p>This policy explains how the <strong>Zzitto</strong> app for Android and Windows handles data, under Articles 13 and 14 of
+Regulation (EU) 2016/679 (GDPR) and the Italian Privacy Code (Legislative Decree 196/2003).</p>
+<p><strong>In short:</strong> Zzitto processes your voice and text <strong>only on your device</strong>. No audio and no dictated text is ever sent
+to us or to third parties. We have no servers and use no advertising, usage analytics or profiling. The only internet
+access is used, during the free trial, to check through Google Play or the Microsoft Store whether you have bought the app.</p>
+<h2>1. Data controller</h2>
+<p>Zaramella Consulting Srl
+Registered office: <mark>[[TO BE COMPLETED: full address]]</mark>
+VAT number: <mark>[[TO BE COMPLETED: VAT number]]</mark>
+Privacy contact email: <mark>[[TO BE COMPLETED: contact email address]]</mark></p>
+<p>The controller has not appointed a Data Protection Officer, as the conditions of Art. 37 GDPR do not apply.
+<mark>[[TO BE COMPLETED: confirm or name the DPO]]</mark></p>
+<h2>2. How Zzitto works and which data it touches</h2>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Data</th>
+<th>What happens</th>
+<th>Where it stays</th>
+<th>Leaves the device?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Voice audio</strong></td>
+<td>Recorded from the microphone only while you dictate, transcribed by the Whisper model on the device</td>
+<td>Working memory (RAM) only; deleted right after transcription, never written to storage</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Dictated text</strong></td>
+<td>Corrected, rewritten or translated by the Phi-4-mini model on the device and inserted into the text field you are using</td>
+<td>In the text field of the app you are typing in; if you turn history on, also in Zzitto's encrypted store</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Text selected for voice rewriting</strong></td>
+<td>Read only when you select text and ask by voice to rewrite it; the result replaces the selection</td>
+<td>Memory only, during processing</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Dictation history</strong> (optional)</td>
+<td>Your latest dictations (raw and corrected text), so you can look them up</td>
+<td>Encrypted store on the device; can be turned off, deleted with one tap, retention configurable</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Personal dictionary and voice shortcuts</strong></td>
+<td>Words, names and texts you enter, used to improve recognition</td>
+<td>Encrypted store on the device</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Settings</strong></td>
+<td>Language, correction mode, timings</td>
+<td>On the device</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Clipboard</strong></td>
+<td>Only when an app does not accept direct insertion: the text goes through the clipboard and the previous content is restored</td>
+<td>System clipboard, for a moment</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Licence status</strong></td>
+<td>Result of the purchase check</td>
+<td>On the device, encrypted</td>
+<td>See §3</td>
+</tr>
+<tr>
+<td><strong>Trial start date</strong> (Android only)</td>
+<td>Saved with Google's Block Store service</td>
+<td>On the device and in your Google account backup</td>
+<td>See §4</td>
+</tr>
+</tbody>
+</table></div>
+<p>Zzitto does <strong>not</strong> collect: name, email, contacts, location, advertising IDs, usage data, analytics or crash reports.
+It does not ask you to create an account.</p>
+<h2>3. Licence check during the free trial</h2>
+<ul>
+<li><strong>Android:</strong> the app is a free download and is unlocked forever with a one-time in-app purchase on Google Play
+  ("Unlock Zzitto"). During the 30-day trial, at every launch Zzitto asks the Google Play Billing library whether the
+  purchase has been made.</li>
+<li><strong>Windows:</strong> the app is sold on the Microsoft Store with a 30-day free trial managed by the Store. During the trial,
+  at every launch Zzitto reads the licence status through the Microsoft Store APIs.</li>
+<li>We send no data of our own in this check: the request goes through the store app installed on your device, which uses
+  your Google or Microsoft account. We never receive your payment details or your account.</li>
+<li>Without a connection the trial simply continues. Once the purchase is confirmed, the unlock is stored encrypted on the
+  device and <strong>Zzitto never connects to the internet again</strong>.</li>
+</ul>
+<p>Google (Google Ireland Ltd) and Microsoft (Microsoft Ireland Operations Ltd) process purchase data as independent
+controllers under their own policies: <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a> — <a href="https://privacy.microsoft.com/privacystatement">https://privacy.microsoft.com/privacystatement</a></p>
+<h2>4. Trial start date on Android (Block Store)</h2>
+<p>To prevent the trial from restarting after uninstalling and reinstalling, Zzitto stores <strong>only the trial start date</strong>
+with Google Play services Block Store. It stays on the device and, if Google backup is on, is saved in your Google account
+backup with end-to-end encryption where the device supports it (Android 9 or later with a screen lock). It contains
+nothing else: no audio, no text, no information about how you use the app.</p>
+<h2>5. Permissions</h2>
+<p><strong>Android</strong></p>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Microphone (<code>RECORD_AUDIO</code>)</td>
+<td>To hear your voice while you dictate. The microphone is active only after you tap the icon.</td>
+</tr>
+<tr>
+<td>Accessibility service</td>
+<td><strong>Only</strong> to detect which text field is active, show the microphone icon next to it, insert the dictated text and read the text you select for voice rewriting. Zzitto does not read the rest of the screen, does not log what you type on your keyboard, and does not store or transmit other apps' content.</td>
+</tr>
+<tr>
+<td>Display over other apps</td>
+<td>To show the floating microphone icon.</td>
+</tr>
+<tr>
+<td>Internet</td>
+<td>Only for the purchase check during the trial (§3).</td>
+</tr>
+<tr>
+<td>Battery optimisation exemption (optional)</td>
+<td>To stop the system from closing the dictation service.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Before the accessibility service is enabled, the app shows a screen explaining these uses and asks for your consent.</p>
+<p><strong>Windows:</strong> microphone; internet only for the Store licence; UI Automation and keyboard input simulation to insert text
+into the active field; clipboard as a fallback.</p>
+<h2>6. Purposes and legal bases</h2>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Data</th>
+<th>Legal basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Providing dictation, correction, rewriting and translation</td>
+<td>Audio and text, processed on the device only</td>
+<td>Performance of the licence contract (Art. 6(1)(b) GDPR)</td>
+</tr>
+<tr>
+<td>History, dictionary, shortcuts</td>
+<td>Data you choose to save</td>
+<td>Performance of the contract; optional features you turn on</td>
+</tr>
+<tr>
+<td>Purchase and trial check</td>
+<td>Licence status, trial start date</td>
+<td>Performance of the contract (Art. 6(1)(b)) and legitimate interest in preventing trial abuse (Art. 6(1)(f))</td>
+</tr>
+</tbody>
+</table></div>
+<p>Since audio and text never leave the device, the controller has no access to them and does not store them.</p>
+<h2>7. Retention</h2>
+<ul>
+<li>Audio: not retained (working memory only, deleted after transcription).</li>
+<li>History: for the period you choose in settings, until you delete it or uninstall the app.</li>
+<li>Dictionary, shortcuts, settings, licence status: on the device until you delete them or uninstall the app.</li>
+<li>Trial start date (Android): in Block Store as long as the app backup remains in your Google account.</li>
+</ul>
+<h2>8. Recipients and transfers abroad</h2>
+<p>The controller does not disclose data to third parties or transfer it outside the European Union. Google and Microsoft may
+process purchase and backup data outside the EU as independent controllers, with the safeguards described in their policies.</p>
+<h2>9. Security</h2>
+<p>Encrypted stores with keys held in the Android Keystore (Android) or Windows system protection; no audio or dictated text
+in diagnostic logs; AI models verified by SHA-256 fingerprint; no secrets in the code. Details are in the project's
+ISO/IEC 27001, 27017 and 27018 compliance annex.</p>
+<h2>10. Your rights</h2>
+<p>You have the rights of access, rectification, erasure, restriction, portability and objection (Arts. 15–21 GDPR).
+Since data stays on your device, you can exercise them directly in the app: view and delete history, edit the dictionary
+and shortcuts, turn history off, uninstall the app. For any request write to <mark>[[TO BE COMPLETED: contact email address]]</mark>.</p>
+<p>You can lodge a complaint with the Italian Data Protection Authority (<a href="https://www.garanteprivacy.it">https://www.garanteprivacy.it</a>) or the supervisory
+authority of your country.</p>
+<h2>11. Children</h2>
+<p>Zzitto is not intended for children under 14.</p>
+<h2>12. Artificial intelligence</h2>
+<p>Zzitto uses AI models (Whisper for transcription, Phi-4-mini for correction, rewriting and translation) that run entirely
+on the device. The output may contain mistakes: review it before sending. No data is used to train models.</p>
+<h2>13. Changes</h2>
+<p>Any changes to this policy will be published on this page with the update date and, if significant, announced in the app.</p>
+</section>
+</main>
+</body>
+</html>

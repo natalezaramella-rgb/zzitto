@@ -15,7 +15,7 @@ nella sezione della nuova versione con data e ora (ora italiana).
 - Script di preparazione dei modelli con verifica SHA-256 e aggiornamento automatico di `ModelManifest` (`tools/models/`).
 - Script di rilascio locali: test obbligatori, AAB firmato con la chiave di upload, bundle MSIX ARM64 + x64 (`tools/release/`) (Spec §12, §13).
 - Allegato di conformità ISO 27001/27017/27018 e checklist OWASP MASVS (`docs/compliance/`) (Spec §10).
-- Informativa privacy in italiano e inglese, anche in HTML (`docs/privacy/`) (Spec §10).
+- Informativa privacy in italiano e inglese, anche in HTML generata da `tools/docs/build-privacy-html.py` (`docs/privacy/`) (Spec §10).
 - Testi per Google Play e Microsoft Store (`docs/store/`) (Spec §8, §8.2, §5.1-bis).
 - Elenco delle licenze di terze parti (`THIRD_PARTY_LICENSES.md`) (Spec §2.2).
 - Guida al rilascio per il titolare (`docs/release-guide.md`).
