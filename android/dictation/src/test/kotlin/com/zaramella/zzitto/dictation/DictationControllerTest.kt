@@ -503,6 +503,27 @@ class DictationControllerTest {
         c.close()
     }
 
+    // Spec §11, precaricamento all'apparizione dell'icona (22/10/2026 21:48).
+    @Test
+    fun `prewarm carica i modelli una volta e poi li scarica per inattivita`() = runBlocking {
+        val c = controller(this)
+        c.prewarm()
+        c.prewarm()
+        withTimeout(5_000) { while (engine.unloaded == 0) delay(5) }
+        assertEquals(1, engine.prepared)
+        assertEquals(DictationState.Idle, c.state.value)
+        c.close()
+    }
+
+    @Test
+    fun `prewarm non fa nulla senza licenza valida`() = runBlocking {
+        val c = controller(this, FakeLicense(LicenseState.TrialExpired))
+        c.prewarm()
+        delay(50)
+        assertEquals(0, engine.prepared)
+        c.close()
+    }
+
     @Test
     fun `i modelli vengono scaricati dopo l'inattivita`() = runBlocking {
         val c = controller(this)

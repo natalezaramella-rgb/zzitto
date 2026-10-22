@@ -211,6 +211,7 @@ class ZzittoAccessibilityService : AccessibilityService() {
         if (visible && !overlayController.isIconVisible) {
             val cfg = settingsState.value
             overlayController.showIcon(cfg.iconX, cfg.iconY)
+            controller?.prewarm() // Spec §11: modelli pronti prima del tap (22/10/2026 21:48)
         } else if (!visible && overlayController.isIconVisible) {
             overlayController.hideIcon()
         }

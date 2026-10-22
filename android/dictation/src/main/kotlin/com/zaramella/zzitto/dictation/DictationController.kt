@@ -97,6 +97,7 @@ class DictationController(
     private var cycleJob: Job? = null
     private var session: AudioCaptureSession? = null
     private var unloadJob: Job? = null
+    private var prewarmJob: Job? = null
     private var errorJob: Job? = null
     private var lastUndo: UndoRecord? = null
 
@@ -107,6 +108,22 @@ class DictationController(
             DictationState.Idle, is DictationState.Error -> start()
             // Durante l'elaborazione il tap non fa nulla: si annulla dal menu (Spec §5.1, §5.2).
             else -> Unit
+        }
+    }
+
+    /**
+     * Precarica i modelli quando compare l'icona su un campo di testo (Spec §11; aggiunto il 22/10/2026
+     * alle 21:48). Sul Galaxy il caricamento dura 10–13 s: farlo al tap sul microfono rendeva la prima
+     * dettatura lentissima. Dopo il caricamento parte il normale scaricamento per inattività (Spec §4.2).
+     */
+    fun prewarm() {
+        if (state.value != DictationState.Idle || !licenseGate.canDictate()) return
+        if (prewarmJob?.isActive == true) return
+        unloadJob?.cancel()
+        prewarmJob = scope.launch {
+            if (runCatching { engine.prepare() }.isSuccess && state.value == DictationState.Idle) {
+                scheduleUnload(settings.value)
+            }
         }
     }
 
@@ -132,6 +149,7 @@ class DictationController(
     /** Ferma tutto (servizio disattivato). */
     fun close() {
         cancel()
+        prewarmJob?.cancel()
         unloadJob?.cancel()
         unloadJob = null
         lastUndo = null

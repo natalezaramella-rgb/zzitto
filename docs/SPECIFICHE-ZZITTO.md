@@ -523,3 +523,15 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 *22/10/2026 17:48 – Scelta del microfono, su richiesta del titolare (§5.7). Windows: endpoint WASAPI salvato per id, elenco con nome del dispositivo. Android: chiave stabile tipo|prodotto|indirizzo (l'id di sistema cambia a ogni collegamento); per le cuffie Bluetooth si imposta il dispositivo di comunicazione solo durante la dettatura e mai durante una chiamata, quindi in quei secondi l'audio verso le cuffie passa alla qualità telefonica. Avvio con Windows: l'eseguibile non pacchettizzato usa la chiave Run dell'utente, il pacchetto MSIX continua a usare StartupTask (§2.4).*
 
 *22/10/2026 19:55 – Android, prima prova sul telefono: dopo la dettatura l'icona restava arancione. Causa: nell'APK di test il motore reale era compilato con il CMAKE_BUILD_TYPE=Debug della variante debug (-O0), decine di volte più lento. Il motore reale ora si compila sempre ottimizzato (Release), anche nella variante debug (§11).*
+
+*22/10/2026 21:48 – Prime misure sul telefono del titolare (Galaxy S25 Ultra, Snapdragon 8 Elite, 8 core, 11 GB), zz_bench in streaming su un audio da 10 s:*
+
+| Configurazione | Caricamento modelli | Latenza dalla fine della dettatura |
+|---|---|---|
+| Whisper medium, 4 thread | 10 s | 4,4–4,7 s |
+| Whisper medium, 6 thread | 13 s | 3,1–3,9 s |
+| Whisper medium, 8 thread | 12 s | 4,0–6,0 s |
+| Whisper small, 6 thread | 11 s | 1,8 s |
+
+*Picco di RAM del motore circa 5,2 GB. Decisioni: su Android 6 thread (prima 4); i modelli si precaricano quando l'icona compare su un campo di testo, invece che al tap sul microfono, perché il caricamento di 10–13 s rendeva lenta la prima dettatura (oltre 20 s per un messaggio di 3 s, segnalazione del titolare) (§11, §4.2).*
+

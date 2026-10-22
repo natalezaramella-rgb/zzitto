@@ -56,9 +56,9 @@ int default_thread_count() {
     const int hw = static_cast<int>(std::thread::hardware_concurrency());
     if (hw <= 0) return 4;
 #if defined(__ANDROID__)
-    // Galaxy S24: 10 core (1+5 prestazioni, 4 efficienza). I core piccoli rallentano
-    // le barriere di ggml: si usano solo quelli grandi (Spec §11, da misurare con zz_bench).
-    return std::max(2, std::min(6, hw - 4));
+    // Misure con zz_bench sul Galaxy S25 Ultra (Snapdragon 8 Elite, 8 core) del 22/10/2026 21:48: con 6 thread
+    // la latenza dello streaming è 3,1–3,9 s, con 4 thread 4,4–4,7 s, con 8 thread 4,0–6,0 s (Spec §11).
+    return std::max(2, std::min(6, hw - 2));
 #else
     // Desktop: 6 thread (misure del 22/10/2026 sul Surface Snapdragon X a 12 core). Con 8 o più thread
     // le barriere di ggml aspettano i core occupati da altre app e compaiono picchi fino a 10 s;
