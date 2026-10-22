@@ -1,0 +1,81 @@
+<!--
+  Zzitto per Windows: app WinUI 3 pacchettizzata MSIX a progetto singolo (Spec §2.4, §4.3 "win-app", §7.1).
+  Aggiunto il 22/10/2026 alle 11:32.
+
+  - Windows App SDK 1.8 (ultima linea compatibile con .NET 8 e Visual Studio 2022; vedi README e capitolo 14).
+  - Piattaforme ARM64 e x64 (Spec §11.1); bundle per lo Store creato da tools/release/release-windows.ps1 (agente E).
+  - Nessun taglio del codice (PublishTrimmed=false): l'interop COM classico (UI Automation, WASAPI) e la
+    serializzazione JSON usano la riflessione.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\msbuild\Zzitto.Common.props" />
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Zzitto.App</RootNamespace>
+    <AssemblyName>Zzitto</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <DefaultLanguage>it-IT</DefaultLanguage>
+    <ApplicationIcon>Assets\Zzitto.ico</ApplicationIcon>
+    <!-- Main personalizzato in Program.cs: istanza unica (Spec §2.4, app residente). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">false</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">true</PublishReadyToRun>
+    <!-- Pacchetto per lo Store: il bundle ARM64 + x64 lo crea lo script di rilascio (agente E). -->
+    <AppxBundle>Never</AppxBundle>
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <GenerateTestArtifacts>false</GenerateTestArtifacts>
+    <!-- Suggerimenti di C#/WinRT per la compilazione AOT (non usata): restano avvisi, non errori. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CsWinRT1028;CsWinRT1030;CsWinRT1032;CsWinRT1033</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\*.png" />
+    <Content Include="Assets\Zzitto.ico" />
+  </ItemGroup>
+
+  <!-- Spec §7.1: modelli inclusi nel pacchetto in Models\ (sola lettura nella cartella di installazione).
+       Li copia qui tools/models/prepare-models.* (agente E), che trova la cartella grazie a .zz-models-dir. -->
+  <ItemGroup>
+    <Content Include="Models\*.bin;Models\*.gguf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Models\.zz-models-dir" />
+  </ItemGroup>
+
+  <!-- Spec §2.2: schermata "Licenze open source" con THIRD_PARTY_LICENSES.md (agente E). -->
+  <ItemGroup Condition="Exists('..\..\..\THIRD_PARTY_LICENSES.md')">
+    <Content Include="..\..\..\THIRD_PARTY_LICENSES.md" Link="Licenses\THIRD_PARTY_LICENSES.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)' != 'true' and '$(EnableMsixTooling)' == 'true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)' != 'true' and '$(EnableMsixTooling)' == 'true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Licenze: Windows App SDK e Windows SDK BuildTools con termini Microsoft (sorgenti MIT), vedi README. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260921001" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.9169" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zzitto.Core\Zzitto.Core.csproj" />
+    <ProjectReference Include="..\Zzitto.Platform\Zzitto.Platform.csproj" />
+    <ProjectReference Include="..\Zzitto.Licensing\Zzitto.Licensing.csproj" />
+  </ItemGroup>
+
+  <!-- zz_engine.dll accanto a Zzitto.exe nel pacchetto (proprietà ZzEngineDir per il rilascio). -->
+  <Import Project="..\..\msbuild\Zzitto.Native.targets" />
+</Project>

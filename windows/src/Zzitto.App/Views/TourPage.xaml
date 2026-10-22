@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tour guidato al primo avvio, ripetibile dalle impostazioni (Spec §5.8): privacy, microfono, icona e
+     scorciatoia, prima dettatura. Aggiunto il 22/10/2026 alle 11:32. -->
+<Page
+    x:Class="Zzitto.App.Views.TourPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid RowSpacing="16" MaxWidth="720" HorizontalAlignment="Left">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock x:Uid="TourTitle" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock x:Name="StepCounter" Style="{StaticResource CaptionTextBlockStyle}" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <StackPanel x:Name="Step0" Spacing="12">
+                <TextBlock x:Uid="TourWelcomeHeader" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Uid="TourWelcomeText" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel x:Name="Step1" Spacing="12" Visibility="Collapsed">
+                <TextBlock x:Uid="TourMicHeader" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Uid="TourMicText" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button x:Uid="TourMicButton" Style="{StaticResource AccentButtonStyle}" Click="OnMicClick" />
+                    <Button x:Name="PrivacyButton" x:Uid="TourMicPrivacyButton" Visibility="Collapsed" Click="OnPrivacyClick" />
+                </StackPanel>
+                <TextBlock x:Name="MicResult" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel x:Name="Step2" Spacing="12" Visibility="Collapsed">
+                <TextBlock x:Uid="TourIconHeader" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="IconText" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel x:Name="Step3" Spacing="12" Visibility="Collapsed">
+                <TextBlock x:Uid="TourTryHeader" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="TryText" TextWrapping="Wrap" />
+                <TextBox x:Uid="TourTryBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" />
+            </StackPanel>
+            <StackPanel x:Name="Step4" Spacing="12" Visibility="Collapsed">
+                <TextBlock x:Uid="TourDoneHeader" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Uid="TourDoneText" TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
+            <Button x:Name="BackButton" x:Uid="TourBack" Click="OnBackClick" />
+            <Button x:Name="NextButton" x:Uid="TourNext" Style="{StaticResource AccentButtonStyle}" Click="OnNextClick" />
+            <Button x:Name="FinishButton" x:Uid="TourFinish" Style="{StaticResource AccentButtonStyle}" Click="OnFinishClick" Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
+</Page>
