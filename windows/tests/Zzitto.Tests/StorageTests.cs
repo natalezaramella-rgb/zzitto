@@ -165,10 +165,31 @@ public sealed class StorageTests : IDisposable
     [Fact]
     public void Hotkey_FormatAndValidity()
     {
-        Assert.Equal("Ctrl+Alt+Spazio", HotkeyBinding.Default.ToString());
+        Assert.Equal("Ctrl+Alt+Z", HotkeyBinding.Default.ToString());
+        Assert.Equal("Ctrl+Alt+Spazio", HotkeyBinding.LegacyDefault.ToString());
         Assert.True(HotkeyBinding.Default.IsValid);
         Assert.False(new HotkeyBinding(HotkeyModifiers.None, 0x41).IsValid);
         Assert.False(new HotkeyBinding(HotkeyModifiers.Control, 0x11).IsValid);
         Assert.Equal("Ctrl+Maiusc+F5", new HotkeyBinding(HotkeyModifiers.Control | HotkeyModifiers.Shift, 0x74).ToString());
+    }
+
+    // Migrazione delle impostazioni alla versione 2 (22/10/2026 17:19).
+    [Fact]
+    public void Migration_FromVersion1_UpdatesOnlyOldDefaults()
+    {
+        var old = new ZzittoSettings { Version = 1, Hotkey = HotkeyBinding.LegacyDefault, OverlayMode = OverlayMode.FollowField };
+        ZzittoSettings migrated = old.Normalize();
+        Assert.Equal(HotkeyBinding.Default, migrated.Hotkey);
+        Assert.Equal(OverlayMode.FixedPosition, migrated.OverlayMode);
+        Assert.Equal(ZzittoSettings.CurrentVersion, migrated.Version);
+
+        var custom = new HotkeyBinding(HotkeyModifiers.Control | HotkeyModifiers.Shift, 0x44);
+        var chosen = new ZzittoSettings { Version = 1, Hotkey = custom, OverlayMode = OverlayMode.Hidden };
+        ZzittoSettings kept = chosen.Normalize();
+        Assert.Equal(custom, kept.Hotkey);
+        Assert.Equal(OverlayMode.Hidden, kept.OverlayMode);
+
+        var current = new ZzittoSettings { OverlayMode = OverlayMode.FollowField };
+        Assert.Equal(OverlayMode.FollowField, current.Normalize().OverlayMode); // scelta esplicita in versione 2
     }
 }

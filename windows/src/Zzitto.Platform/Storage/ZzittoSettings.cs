@@ -32,8 +32,12 @@ public enum HotkeyModifiers : uint
 /// <summary>Scorciatoia da tastiera globale (Spec §2.4).</summary>
 public sealed record HotkeyBinding(HotkeyModifiers Modifiers, uint VirtualKey)
 {
-    /// <summary>Predefinita: Ctrl+Alt+Spazio.</summary>
-    public static HotkeyBinding Default { get; } = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x20);
+    /// <summary>Predefinita: Ctrl+Alt+Z ("Z" di Zzitto). Modifica del 22/10/2026 17:19: Ctrl+Alt+Spazio è usata dall'app
+    /// Claude e da altri programmi, che reagivano insieme a Zzitto (segnalazione del titolare, Spec §2.4).</summary>
+    public static HotkeyBinding Default { get; } = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x5A);
+
+    /// <summary>Predefinita fino alla versione 1 delle impostazioni, migrata a <see cref="Default"/>.</summary>
+    public static HotkeyBinding LegacyDefault { get; } = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x20);
 
     /// <summary>Una scorciatoia globale valida richiede almeno un modificatore diverso da Maiusc.</summary>
     [JsonIgnore]
@@ -101,7 +105,8 @@ public sealed record HotkeyBinding(HotkeyModifiers Modifiers, uint VirtualKey)
 
 public sealed record ZzittoSettings
 {
-    public const int CurrentVersion = 1;
+    // Versione 2 (22/10/2026 17:19): scorciatoia predefinita Ctrl+Alt+Z e icona in posizione fissa trascinabile.
+    public const int CurrentVersion = 2;
 
     public int Version { get; init; } = CurrentVersion;
 
@@ -137,7 +142,9 @@ public sealed record ZzittoSettings
     // ---- App residente (Spec §2.4, §2.6) ----
     public HotkeyBinding Hotkey { get; init; } = HotkeyBinding.Default;
 
-    public OverlayMode OverlayMode { get; init; } = OverlayMode.FollowField;
+    // Spec §2.4, §2.6 (modifica del 22/10/2026 17:19, richiesta del titolare): l'icona sta dove l'utente la trascina e non
+    // insegue il cursore; "segue il campo" resta disponibile nelle impostazioni e nel menu.
+    public OverlayMode OverlayMode { get; init; } = OverlayMode.FixedPosition;
 
     /// <summary>Ultima posizione scelta dall'utente per l'icona (pixel fisici), null = non ancora scelta.</summary>
     public int? OverlayX { get; init; }
@@ -155,7 +162,7 @@ public sealed record ZzittoSettings
     public static IReadOnlyList<string> SupportedLanguages { get; } = new[] { "it", "en", "es", "fr", "de" };
 
     /// <summary>Riporta i valori negli intervalli ammessi (file modificati a mano o versioni precedenti).</summary>
-    public ZzittoSettings Normalize() => this with
+    public ZzittoSettings Normalize() => Migrate() with
     {
         Version = CurrentVersion,
         Language = SupportedLanguages.Contains(Language) ? Language : "it",
@@ -167,9 +174,25 @@ public sealed record ZzittoSettings
         HistoryRetentionDays = Math.Clamp(HistoryRetentionDays, 1, 365),
         HistoryMaxEntries = Math.Clamp(HistoryMaxEntries, 10, 1000),
         Hotkey = Hotkey is { IsValid: true } ? Hotkey : HotkeyBinding.Default,
-        OverlayMode = Enum.IsDefined(OverlayMode) ? OverlayMode : OverlayMode.FollowField,
+        OverlayMode = Enum.IsDefined(OverlayMode) ? OverlayMode : OverlayMode.FixedPosition,
         ModelUnloadMinutes = Math.Clamp(ModelUnloadMinutes, 1, 120),
     };
+
+    /// <summary>Impostazioni salvate da versioni precedenti: si aggiornano solo i valori rimasti ai vecchi
+    /// predefiniti, le scelte esplicite dell'utente restano (22/10/2026 17:19).</summary>
+    private ZzittoSettings Migrate()
+    {
+        if (Version >= 2)
+        {
+            return this;
+        }
+
+        return this with
+        {
+            Hotkey = Hotkey == HotkeyBinding.LegacyDefault ? HotkeyBinding.Default : Hotkey,
+            OverlayMode = OverlayMode == OverlayMode.FollowField ? OverlayMode.FixedPosition : OverlayMode,
+        };
+    }
 
     public DictationOptions ToDictationOptions() =>
         new(Language, Mode, Translate, VoiceCommandsEnabled, CorrectionTimeoutMs);

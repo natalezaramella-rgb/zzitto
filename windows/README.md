@@ -40,7 +40,7 @@ Nessun pacchetto va installato a mano: NuGet ripristina tutto alla prima apertur
      scelta (motore finto, `-DZZ_ENGINE_MOCK=ON`, runtime statico `/MT`), esegue i test del motore e copia
      `zz_engine.dll` accanto a `Zzitto.exe`;
    - Visual Studio registra il pacchetto MSIX e avvia l'app: al primo avvio si apre il tour (Spec §5.8).
-5. Prova: clic in Blocco note, `Ctrl+Alt+Spazio` (o clic sull'icona), parlare, pausa di 2 secondi. Con il motore finto
+5. Prova: clic in Blocco note, `Ctrl+Alt+Z` (o clic sull'icona), parlare, pausa di 2 secondi. Con il motore finto
    il testo inserito è sempre la stessa frase di prova (Spec §16.1).
 
 In Debug la licenza dello Store è simulata (prova di 30 giorni, `DevelopmentStoreLicenseSource` dell'agente D):
@@ -81,7 +81,7 @@ un'app avviata da Visual Studio non è installata dallo Store. In Release si usa
 |---|---|---|
 | App residente | Thread Win32 dedicato (`ShellHost`) con icona nell'area di notifica (`Shell_NotifyIcon`), menu, fumetti; WinUI senza finestre (`DispatcherShutdownMode.OnExplicitShutdown`); istanza unica (`AppInstance`) | §2.4, §2.5 |
 | Avvio con Windows | `StartupTask` MSIX `ZzittoStartup`, attivabile dalle impostazioni | §2.4 |
-| Scorciatoia globale | `RegisterHotKey` (predefinita Ctrl+Alt+Spazio, configurabile); Esc annulla durante la dettatura; nessun hook di tastiera | §2.4, §5.2 |
+| Scorciatoia globale | `RegisterHotKey` (predefinita Ctrl+Alt+Z, configurabile); Esc annulla durante la dettatura; nessun hook di tastiera | §2.4, §5.2 |
 | Icona flottante | Finestra a livelli `WS_EX_NOACTIVATE` (non toglie il focus), disegnata via software; colore e animazione per stato; trascinabile; pressione lunga o clic destro per il menu | §2.4, §2.5, §5.1 |
 | Posizione | Cursore Win32 (`GetGUIThreadInfo`) → cursore UI Automation (`TextPattern2`) → rettangolo del controllo → ultima posizione scelta; nascosta con app a schermo intero | §2.6 |
 | Audio | WASAPI condiviso a eventi sul microfono predefinito, conversione mono e ricampionamento a 16 kHz (FIR + interpolazione), solo in memoria, azzerato dopo la trascrizione | §4.1, §10 |
@@ -175,3 +175,14 @@ Da verificare alla prima build:
   riscrittura senza streaming; `zz_cancel` prima di `zz_stream_abort`.
 - Da verificare alla prima build sul Surface: compilazione (TreatWarningsAsErrors) e `NativeInteropTests` contro il mock
   con le funzioni `zz_stream_*` (falliscono con `EntryPointNotFoundException` finché il mock non le esporta).
+
+## Scorciatoia e posizione dell'icona (22/10/2026 17:19)
+
+*Aggiunto il 22/10/2026 alle 17:19, su segnalazione del titolare.*
+
+- Scorciatoia predefinita **Ctrl+Alt+Z** (prima Ctrl+Alt+Spazio, che attivava anche l'app Claude). Si cambia da
+  Impostazioni → Generale oppure dal menu dell'icona nell'area di notifica ("Scorciatoia: … (cambia…)").
+- L'icona del microfono resta **ferma dove la trascini** (predefinito). "Vicino al testo che scrivi" e "Nascosta" si
+  scelgono dal menu "Icona del microfono" o dalle impostazioni. Trascinare l'icona attiva la posizione fissa.
+- Le impostazioni della versione 1 vengono migrate: la vecchia scorciatoia predefinita e la modalità "segue il campo"
+  passano ai nuovi predefiniti; le scelte fatte dall'utente restano.

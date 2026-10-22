@@ -512,3 +512,5 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *Punti aperti: misure sul Galaxy S24; eventuale opzione "massima velocità" con Whisper small; accelerazione GPU/NPU.*
 
+*22/10/2026 17:19 – Windows, su segnalazione del titolare dopo le prime prove: scorciatoia globale predefinita Ctrl+Alt+Z (Ctrl+Alt+Spazio attivava anche l'app Claude), modificabile dalle impostazioni e dal menu dell'area di notifica; l'icona del microfono resta ferma dove l'utente la trascina (predefinito) invece di seguire il cursore, con "vicino al testo" e "nascosta" come alternative; migrazione automatica delle impostazioni salvate (§2.4, §2.6).*
+

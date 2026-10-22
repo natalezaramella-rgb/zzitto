@@ -87,6 +87,11 @@
   <data name="Menu_Mode" xml:space="preserve"><value>Modalità di correzione</value></data>
   <data name="Menu_Settings" xml:space="preserve"><value>Impostazioni…</value></data>
   <data name="Menu_ShowOverlay" xml:space="preserve"><value>Mostra l'icona del microfono</value></data>
+  <data name="Menu_Overlay" xml:space="preserve"><value>Icona del microfono</value></data>
+  <data name="Overlay_Fixed" xml:space="preserve"><value>Ferma dove la trascini</value></data>
+  <data name="Overlay_Follow" xml:space="preserve"><value>Vicino al testo che scrivi</value></data>
+  <data name="Overlay_Hidden" xml:space="preserve"><value>Nascosta</value></data>
+  <data name="Menu_Hotkey" xml:space="preserve"><value>Scorciatoia: {0} (cambia…)</value></data>
   <data name="Menu_Start" xml:space="preserve"><value>Avvia dettatura ({0})</value></data>
   <data name="Menu_Stop" xml:space="preserve"><value>Ferma dettatura ({0})</value></data>
   <data name="Menu_Translate" xml:space="preserve"><value>Traduzione</value></data>

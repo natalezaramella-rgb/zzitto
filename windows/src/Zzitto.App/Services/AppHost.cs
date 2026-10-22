@@ -38,6 +38,8 @@ internal sealed class AppHost : IDisposable
     private const int CmdBuy = 6;
     private const int CmdExit = 7;
     private const int CmdToggleOverlay = 8;
+    private const int CmdHotkey = 9;            // 22/10/2026 17:19: scorciatoia visibile e modificabile dal menu
+    private const int CmdOverlayBase = 300;     // + OverlayMode (22/10/2026 17:19)
     private const int CmdModeBase = 100;      // + CorrectionMode
     private const int CmdTranslateBase = 200; // + TranslateTarget
 
@@ -420,7 +422,15 @@ internal sealed class AppHost : IDisposable
             new MenuItemSpec(CmdTranslateBase + (int)TranslateTarget.English, Loc.Get("Translate_English"), settings.Translate == TranslateTarget.English),
             new MenuItemSpec(CmdTranslateBase + (int)TranslateTarget.Spanish, Loc.Get("Translate_Spanish"), settings.Translate == TranslateTarget.Spanish),
         }));
-        items.Add(new MenuItemSpec(CmdToggleOverlay, Loc.Get("Menu_ShowOverlay"), settings.OverlayMode != OverlayMode.Hidden));
+        // Spec §2.4, §2.6 (22/10/2026 17:19, richiesta del titolare): posizione dell'icona e scorciatoia
+        // raggiungibili direttamente dal menu dell'area di notifica.
+        items.Add(new MenuItemSpec(0, Loc.Get("Menu_Overlay"), Children: new[]
+        {
+            new MenuItemSpec(CmdOverlayBase + (int)OverlayMode.FixedPosition, Loc.Get("Overlay_Fixed"), settings.OverlayMode == OverlayMode.FixedPosition),
+            new MenuItemSpec(CmdOverlayBase + (int)OverlayMode.FollowField, Loc.Get("Overlay_Follow"), settings.OverlayMode == OverlayMode.FollowField),
+            new MenuItemSpec(CmdOverlayBase + (int)OverlayMode.Hidden, Loc.Get("Overlay_Hidden"), settings.OverlayMode == OverlayMode.Hidden),
+        }));
+        items.Add(new MenuItemSpec(CmdHotkey, Loc.Format("Menu_Hotkey", settings.Hotkey.ToString())));
         items.Add(MenuItemSpec.Separator);
         items.Add(new MenuItemSpec(CmdSettings, Loc.Get("Menu_Settings")));
         items.Add(new MenuItemSpec(CmdHelp, Loc.Get("Menu_Help")));
@@ -470,8 +480,14 @@ internal sealed class AppHost : IDisposable
             case CmdToggleOverlay:
                 Settings.Update(s => s with
                 {
-                    OverlayMode = s.OverlayMode == OverlayMode.Hidden ? OverlayMode.FollowField : OverlayMode.Hidden,
+                    OverlayMode = s.OverlayMode == OverlayMode.Hidden ? OverlayMode.FixedPosition : OverlayMode.Hidden,
                 });
+                break;
+            case CmdHotkey:
+                Dispatcher.TryEnqueue(() => OpenSettings(SettingsSection.General));
+                break;
+            case >= CmdOverlayBase and < CmdOverlayBase + 3:
+                Settings.Update(s => s with { OverlayMode = (OverlayMode)(id - CmdOverlayBase) });
                 break;
             case >= CmdModeBase and < CmdModeBase + 3:
                 Settings.Update(s => s with { Mode = (CorrectionMode)(id - CmdModeBase) });

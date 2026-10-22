@@ -64,7 +64,13 @@ public sealed class OverlayCoordinator : IDisposable
     private void OnMovedByUser(object? sender, (int X, int Y) position)
     {
         // Spec §2.6: l'ultima posizione scelta dall'utente è il riferimento quando il campo non è rilevabile.
-        _settings.Update(s => s with { OverlayX = position.X, OverlayY = position.Y });
+        // Modifica del 22/10/2026 17:19: chi trascina l'icona la vuole lì, quindi si passa alla posizione fissa.
+        _settings.Update(s => s with
+        {
+            OverlayX = position.X,
+            OverlayY = position.Y,
+            OverlayMode = s.OverlayMode == OverlayMode.FollowField ? OverlayMode.FixedPosition : s.OverlayMode,
+        });
     }
 
     private void Run()
