@@ -1,0 +1,5 @@
+# Spec §7 — i modelli e le loro parti non vanno in git. Aggiunto il 22/10/2026 alle 11:29.
+*.bin
+*.gguf
+*.part
+models-index.json
