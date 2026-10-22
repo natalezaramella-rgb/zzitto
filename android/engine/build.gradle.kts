@@ -38,7 +38,14 @@ android {
         // sul telefono con i modelli copiati in Android/data/<app>/files/models.
         getByName("debug") {
             val real = (project.findProperty("zzRealEngine") as String?) == "true"
-            externalNativeBuild { cmake { arguments += if (real) "-DZZ_ENGINE_MOCK=OFF" else "-DZZ_ENGINE_MOCK=ON" } }
+            // Correzione del 22/10/2026 19:55 (Spec §11): il motore reale va sempre compilato ottimizzato. Con il
+            // CMAKE_BUILD_TYPE=Debug impostato da Gradle per la variante debug, ggml/whisper/llama giravano a -O0,
+            // decine di volte più lenti: sul telefono la trascrizione sembrava non finire mai.
+            externalNativeBuild {
+                cmake {
+                    arguments += if (real) listOf("-DZZ_ENGINE_MOCK=OFF", "-DCMAKE_BUILD_TYPE=Release") else listOf("-DZZ_ENGINE_MOCK=ON")
+                }
+            }
             buildConfigField("boolean", "ENGINE_MOCK", (!real).toString())
             buildConfigField("boolean", "EXTERNAL_MODELS", "true")
         }
