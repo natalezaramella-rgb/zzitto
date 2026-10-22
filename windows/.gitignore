@@ -1,0 +1,5 @@
+AppPackages/
+BundleArtifacts/
+*.user
+*.msix
+*.msixbundle

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Impostazioni dei test Windows (Spec §12). Aggiunto il 22/10/2026 alle 11:32. -->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <!-- Motore finto senza ritardi artificiali (docs/engine-contract.md). -->
+      <ZZ_MOCK_FAST>1</ZZ_MOCK_FAST>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

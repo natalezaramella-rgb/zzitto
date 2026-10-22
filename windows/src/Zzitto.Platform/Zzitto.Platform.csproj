@@ -1,0 +1,23 @@
+<!--
+  Zzitto.Platform — tutta la logica Windows non grafica (Spec §4.3):
+  interop con il motore, cattura audio WASAPI, ciclo di dettatura, inserimento del testo,
+  icona flottante e area di notifica Win32, archiviazione cifrata.
+  Nessuna dipendenza da WinUI, così i test xUnit la usano direttamente (Spec §12).
+  Aggiunto il 22/10/2026 alle 11:32.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\msbuild\Zzitto.Common.props" />
+
+  <PropertyGroup>
+    <RootNamespace>Zzitto.Platform</RootNamespace>
+    <AssemblyName>Zzitto.Platform</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Zzitto.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zzitto.Core\Zzitto.Core.csproj" />
+  </ItemGroup>
+</Project>

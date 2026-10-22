@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Finestra delle impostazioni, aperta solo su richiesta (Spec §2.5, §5.7, §5.8). Aggiunto il 22/10/2026 alle 11:32. -->
+<Window
+    x:Class="Zzitto.App.Views.SettingsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <NavigationView
+        x:Name="Nav"
+        IsBackButtonVisible="Collapsed"
+        IsSettingsVisible="False"
+        PaneDisplayMode="Left"
+        OpenPaneLength="220"
+        SelectionChanged="OnSelectionChanged">
+        <NavigationView.MenuItems>
+            <NavigationViewItem x:Uid="NavGeneral" Tag="General" Icon="Setting" />
+            <NavigationViewItem x:Uid="NavDictionary" Tag="Dictionary" Icon="Library" />
+            <NavigationViewItem x:Uid="NavShortcuts" Tag="Shortcuts" Icon="Keyboard" />
+            <NavigationViewItem x:Uid="NavHistory" Tag="History" Icon="Clock" />
+            <NavigationViewItem x:Uid="NavLicense" Tag="License" Icon="Shop" />
+        </NavigationView.MenuItems>
+        <NavigationView.FooterMenuItems>
+            <NavigationViewItem x:Uid="NavTour" Tag="Tour" Icon="Play" />
+            <NavigationViewItem x:Uid="NavHelp" Tag="Help" Icon="Help" />
+            <NavigationViewItem x:Uid="NavOpenSource" Tag="OpenSource" Icon="Document" />
+        </NavigationView.FooterMenuItems>
+        <Frame x:Name="ContentFrame" Padding="24,16,24,24" />
+    </NavigationView>
+</Window>

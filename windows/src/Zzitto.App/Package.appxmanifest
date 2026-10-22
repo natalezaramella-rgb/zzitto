@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Manifest del pacchetto MSIX di Zzitto (Spec §2.4, §7.1, §8.2, §10). Aggiunto il 22/10/2026 alle 11:32.
+  - Identity Name: Zaramella.Zzitto (capitolo 14). Publisher: SEGNAPOSTO, da sostituire con il valore
+    "Package/Identity/Publisher" di Partner Center (Gestione prodotto → Identità del prodotto).
+  - Version X.Y.Z.0 allineata a tools/release/version.properties da tools/release/version.py sync-appx (agente E).
+  - Capacità: solo microfono (Spec §10); runFullTrust è richiesta dalle app desktop WinUI 3.
+    Nessuna capacità internetClient: la verifica della licenza la svolge lo Store (Spec §8.1, §8.2).
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap5 rescap">
+
+  <Identity
+    Name="Zaramella.Zzitto"
+    Publisher="CN=00000000-0000-0000-0000-000000000000"
+    Version="0.1.0.0" />
+
+  <Properties>
+    <DisplayName>Zzitto</DisplayName>
+    <PublisherDisplayName>Zaramella Consulting Srl</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Zzitto"
+        Description="Dettatura vocale con AI interamente sul dispositivo."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Spec §2.4: avvio automatico con Windows (l'utente può disattivarlo nelle impostazioni). -->
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask TaskId="ZzittoStartup" Enabled="true" DisplayName="Zzitto" />
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <DeviceCapability Name="microphone" />
+  </Capabilities>
+</Package>
