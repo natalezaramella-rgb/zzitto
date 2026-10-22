@@ -23,7 +23,8 @@ android {
     }
 }
 
-kotlin { jvmToolchain(17) }
+// Bytecode Java 17 compilato con il JDK di Android Studio (build locale del 22/10/2026 14:20, Spec §3).
+kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 // Spec §12: test JUnit 5 eseguiti da `check` e prima di ogni assemble.
 tasks.withType<Test>().configureEach { useJUnitPlatform() }

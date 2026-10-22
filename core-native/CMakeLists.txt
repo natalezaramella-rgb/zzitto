@@ -21,6 +21,11 @@ option(ZZ_RUN_TESTS_ON_BUILD "Esegue i test dopo ogni build" ON)
 # Aggiunto il 22/10/2026 alle 11:52 (agente A).
 set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# Build locale del 22/10/2026 14:36: windows.h definisce le macro min/max (rompevano std::min nei test) e MSVC
+# segnala come deprecate fopen/getenv usate in modo sicuro.
+if(WIN32)
+  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif()
 
 # Logica condivisa tra mock e motore reale (comandi, scorciatoie, VAD, SHA-256).
 # Libreria OBJECT: i suoi oggetti entrano interi in zz_engine (le funzioni ZZ_API
@@ -28,9 +33,12 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 add_library(zz_common_obj OBJECT src/zz_common.cpp src/zz_sha256.cpp)
 target_include_directories(zz_common_obj PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_definitions(zz_common_obj PRIVATE ZZ_ENGINE_BUILD)
-target_compile_options(zz_common_obj PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>)
+# Build locale 22/10/2026 15:00: MSVC e clang-cl con opzioni in stile MSVC, gli altri compilatori con -Wall -Wextra.
+if(MSVC)
+  target_compile_options(zz_common_obj PRIVATE /W4 /utf-8)
+else()
+  target_compile_options(zz_common_obj PRIVATE -Wall -Wextra)
+endif()
 set_target_properties(zz_common_obj PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 
 if(ZZ_ENGINE_MOCK)

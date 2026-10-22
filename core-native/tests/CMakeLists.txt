@@ -3,9 +3,20 @@
 # test con modelli reali attivati da ZZ_TEST_WHISPER_MODEL e ZZ_TEST_LLM_MODEL.
 
 function(zz_test_warnings target)
-  target_compile_options(${target} PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>)
+  # Build locale 22/10/2026 15:00: clang-cl usa le opzioni in stile MSVC (con -Wall attiverebbe -Weverything).
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /W4 /utf-8)
+  else()
+    target_compile_options(${target} PRIVATE -Wall -Wextra)
+  endif()
+  # Su Windows la DLL del motore va accanto all'eseguibile del test, altrimenti non si avvia (0xc0000135).
+  if(WIN32 AND TARGET zz_engine)
+    get_target_property(_zz_type zz_engine TYPE)
+    if(_zz_type STREQUAL "SHARED_LIBRARY")
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:zz_engine> $<TARGET_FILE_DIR:${target}>)
+    endif()
+  endif()
 endfunction()
 
 # Contratto: vale per il mock e per il motore reale.

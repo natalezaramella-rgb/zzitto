@@ -3,7 +3,8 @@ using Zzitto.Platform.Interop;
 
 namespace Zzitto.Platform.Input;
 
-internal static unsafe class KeyboardInjector
+// Build locale 22/10/2026 14:36: "unsafe" solo su Send, perché in un contesto unsafe non si può usare await (CS4004).
+internal static class KeyboardInjector
 {
     /// <summary>Marca gli eventi generati da Zzitto (dwExtraInfo), utile per riconoscerli.</summary>
     public static readonly IntPtr ZzittoInputTag = new(0x5A5A1770);
@@ -11,7 +12,7 @@ internal static unsafe class KeyboardInjector
     private const int ChunkSize = 256;
 
     /// <summary>Invia la sequenza; false se il sistema ne ha accettata solo una parte.</summary>
-    public static bool Send(IReadOnlyList<KeyStroke> strokes)
+    public static unsafe bool Send(IReadOnlyList<KeyStroke> strokes)
     {
         ArgumentNullException.ThrowIfNull(strokes);
         if (strokes.Count == 0)

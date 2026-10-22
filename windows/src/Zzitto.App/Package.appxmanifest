@@ -50,7 +50,8 @@
       <Extensions>
         <!-- Spec §2.4: avvio automatico con Windows (l'utente può disattivarlo nelle impostazioni). -->
         <!-- Revisione 22/10/2026 12:30: Executable ed EntryPoint espliciti come da documentazione per le app desktop pacchettizzate. -->
-        <uap5:Extension Category="windows.startupTask" Executable="$targetnametoken$.exe" EntryPoint="Windows.FullTrustApplication">
+        <!-- Build locale 22/10/2026 14:50: nome esplicito, il segnaposto $targetnametoken$ viene sostituito solo in <Application>. -->
+        <uap5:Extension Category="windows.startupTask" Executable="Zzitto.exe" EntryPoint="Windows.FullTrustApplication">
           <uap5:StartupTask TaskId="ZzittoStartup" Enabled="true" DisplayName="Zzitto" />
         </uap5:Extension>
       </Extensions>

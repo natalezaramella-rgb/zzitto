@@ -467,3 +467,25 @@ L'agente che riceve questa specifica fa da **orchestratore**: non sviluppa tutto
 
 *22/10/2026 12:37 – Revisioni indipendenti di compilabilità. Android: aggiunto il plugin `foojay-resolver-convention` 1.0.0 per procurare il JDK 17 richiesto dai moduli (§3); in debug col motore finto l'app parte anche senza i modelli negli asset (§16.1). Windows: il motore reale ARM64 si compila con il toolset ClangCL (serve il componente "Strumenti C++ Clang per Windows" di Visual Studio), DLL del motore separate per app e test, test sempre sul motore finto, attributi `Executable` ed `EntryPoint` nello startup task (§2.4, §11.1, §12).*
 
+*22/10/2026 15:08 – Prima compilazione sul Surface Snapdragon del titolare (Windows 11 ARM64, Visual Studio 2022 17.13, Android SDK con NDK 28.2). Esiti e correzioni:*
+
+| Data e ora | Decisione o esito | Motivazione | Riferimento |
+| --- | --- | --- | --- |
+| 22/10/2026 15:08 | APK Android di debug compilato (motore finto e motore reale); app Windows ARM64 compilata e avviata senza errori | Prima build reale | §12, §13 |
+| 22/10/2026 15:08 | Moduli Android compilati col JDK di Android Studio con bytecode Java 17 (`jvmTarget`), senza toolchain JDK 17 dedicata; NDK fissato a 28.2.13676358 | Il download automatico del JDK 17 falliva | §3 |
+| 22/10/2026 15:08 | Debug Android con `-PzzRealEngine=true` usa il motore reale e legge i modelli anche da `Android/data/<app>/files/models` (copiati via USB) | Test sul telefono senza Play Store | §7, §16.1 |
+| 22/10/2026 15:08 | Motore reale Windows ARM64 compilato con clang-cl di LLVM 23 portatile, CMake e Ninja di Visual Studio; DLL senza dipendenze esterne (solo KERNEL32 e ADVAPI32) | Su ARM64 ggml richiede clang | §11.1 |
+| 22/10/2026 15:08 | Correzioni di compilazione: import di `Properties` in Gradle, condizione MSBuild annidata, `NOMINMAX` su Windows, `unsafe` e lambda in C#, `Executable` esplicito nello startup task, opzioni di avviso per clang-cl, DLL accanto ai test su Windows | Errori emersi alla prima build | §12 |
+| 22/10/2026 15:08 | Per i test locali Phi-4-mini Q4_K_M è stato preso dal GGUF pubblicato da bartowski su Hugging Face; il rilascio resta con la quantizzazione dai pesi Microsoft (`tools/models`). Gli hash di test non sono nel repository | Rapidità dei test | §3, §7 |
+
+*Benchmark del 22/10/2026 15:03 sul Surface Snapdragon (CPU, senza GPU/NPU), frase italiana sintetica di 10,2 s con esitazioni e autocorrezione:*
+
+| Prova | Trascrizione | Correzione | Totale | RAM di picco |
+| --- | --- | --- | --- | --- |
+| Pulito, 1ª esecuzione | 6,4 s | 11,4 s | 17,8 s | 5,2 GB |
+| Pulito, 2ª esecuzione | 7,4 s | 8,3 s | 15,8 s | 5,2 GB |
+| Traduzione EN, 1ª esecuzione | 7,6 s | 12,5 s | 20,1 s | 5,2 GB |
+| Traduzione EN, 2ª esecuzione | 8,4 s | 11,3 s | 19,8 s | 5,2 GB |
+
+*Esito: il testo corretto è giusto (ripetizione e autocorrezione "anzi no, alle 11" risolte), ma l'obiettivo del §11 (meno di 5 s) non è raggiunto, e la traduzione in inglese ha invertito l'autocorrezione ("at 11 … no, at 10"). Punti aperti: accelerazione GPU/NPU, Whisper small o turbo, prompt di traduzione applicato dopo la correzione, verifica della RAM di picco con il caricamento sequenziale.*
+

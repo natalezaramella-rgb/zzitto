@@ -2,6 +2,7 @@ package com.zaramella.zzitto.engine.di
 
 import android.content.Context
 import com.zaramella.zzitto.engine.AndroidModelAssetSource
+import com.zaramella.zzitto.engine.FallbackModelAssetSource
 import com.zaramella.zzitto.engine.BuildConfig
 import com.zaramella.zzitto.engine.EngineNative
 import com.zaramella.zzitto.engine.JniEngineNative
@@ -39,7 +40,12 @@ object EngineModule {
             "app-" + context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
         }
         return ModelInstaller(
-            source = AndroidModelAssetSource(context.assets),
+            // Debug: anche i modelli copiati a mano in Android/data/<app>/files/models (build locale 22/10/2026 14:40).
+            source = if (BuildConfig.EXTERNAL_MODELS) {
+                FallbackModelAssetSource(AndroidModelAssetSource(context.assets), context.getExternalFilesDir("models"))
+            } else {
+                AndroidModelAssetSource(context.assets)
+            },
             targetDir = File(context.noBackupFilesDir, "models"),
             installKey = installKey,
             // Con il motore finto (debug) gli hash possono mancare; in release sono obbligatori.

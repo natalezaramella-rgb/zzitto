@@ -1,3 +1,5 @@
+import java.util.Properties
+
 // Modulo :app — Application, schermate Compose, dati cifrati (Spec §4.1, §5.5–§5.8, §8.1, §10). Agente B.
 // Aggiunto il 22/10/2026 alle 11:59.
 plugins {
@@ -35,7 +37,7 @@ val copyThirdPartyLicenses = tasks.register<CopyThirdPartyLicensesTask>("copyThi
 }
 
 /** Spec §13: versione da un'unica fonte, gestita dagli script di rilascio dell'agente E. */
-val zzVersion = java.util.Properties().apply {
+val zzVersion = Properties().apply {
     val f = rootProject.file("../tools/release/version.properties")
     if (f.isFile) f.inputStream().use { load(it) }
 }
@@ -98,7 +100,8 @@ androidComponents {
     }
 }
 
-kotlin { jvmToolchain(17) }
+// Bytecode Java 17 compilato con il JDK di Android Studio (build locale del 22/10/2026 14:20, Spec §3).
+kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 // Spec §12: test JUnit 5 eseguiti da `check` e prima di ogni assemble/bundle.
 tasks.withType<Test>().configureEach { useJUnitPlatform() }

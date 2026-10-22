@@ -6,12 +6,8 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-// Revisione di compilabilità del 22/10/2026 alle 12:36: tutti i moduli usano `kotlin { jvmToolchain(17) }`
-// e Android Studio include solo il JBR 21. Senza un resolver Gradle non trova un JDK 17 e la build si
-// ferma ("No matching toolchains found"); Foojay lo scarica in automatico quando manca.
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
+// Build locale del 22/10/2026 14:20: niente toolchain JDK 17 dedicata; si compila col JDK di Android Studio
+// con bytecode Java 17 (jvmTarget nei moduli), quindi il resolver Foojay non serve più.
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

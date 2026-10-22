@@ -168,9 +168,12 @@ function(zz_engine_configure target)
     ZZ_ENGINE_VERSION="${PROJECT_VERSION}"
     $<$<BOOL:${ZZ_ENGINE_DEBUG_LOGS}>:ZZ_ENGINE_DEBUG_LOGS=1>)
   target_link_libraries(${target} PRIVATE whisper llama ggml)
-  target_compile_options(${target} PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8 /permissive->
-    $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<COMPILE_LANGUAGE:CXX>>:-Wall -Wextra>)
+  # Build locale 22/10/2026 15:00: clang-cl va trattato come MSVC (variabile MSVC), non come Clang.
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /W4 /utf-8 /permissive-)
+  else()
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra>)
+  endif()
   set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 endfunction()
 
@@ -207,9 +210,11 @@ if(ZZ_BUILD_BENCH)
   add_executable(zz_bench ${CMAKE_CURRENT_SOURCE_DIR}/tools/zz_bench.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/zz_wav.cpp)
   target_include_directories(zz_bench PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
   target_link_libraries(zz_bench PRIVATE zz_engine)
-  target_compile_options(zz_bench PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>)
+  if(MSVC)
+    target_compile_options(zz_bench PRIVATE /W4 /utf-8)
+  else()
+    target_compile_options(zz_bench PRIVATE -Wall -Wextra)
+  endif()
   if(WIN32)
     target_link_libraries(zz_bench PRIVATE psapi)
   endif()

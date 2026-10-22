@@ -21,7 +21,8 @@ public static class Program
             return 0;
         }
 
-        Application.Start(_ =>
+        // Build locale 22/10/2026 14:38: il parametro non si chiama "_", altrimenti "_ = new App()" lo assegnerebbe (CS0029).
+        Application.Start(initParams =>
         {
             var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
             SynchronizationContext.SetSynchronizationContext(context);

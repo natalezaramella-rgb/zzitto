@@ -23,8 +23,11 @@
     <ZzEngineFlavor Condition="'$(ZzEngineMock)' != 'ON'">real</ZzEngineFlavor>
     <ZzNativeOutDir>$(ZzWindowsRoot)build\native-bin\$(ZzNativePlatform)\$(Configuration)-$(ZzEngineFlavor)\</ZzNativeOutDir>
     <!-- DLL fornita dall'esterno (release-windows.ps1 dell'agente E). -->
-    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and Exists('$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))zz_engine.dll')">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))</ZzNativeOutDir>
-    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and !Exists('$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))zz_engine.dll')">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))Release\</ZzNativeOutDir>
+    <!-- Build locale del 22/10/2026 14:30: MSBuild non accetta una funzione di proprietà annidata dentro Exists();
+         la cartella con la barra finale si calcola prima in una proprietà a parte. -->
+    <_ZzEngineDirSlash Condition="'$(ZzEngineDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(ZzEngineDir)'))</_ZzEngineDirSlash>
+    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and Exists('$(_ZzEngineDirSlash)zz_engine.dll')">$(_ZzEngineDirSlash)</ZzNativeOutDir>
+    <ZzNativeOutDir Condition="'$(ZzEngineDir)' != '' and !Exists('$(_ZzEngineDirSlash)zz_engine.dll')">$(_ZzEngineDirSlash)Release\</ZzNativeOutDir>
     <ZzSkipNativeBuild Condition="'$(ZzEngineDir)' != ''">true</ZzSkipNativeBuild>
     <ZzSkipNativeBuild Condition="'$(ZzSkipNativeBuild)' == ''">false</ZzSkipNativeBuild>
     <ZzHostArch>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)</ZzHostArch>

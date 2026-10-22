@@ -10,6 +10,8 @@ plugins {
 android {
     namespace = "com.zaramella.zzitto.engine"
     compileSdk = 36
+    // NDK installato sul Surface del titolare; build locale del 22/10/2026 14:20 (Spec §13).
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         minSdk = 34
@@ -32,15 +34,20 @@ android {
 
     buildTypes {
         // Spec §16.1: motore finto solo in debug finché l'orchestratore non integra il motore reale.
+        // Build locale del 22/10/2026 14:40: con `-PzzRealEngine=true` il debug usa il motore reale, per i test
+        // sul telefono con i modelli copiati in Android/data/<app>/files/models.
         getByName("debug") {
-            externalNativeBuild { cmake { arguments += "-DZZ_ENGINE_MOCK=ON" } }
-            buildConfigField("boolean", "ENGINE_MOCK", "true")
+            val real = (project.findProperty("zzRealEngine") as String?) == "true"
+            externalNativeBuild { cmake { arguments += if (real) "-DZZ_ENGINE_MOCK=OFF" else "-DZZ_ENGINE_MOCK=ON" } }
+            buildConfigField("boolean", "ENGINE_MOCK", (!real).toString())
+            buildConfigField("boolean", "EXTERNAL_MODELS", "true")
         }
         // docs/release-guide.md (agente E): la release non usa mai il motore finto. Finché l'agente A
         // non fornisce core-native/cmake/real_engine.cmake, la build release si ferma in CMake.
         getByName("release") {
             externalNativeBuild { cmake { arguments += "-DZZ_ENGINE_MOCK=OFF" } }
             buildConfigField("boolean", "ENGINE_MOCK", "false")
+            buildConfigField("boolean", "EXTERNAL_MODELS", "false")
         }
     }
 
@@ -63,7 +70,8 @@ android {
     }
 }
 
-kotlin { jvmToolchain(17) }
+// Bytecode Java 17 compilato con il JDK di Android Studio (build locale del 22/10/2026 14:20, Spec §3).
+kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 // Spec §12: JUnit 5 per i test unitari, eseguiti da `check` e prima di ogni assemble.
 tasks.withType<Test>().configureEach { useJUnitPlatform() }

@@ -33,6 +33,23 @@ class AndroidModelAssetSource(private val assets: AssetManager) : ModelAssetSour
     }
 }
 
+/**
+ * Solo build di debug (test sul telefono senza Play Store): se un modello non è negli asset lo si cerca in
+ * [externalDir], la cartella `Android/data/<app>/files/models` dove il tester lo copia via USB.
+ * Le build di release usano solo gli asset pack install-time (Spec §7). Build locale del 22/10/2026 14:40.
+ */
+class FallbackModelAssetSource(
+    private val primary: ModelAssetSource,
+    private val externalDir: java.io.File?,
+) : ModelAssetSource {
+    override fun openOrNull(path: String): InputStream? {
+        primary.openOrNull(path)?.let { return it }
+        val dir = externalDir ?: return null
+        val file = java.io.File(dir, path.removePrefix("models/"))
+        return if (file.isFile) file.inputStream() else null
+    }
+}
+
 /** Stato della preparazione dei modelli, mostrato dal tour al primo avvio (Spec §5.8, §7). */
 sealed interface ModelInstallState {
     data object Idle : ModelInstallState
