@@ -41,6 +41,12 @@ std::vector<std::string> sanitize_dictionary(const std::vector<std::string> &wor
 // Restituisce una stringa vuota se il dizionario è vuoto. Limitato a ~200 token.
 std::string whisper_initial_prompt(const std::vector<std::string> &dictionary);
 
+// Spec §5.5, §11 (dettatura in streaming, 22/10/2026): prompt iniziale per un pezzo di audio dopo il primo.
+// Dizionario seguito dalla coda (~tail_chars caratteri, da inizio parola, UTF-8 integro) del testo già
+// trascritto, per la continuità tra i pezzi. Senza testo precedente è uguale a whisper_initial_prompt.
+std::string whisper_continuation_prompt(const std::vector<std::string> &dictionary, const std::string &previous,
+                                        size_t tail_chars = 200);
+
 // Spec §5.3, §5.12: prompt di sistema fisso per la modalità e l'eventuale traduzione.
 std::string correction_system_prompt(zz_correction_mode mode, zz_translate_target translate,
                                      const std::vector<std::string> &dictionary);

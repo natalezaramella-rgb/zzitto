@@ -17,6 +17,7 @@ vedi `docs/engine-contract.md`): il motore reale la rispetta esattamente, come i
 | `src/zz_sha256.*` | SHA-256 portabile + ARMv8 Crypto + x86 SHA-NI, file con percorsi UTF-8 |
 | `src/zz_engine.cpp` | API C del motore reale |
 | `src/zz_engine_core.*` | Orchestrazione: busy, annullamento, hash, caricamento sequenziale, pipeline |
+| `src/zz_stream.*` | Dettatura in streaming (API 2): taglio nelle pause, thread del flusso, `zz_stream_*` |
 | `src/zz_prompts.*` | Prompt di sistema, template Phi-4-mini, pulizia dell'uscita, suddivisione del testo |
 | `src/zz_backends.h` | Interfacce interne `SttBackend` / `LlmBackend` (punto di iniezione per i test) |
 | `src/zz_backend_whisper.cpp`, `src/zz_backend_llama.cpp` | Implementazioni con whisper.cpp e llama.cpp |
@@ -190,17 +191,56 @@ revisioni di whisper.cpp/llama.cpp e i nomi dei modelli attesi (Spec §13).
 - **Thread:** `n_threads=0` → su Android i soli core grandi (`hw-4`, tra 2 e 6), altrimenti fino a 8.
   Da tarare con `zz_bench --threads`.
 
+## Dettatura in streaming (API 2, Spec §11)
+
+*Aggiunto il 22/10/2026 alle 16:12 (agente A).*
+
+Obiettivo: ridurre la latenza percepita. Sul Surface (Snapdragon X, CPU, modelli residenti) 10 s di
+audio richiedono ~2,5–3,5 s di Whisper medium + ~1,5 s di Phi-4-mini *dopo* lo stop; con il flusso la
+trascrizione avviene mentre l'utente parla e dopo lo stop resta solo l'ultimo pezzo.
+
+- **`zz_stream_begin`** occupa il motore (`ZZ_ERR_BUSY` a tutte le altre operazioni) fino a
+  `finish`/`abort`, verifica opzioni e `zz_engine_load` come `zz_dictate` (`ZZ_ERR_NOT_LOADED`), copia
+  le opzioni (anche la stringa della lingua) e il dizionario, porta in RAM Whisper e, se
+  `sequential_loading=0`, Phi-4-mini (un errore di Phi-4-mini qui non blocca: in finish vale il fallback
+  del §5.3). Con `sequential_loading=1` Phi-4-mini si carica in finish (mai due modelli insieme, §7).
+  Avvia il thread del flusso.
+- **`zz_stream_feed`** non blocca: copia i campioni in un buffer protetto da mutex e sveglia il thread.
+  Restituisce `ZZ_ERR_CANCELLED` dopo `zz_cancel` e l'errore di un pezzo fallito (il flusso va comunque
+  chiuso con finish o abort).
+- **Taglio nelle pause** (`PauseSegmenter`, `src/zz_stream.h`): energia su blocchi da 30 ms con la soglia
+  adattiva di `zz_vad`. Quando ci sono almeno ~4 s non trascritti e una pausa di almeno 360 ms (anche
+  ancora in corso) che termina dopo i 4 s, taglio a metà pausa; senza pause, taglio forzato nel blocco
+  più quieto tra 15 e 20 s. I tagli cadono su multipli di 30 ms: i pezzi hanno la stessa griglia di
+  blocchi dell'audio intero, quindi il controllo "solo silenzio" coincide con quello di `zz_dictate`. I
+  pezzi di solo silenzio non vanno a Whisper (niente allucinazioni, meno lavoro).
+- **Continuità:** ogni pezzo è trascritto con prompt iniziale = dizionario personale + coda (~200
+  caratteri, da inizio parola, UTF-8 integro) del testo già trascritto (`whisper_continuation_prompt`).
+  I testi dei pezzi sono uniti con uno spazio.
+- **`zz_stream_finish`**: callback `ZZ_STAGE_TRANSCRIBING`, segnala la fine, attende il pezzo in corso
+  (non taglia altro), trascrive il resto se contiene parlato, poi segue esattamente il percorso di
+  `zz_dictate` dopo la trascrizione (comandi, scorciatoie, correzione/traduzione, `used_fallback`,
+  azioni, `CORRECTING`, `DONE`). `ms_transcribe` = tempo da finish alla fine della trascrizione.
+  Audio < 0,1 s, solo silenzio o testo vuoto → `ZZ_ERR_NO_SPEECH`. Libera sempre il flusso e il motore.
+- **`zz_stream_abort`** e `zz_cancel`: interrompono anche Whisper nel pezzo in corso (abort callback),
+  attendono il thread e liberano tutto. `zz_engine_destroy` va chiamato solo dopo finish/abort.
+- **Spec §10:** audio e testo dei pezzi solo in RAM; l'audio trascritto viene scartato man mano.
+
+Misura: `zz_bench --stream` (vedi sotto). Verificato su Linux con backend finti (TSAN e ASAN/UBSAN
+puliti) e con whisper.cpp vero sul modello di test; **da misurare** sul Surface e sul Galaxy S24 con i
+modelli veri.
+
 ## Test (Spec §12)
 
 Eseguiti a ogni build (`ZZ_RUN_TESTS_ON_BUILD`):
 
 | Test | Cosa verifica | Modelli |
 |---|---|---|
-| `contract` | contratto, uguale per mock e reale; col reale senza modelli verifica gli errori attesi | facoltativi |
+| `contract` | contratto, uguale per mock e reale (API 2 compresa); col reale senza modelli verifica gli errori attesi | facoltativi |
 | `common` | comandi vocali, scorciatoie, VAD, SHA-256 | no |
 | `sha256` | vettori FIPS, accelerato = portabile, percorsi UTF-8 | no |
 | `prompts` | template, prompt per modalità/traduzione/riscrittura, pulizia, plausibilità, suddivisione, allucinazioni | no |
-| `engine` | motore con backend finti: hash, `NOT_LOADED`, busy, cancel, timeout/fallback, caricamento sequenziale, stadi, scorciatoie, dizionario, riscrittura, WAV | no |
+| `engine` | motore con backend finti: hash, `NOT_LOADED`, busy, cancel, timeout/fallback, caricamento sequenziale, stadi, scorciatoie, dizionario, riscrittura, WAV; flusso (22/10/2026 16:12): tagli nelle pause, feed da 20 ms da un altro thread, equivalenza con `zz_dictate`, prompt di continuità, cancel/abort durante Whisper, busy, errori dei pezzi, nessun parlato, taglio forzato a ~20 s | no |
 | `integration` | whisper.cpp e llama.cpp veri con modelli minuscoli: cache del prefisso deterministica, abort dentro `llama_decode`, contesto superato, lingua non valida | generati (Python 3 + numpy), altrimenti saltato |
 | `models` | qualità minima con i modelli veri (correzione, traduzione, timeout, cancel, dettatura da WAV) | `ZZ_TEST_WHISPER_MODEL`, `ZZ_TEST_LLM_MODEL` (+ `ZZ_TEST_*_SHA256`, `ZZ_TEST_AUDIO_WAV`); altrimenti saltato |
 
@@ -209,12 +249,16 @@ Eseguiti a ogni build (`ZZ_RUN_TESTS_ON_BUILD`):
 ```sh
 zz_bench --audio dettatura-15s.wav --whisper whisper-medium-q5_0.bin --llm phi-4-mini-instruct-q4_k_m.gguf \
          [--whisper-sha HEX --llm-sha HEX] [--mode pulito] [--translate en] [--threads N] [--gpu 0|1] \
-         [--parallel-load] [--runs 3] [--rewrite "testo selezionato"] [--print-text]
+         [--parallel-load] [--runs 3] [--rewrite "testo selezionato"] [--stream] [--print-text]
 ```
 
 Stampa per ogni esecuzione il tempo totale, di trascrizione e di correzione (con e senza il
 caricamento sequenziale dei modelli), l'esito rispetto all'obiettivo di 5 s del §11 e il picco di RAM
 del processo e di ciascuna fase. Il testo non viene stampato senza `--print-text` (Spec §10).
+Con `--stream` (22/10/2026 16:12) l'audio è passato all'API 2 a blocchi da 100 ms con una pausa reale
+tra un blocco e l'altro, come un microfono; si stampano la **latenza percepita** (da `zz_stream_finish`
+al testo), la trascrizione dopo lo stop (`ms_transcribe`), la correzione (`ms_correct`) e il tempo di
+`zz_stream_begin`. Esempio: `zz_bench --audio d10s.wav --whisper ... --llm ... --stream --runs 3`.
 WAV richiesto: 16 kHz, PCM 16 bit o float 32 bit (`ffmpeg -i in.m4a -ar 16000 -ac 1 out.wav`).
 
 ## Verifiche fatte e da fare

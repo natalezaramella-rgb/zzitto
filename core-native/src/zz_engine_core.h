@@ -17,6 +17,8 @@
 #include "zz_backends.h"
 #include "zz_engine.h"
 
+struct zz_stream;
+
 struct zz_engine {
     zz_engine(const zz_engine_config &config, std::unique_ptr<zz::SttBackend> stt,
               std::unique_ptr<zz::LlmBackend> llm);
@@ -33,12 +35,15 @@ struct zz_engine {
                       zz_stage_callback cb, void *ud, zz_result *out);
     zz_status process_text(const char *raw, const zz_dictation_options *options, zz_result *out);
     void cancel() { cancel_.store(true); }
+    // Dettatura in streaming (API 2, Spec §11): implementata in zz_stream.cpp.
+    zz_status stream_begin(const zz_dictation_options *options, zz_stream **out_stream);
 
     // Solo per i test (Spec §12): quante volte i modelli sono stati caricati.
     int whisper_load_count() const { return whisper_loads_; }
     int llm_load_count() const { return llm_loads_; }
 
 private:
+    friend struct ::zz_stream;  // il flusso usa trascrizione e finish_text del motore (zz_stream.cpp)
     struct Guard;  // occupa il motore per un'operazione (ZZ_ERR_BUSY se già occupato)
     struct Verified {
         std::string path, sha;
@@ -50,8 +55,9 @@ private:
     zz_status verify_one(const std::string &path, const std::string &expected_sha, Verified *cache);
     zz_status ensure_whisper();
     zz_status ensure_llm();
+    // initial_prompt: dizionario (Spec §5.5) e, nel flusso, coda del testo già trascritto (Spec §11).
     zz_status transcribe(const float *pcm, size_t n, const zz_dictation_options &opt,
-                         const std::vector<std::string> &dict, std::string *out);
+                         const std::string &initial_prompt, const zz::AbortCheck &abort, std::string *out);
     // Comandi vocali, scorciatoie e correzione/traduzione sul testo grezzo (Spec §5.3, §5.9, §5.11, §5.12).
     zz_status finish_text(const std::string &raw, const zz_dictation_options &opt, zz_stage_callback cb, void *ud,
                           zz_result *out);
@@ -91,5 +97,11 @@ constexpr int kDefaultCorrectionTimeoutMs = 10000;
 constexpr size_t kMaxCharsPerPiece = 1200;
 // Audio minimo: 0,1 s (come il mock) e soglia di energia per "nessun parlato".
 constexpr size_t kMinSamples = 1600;
+
+// Opzioni con i valori predefiniti del contratto (Spec §5.3); false se non valide.
+bool resolve_options(const zz_dictation_options *in, zz_dictation_options *out);
+
+// Spec §5.2: silenzio digitale o quasi (nessun blocco da 30 ms sopra la soglia).
+bool is_silence(const float *pcm, size_t n);
 
 }  // namespace zz

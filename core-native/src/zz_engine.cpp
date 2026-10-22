@@ -24,7 +24,7 @@ ZZ_API uint32_t zz_api_version(void) { return ZZ_ENGINE_API_VERSION; }
 
 // Spec §13: la versione riporta anche i modelli attesi (nomi concordati tra gli agenti).
 ZZ_API const char *zz_version_string(void) {
-    return "zzitto-engine " ZZ_ENGINE_VERSION " api=1 (whisper.cpp " ZZ_WHISPER_REV ", llama.cpp " ZZ_LLAMA_REV
+    return "zzitto-engine " ZZ_ENGINE_VERSION " api=2 (whisper.cpp " ZZ_WHISPER_REV ", llama.cpp " ZZ_LLAMA_REV
            "; modelli: whisper-medium-q5_0.bin, phi-4-mini-instruct-q4_k_m.gguf)";
 }
 

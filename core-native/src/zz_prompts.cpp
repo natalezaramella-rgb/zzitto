@@ -121,6 +121,25 @@ std::string whisper_initial_prompt(const std::vector<std::string> &dictionary) {
     return s;
 }
 
+// Spec §11 (22/10/2026): Whisper conserva le ultime parti del prompt, quindi la coda del testo sta in fondo,
+// subito prima dell'audio nuovo.
+std::string whisper_continuation_prompt(const std::vector<std::string> &dictionary, const std::string &previous,
+                                        size_t tail_chars) {
+    std::string s = whisper_initial_prompt(dictionary);
+    const std::string prev = trim(previous);
+    if (prev.empty() || tail_chars == 0) return s;
+    size_t start = prev.size() > tail_chars ? prev.size() - tail_chars : 0;
+    if (start > 0) {
+        // mai a metà di un carattere UTF-8, e se possibile a inizio parola
+        while (start < prev.size() && (static_cast<unsigned char>(prev[start]) & 0xC0) == 0x80) ++start;
+        const size_t sp = prev.find(' ', start);
+        if (sp != std::string::npos && sp + 1 < prev.size()) start = sp + 1;
+    }
+    if (!s.empty()) s += " ";
+    s += prev.substr(start);
+    return s;
+}
+
 // Spec §5.3: prompt di sistema fisso. Regole: togliere intercalari ed esitazioni,
 // eliminare ripetizioni e autocorrezioni mantenendo la versione finale, correggere
 // punteggiatura e maiuscole, non aggiungere contenuti, non cambiare il significato.

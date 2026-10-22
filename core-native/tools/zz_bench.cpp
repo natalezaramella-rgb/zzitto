@@ -6,6 +6,10 @@
 // obiettivi del §11 su Galaxy S24 (adb shell) e su Surface Snapdragon / PC x64.
 //
 // Spec §10: il testo dettato NON viene stampato, se non con --print-text.
+//
+// --stream (aggiunto il 22/10/2026 alle 16:12, API 2, Spec §11): simula la dettatura dal microfono con
+// zz_stream_*: blocchi da 100 ms alimentati in tempo reale (pausa vera tra un blocco e l'altro), poi
+// zz_stream_finish. Misura la latenza percepita, cioè il tempo da finish (lo stop dell'utente) al testo.
 
 #include <algorithm>
 #include <atomic>
@@ -125,7 +129,8 @@ void usage() {
                  "              [--whisper-sha HEX] [--llm-sha HEX] [--lang it] [--mode fedele|pulito|formale]\n"
                  "              [--translate en|es] [--threads N] [--gpu 0|1] [--parallel-load] [--sequential] [--runs N]\n"
                  "              [--timeout MS] [--dict \"Parola1,Parola2\"] [--rewrite \"testo selezionato\"]\n"
-                 "              [--print-text]\n"
+                 "              [--stream] [--print-text]\n"
+                 "--stream: audio in tempo reale a blocchi da 100 ms con l'API 2; misura il tempo da zz_stream_finish al testo.\n"
                  "Spec §11: obiettivo < 5000 ms dalla fine di una dettatura di 15 s al testo corretto.\n");
 }
 
@@ -134,7 +139,7 @@ void usage() {
 int main(int argc, char **argv) {
     std::string audio, whisper, llm, whisper_sha, llm_sha, lang = "it", dict, rewrite_sel;
     int threads = 0, gpu = 1, runs = 1, timeout = 0;
-    bool parallel = false, sequential = false, print_text = false, has_rewrite = false;
+    bool parallel = false, sequential = false, print_text = false, has_rewrite = false, stream = false;
     zz_correction_mode mode = ZZ_MODE_CLEAN;
     zz_translate_target tr = ZZ_TRANSLATE_NONE;
     for (int i = 1; i < argc; ++i) {
@@ -161,6 +166,7 @@ int main(int argc, char **argv) {
         else if (a == "--parallel-load") parallel = true;
         else if (a == "--sequential") sequential = true;
         else if (a == "--print-text") print_text = true;
+        else if (a == "--stream") stream = true;
         else if (a == "--mode") {
             std::string m = next();
             mode = m == "fedele" ? ZZ_MODE_FAITHFUL : m == "formale" ? ZZ_MODE_FORMAL : ZZ_MODE_CLEAN;
@@ -176,7 +182,7 @@ int main(int argc, char **argv) {
             return 2;
         }
     }
-    if (audio.empty() || whisper.empty() || llm.empty()) {
+    if (audio.empty() || whisper.empty() || llm.empty() || (stream && has_rewrite)) {
         usage();
         return 2;
     }
@@ -246,6 +252,43 @@ int main(int argc, char **argv) {
     for (int r = 0; r < runs; ++r) {
         StageLog log{&mem, {}, {}, {}};
         zz_result res{};
+        if (stream) {
+            // Spec §11: dettatura simulata in tempo reale; la latenza percepita parte dallo stop (finish).
+            zz_stream *zs = nullptr;
+            const auto t_begin = Clock::now();
+            st = zz_stream_begin(e, &opt, &zs);
+            if (st != ZZ_OK) {
+                std::printf("run %d: zz_stream_begin: %s\n", r + 1, zz_status_string(st));
+                rc = 1;
+                continue;
+            }
+            const long long ms_begin = ms(Clock::now() - t_begin);
+            const size_t block = 1600;  // 100 ms, come un microfono
+            const auto t_audio = Clock::now();
+            for (size_t off = 0, i = 1; off < pcm.size() && st == ZZ_OK; off += block, ++i) {
+                st = zz_stream_feed(zs, pcm.data() + off, std::min(block, pcm.size() - off));
+                std::this_thread::sleep_until(t_audio + std::chrono::milliseconds(100 * i));
+            }
+            const long long ms_audio = ms(Clock::now() - t_audio);
+            log.t_start = Clock::now();
+            st = zz_stream_finish(zs, on_stage, &log, &res);
+            const auto t_end = Clock::now();
+            if (st != ZZ_OK) {
+                std::printf("run %d (stream): %s\n", r + 1, zz_status_string(st));
+                rc = 1;
+                continue;
+            }
+            const long long latency = ms(t_end - log.t_start);
+            std::printf("run %d (stream): latenza percepita %lld ms (da finish al testo) | trascrizione dopo lo stop "
+                        "%lld ms | correzione %lld ms | begin %lld ms | audio %.1f s alimentato in %lld ms"
+                        " | fallback=%d scorciatoia=%d azioni=0x%x | obiettivo §11 (<5000 ms): %s\n",
+                        r + 1, latency, (long long)res.ms_transcribe, (long long)res.ms_correct, ms_begin,
+                        pcm.size() / 16000.0, ms_audio, res.used_fallback, res.from_shortcut, res.actions,
+                        latency < 5000 ? "OK" : "NO");
+            if (print_text) std::printf("  grezzo: %s\n  finale: %s\n", res.raw_text, res.final_text);
+            zz_result_free(&res);
+            continue;
+        }
         log.t_start = Clock::now();
         st = has_rewrite ? zz_rewrite(e, rewrite_sel.c_str(), pcm.data(), pcm.size(), &opt, on_stage, &log, &res)
                          : zz_dictate(e, pcm.data(), pcm.size(), &opt, on_stage, &log, &res);
