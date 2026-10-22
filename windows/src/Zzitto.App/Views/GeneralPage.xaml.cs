@@ -68,19 +68,31 @@ public sealed partial class GeneralPage : Page
             return;
         }
 
+        string? language = PageHelpers.SelectedTag(LanguageBox);
+        bool hasMode = Enum.TryParse(PageHelpers.SelectedTag(ModeBox), out CorrectionMode mode);
+        bool hasTranslate = Enum.TryParse(PageHelpers.SelectedTag(TranslateBox), out TranslateTarget translate);
+        bool hasOverlay = Enum.TryParse(PageHelpers.SelectedTag(OverlayModeBox), out OverlayMode overlay);
+        double silence = SilenceBox.Value;
+        double maxDuration = MaxDurationBox.Value;
+        double unload = UnloadBox.Value;
+        bool voiceCommands = VoiceCommandsSwitch.IsOn;
+        bool startSound = StartSoundSwitch.IsOn;
+        bool clipboardSelection = ClipboardSelectionSwitch.IsOn;
+        bool useGpu = GpuSwitch.IsOn;
+
         PageHelpers.Host.Settings.Update(s => s with
         {
-            Language = PageHelpers.SelectedTag(LanguageBox) ?? s.Language,
-            Mode = Enum.TryParse(PageHelpers.SelectedTag(ModeBox), out CorrectionMode mode) ? mode : s.Mode,
-            Translate = Enum.TryParse(PageHelpers.SelectedTag(TranslateBox), out TranslateTarget translate) ? translate : s.Translate,
-            OverlayMode = Enum.TryParse(PageHelpers.SelectedTag(OverlayModeBox), out OverlayMode overlay) ? overlay : s.OverlayMode,
-            SilenceTimeoutMs = double.IsNaN(SilenceBox.Value) ? s.SilenceTimeoutMs : (int)Math.Round(SilenceBox.Value * 1000),
-            MaxDurationSeconds = double.IsNaN(MaxDurationBox.Value) ? s.MaxDurationSeconds : (int)Math.Round(MaxDurationBox.Value * 60),
-            ModelUnloadMinutes = double.IsNaN(UnloadBox.Value) ? s.ModelUnloadMinutes : (int)Math.Round(UnloadBox.Value),
-            VoiceCommandsEnabled = VoiceCommandsSwitch.IsOn,
-            StartSound = StartSoundSwitch.IsOn,
-            ClipboardSelectionFallback = ClipboardSelectionSwitch.IsOn,
-            UseGpu = GpuSwitch.IsOn,
+            Language = language ?? s.Language,
+            Mode = hasMode ? mode : s.Mode,
+            Translate = hasTranslate ? translate : s.Translate,
+            OverlayMode = hasOverlay ? overlay : s.OverlayMode,
+            SilenceTimeoutMs = double.IsNaN(silence) ? s.SilenceTimeoutMs : (int)Math.Round(silence * 1000),
+            MaxDurationSeconds = double.IsNaN(maxDuration) ? s.MaxDurationSeconds : (int)Math.Round(maxDuration * 60),
+            ModelUnloadMinutes = double.IsNaN(unload) ? s.ModelUnloadMinutes : (int)Math.Round(unload),
+            VoiceCommandsEnabled = voiceCommands,
+            StartSound = startSound,
+            ClipboardSelectionFallback = clipboardSelection,
+            UseGpu = useGpu,
         });
     }
 

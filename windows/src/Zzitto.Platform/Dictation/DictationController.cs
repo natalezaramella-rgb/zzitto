@@ -121,7 +121,15 @@ public sealed class DictationController : IDisposable
             case DictationState.Transcribing:
             case DictationState.Correcting:
                 // Il motore riceve zz_cancel e la dettatura torna a Inattivo.
-                session?.Cancellation.Cancel();
+                try
+                {
+                    session?.Cancellation.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // La dettatura è terminata nel frattempo.
+                }
+
                 break;
             case DictationState.Error:
                 StateMachine.Fire(DictationTrigger.Cancel);

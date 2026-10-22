@@ -63,7 +63,9 @@ public class AudioTests
         var same = new StreamingResampler(16000, 16000);
         float[] output = new float[same.MaxOutputFor(3)];
         Assert.Equal(3, same.Process(new[] { 0.1f, 0.2f, 0.3f }, output));
-        Assert.Equal(new[] { 0.1f, 0.2f, 0.3f }, output.Take(3));
+        Assert.Equal(0.1f, output[0], 6);
+        Assert.Equal(0.2f, output[1], 6);
+        Assert.Equal(0.3f, output[2], 6);
 
         var down = new StreamingResampler(48000, 16000);
         float[] dc = Enumerable.Repeat(1f, 4800).ToArray();

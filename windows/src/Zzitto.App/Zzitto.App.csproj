@@ -31,6 +31,8 @@
     <AppxBundle>Never</AppxBundle>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <GenerateTestArtifacts>false</GenerateTestArtifacts>
+    <!-- Suggerimenti di C#/WinRT per la compilazione AOT (non usata): restano avvisi, non errori. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CsWinRT1028;CsWinRT1030;CsWinRT1032;CsWinRT1033</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

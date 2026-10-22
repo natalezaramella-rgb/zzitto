@@ -36,9 +36,9 @@ public sealed class ClipboardSnapshot
     /// <summary>Azzera le copie in memoria (Spec §10).</summary>
     public void Wipe()
     {
-        foreach ((uint _, byte[] data) in Items)
+        foreach ((uint Format, byte[] Data) item in Items)
         {
-            Array.Clear(data);
+            Array.Clear(item.Data);
         }
     }
 }
@@ -222,9 +222,9 @@ public sealed unsafe class ClipboardService : IClipboardService
         try
         {
             Win32.EmptyClipboard();
-            foreach ((uint format, byte[] data) in snapshot.Items)
+            foreach ((uint Format, byte[] Data) item in snapshot.Items)
             {
-                SetData(format, data);
+                SetData(item.Format, item.Data);
             }
         }
         finally
