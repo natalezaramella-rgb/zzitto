@@ -1,0 +1,8 @@
+/* Simboli esportati da libzz_engine.so: solo l'API del contratto (Spec §4.3).
+   Aggiunto il 22/10/2026 alle 11:29. */
+{
+  global:
+    zz_*;
+  local:
+    *;
+};
